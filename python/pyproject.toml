@@ -1,0 +1,15 @@
+[project]
+name = "dialecte-generate"
+version = "0.1.0"
+description = "XSD to TypeScript definition generator for Dialecte"
+requires-python = ">=3.13"
+dependencies = ["xmlschema>=4.3.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=9.0.2"]
+
+[project.scripts]
+dialecte-generate = "generate.__main__:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

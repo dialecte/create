@@ -1,0 +1,7 @@
+# Keep the published package lean
+**/__pycache__/
+**/*.pyc
+**/*.egg-info/
+python/.venv/
+python/tests/
+.tmp/

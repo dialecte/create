@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  engine-tests:
+    name: Python engine tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install engine (with dev extras)
+        run: pip install -e ".[dev]"
+      - name: Run pytest
+        run: python -m pytest
+
+  cli:
+    name: CLI build + smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Vendor runtime wheels
+        run: npm run vendor
+      - name: Build CLI
+        run: npm run build
+      - name: Smoke test (WASM generate)
+        run: npm run test:cli

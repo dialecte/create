@@ -1,0 +1,45 @@
+{
+	"name": "__packageName__",
+	"version": "0.0.1",
+	"description": "Dialecte SDK for __dialecteId__",
+	"license": "MIT",
+	"type": "module",
+	"source": "src/index.ts",
+	"files": [
+		"dist"
+	],
+	"exports": {
+		"./__version__": {
+			"types": "./dist/__version__/index.d.ts",
+			"default": "./dist/__version__/index.js"
+		},
+		"./__version__/test": {
+			"types": "./dist/__version__/test.d.ts",
+			"default": "./dist/__version__/test.js"
+		}
+	},
+	"scripts": {
+		"build": "run-p type-check \"build-only {@}\" --",
+		"build-only": "tsc -p tsconfig.json && vite build",
+		"type-check": "tsc --noEmit",
+		"test": "vitest",
+		"doc:dev": "vitepress dev docs",
+		"doc:build": "vitepress build docs",
+		"doc:preview": "vitepress preview docs"
+	},
+	"dependencies": {
+		"@dialecte/core": "__coreVersion__"
+	},
+	"devDependencies": {
+		"@tsconfig/node24": "^24.0.4",
+		"@types/node": "^24.12.4",
+		"@vitest/browser-playwright": "^4.1.8",
+		"npm-run-all2": "^8.0.4",
+		"playwright": "^1.60.0",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.16",
+		"vite-plugin-dts": "^5.0.2",
+		"vitepress": "^2.0.0-alpha.17",
+		"vitest": "^4.1.8"
+	}
+}
