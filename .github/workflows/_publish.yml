@@ -1,0 +1,43 @@
+name: _publish
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      npm-token:
+        required: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 'latest'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Vendor runtime wheels
+        run: npm run vendor
+
+      - name: Build CLI
+        run: npm run build
+
+      - name: Verify package contents (dist + wheels)
+        run: |
+          ls -la dist/cli
+          ls -la vendor/*.whl
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm-token }}

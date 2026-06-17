@@ -1,33 +1,59 @@
-name: Publish
+name: Publish @dialecte/create
 
 on:
+  workflow_dispatch:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
 
 jobs:
-  publish:
-    name: Publish to npm
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Vendor runtime wheels
-        run: npm run vendor
-      - name: Build CLI
-        run: npm run build
-      - name: Smoke test
-        run: npm run test:cli
-      - name: Publish
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  install:
+    name: Install Dependencies
+    uses: ./.github/workflows/_install.yml
+
+  build:
+    name: Build CLI
+    needs: install
+    uses: ./.github/workflows/_build.yml
+
+  test:
+    name: CLI Smoke Test
+    needs: install
+    uses: ./.github/workflows/_test.yml
+
+  test-engine:
+    name: Python Engine Tests
+    uses: ./.github/workflows/_test-engine.yml
+
+  version:
+    name: Check Version
+    uses: ./.github/workflows/_check-npm-version.yml
+
+  extract-version:
+    name: Extract Version
+    uses: ./.github/workflows/_extract-version.yml
+
+  deploy:
+    name: Publish to NPM
+    if: needs.version.outputs.version_changed == 'true'
+    needs:
+      - build
+      - test
+      - test-engine
+      - version
+    uses: ./.github/workflows/_publish.yml
+    secrets:
+      npm-token: ${{ secrets.NPM_TOKEN }}
+
+  create-release-tag:
+    name: Create Release Tag
+    if: needs.version.outputs.version_changed == 'true'
+    needs:
+      - version
+      - extract-version
+      - deploy
+    uses: ./.github/workflows/_tag-release.yml
+    with:
+      version: ${{ needs.extract-version.outputs.version }}
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
