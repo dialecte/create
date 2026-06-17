@@ -12,8 +12,12 @@ offline at runtime.
 Scaffold a brand-new dialecte package from a schema:
 
 ```sh
-npm create @dialecte ./my-schema.xsd --name @acme/widget
+npm create @dialecte -- ./my-schema.xsd --name @acme/widget
 ```
+
+> `npm create @dialecte` resolves to the `@dialecte/create` package. The `--`
+> separator is required so npm forwards the schema path and flags to the CLI
+> instead of consuming them itself.
 
 Or just regenerate definition files into an existing package:
 
@@ -28,13 +32,13 @@ npx @dialecte/create generate --entry ./my-schema.xsd --out-dir ./src/v1/definit
 Scaffolds a new dialecte package (built on `@dialecte/core`) and generates its
 element definitions from the schema in one step.
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `--name <pkg>` | `@dialecte/<schema basename>` | npm package name |
-| `--out <dir>` | `./<dialecte id>` | target directory |
-| `--version <vN>` | `v1` | version folder name |
-| `--namespace <uri>` | `urn:dialecte:<id>` | default XML namespace URI |
-| `--core-version <ver>` | `^0.2.19` | `@dialecte/core` version range |
+| Option                 | Default                       | Description                    |
+| ---------------------- | ----------------------------- | ------------------------------ |
+| `--name <pkg>`         | `@dialecte/<schema basename>` | npm package name               |
+| `--out <dir>`          | `./<dialecte id>`             | target directory               |
+| `--version <vN>`       | `v1`                          | version folder name            |
+| `--namespace <uri>`    | `urn:dialecte:<id>`           | default XML namespace URI      |
+| `--core-version <ver>` | `^0.2.19`                     | `@dialecte/core` version range |
 
 The generated package includes:
 
@@ -48,10 +52,10 @@ The generated package includes:
 Generates only the three definition files
 (`definition.generated.ts`, `constants.generated.ts`, `types.generated.ts`).
 
-| Option | Description |
-| --- | --- |
-| `--entry <schema.xsd>` | entry XSD file (required) |
-| `--out-dir <dir>` | output directory (required) |
+| Option                 | Description                 |
+| ---------------------- | --------------------------- |
+| `--entry <schema.xsd>` | entry XSD file (required)   |
+| `--out-dir <dir>`      | output directory (required) |
 
 ## Bring your own XSD
 
