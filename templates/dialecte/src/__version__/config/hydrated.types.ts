@@ -5,14 +5,14 @@ import type * as Core from '@dialecte/core'
 type __DialecteName__Extensions = Core.MergedExtensions<typeof __DIALECTE_NAME___EXTENSION_MODULES>
 
 export namespace __DialecteName__ {
-	export type Project<
-		GenericCustomModules extends Core.ExtensionModules = Record<never, never>,
-	> = Core.Project<Config, __DialecteName__Extensions & GenericCustomModules>
+	export type Project<GenericCustomModules extends Core.ExtensionModules = Record<never, never>> =
+		Core.Project<Config, __DialecteName__Extensions & GenericCustomModules>
 	export type Document = Core.Document<Config, __DialecteName__Extensions>
 	export type Context = Core.Context<Config>
 
 	export type Query = Core.Query<Config> & Core.QueryExtensions<__DialecteName__Extensions>
-	export type Transaction = Core.Transaction<Config> & Core.AllExtensions<__DialecteName__Extensions>
+	export type Transaction = Core.Transaction<Config> &
+		Core.AllExtensions<__DialecteName__Extensions>
 	export type TransactionHooks = Core.TransactionHooks<Config>
 
 	// DEFINITION
@@ -24,8 +24,10 @@ export namespace __DialecteName__ {
 		Config,
 		GenericElement
 	>
-	export type FullAttributeObjectOf<GenericElement extends ElementsOf> =
-		Core.FullAttributeObjectOf<Config, GenericElement>
+	export type FullAttributeObjectOf<GenericElement extends ElementsOf> = Core.FullAttributeObjectOf<
+		Config,
+		GenericElement
+	>
 	export type ChildrenOf<GenericElement extends ElementsOf> = Core.ChildrenOf<
 		Config,
 		GenericElement

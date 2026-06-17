@@ -1,5 +1,5 @@
-import { basename, resolve } from 'node:path'
 import { existsSync } from 'node:fs'
+import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { runGenerator } from './pyodide-runner.js'
@@ -99,7 +99,7 @@ async function runCreateCommand(
 	const coreVersion =
 		typeof flags['core-version'] === 'string' ? flags['core-version'] : DEFAULT_CORE_VERSION
 	const targetDir =
-		typeof flags.out === 'string' ? flags.out : positionals[1] ?? `./${dialecteId}`
+		typeof flags.out === 'string' ? flags.out : (positionals[1] ?? `./${dialecteId}`)
 
 	await scaffoldDialecte({
 		entry,

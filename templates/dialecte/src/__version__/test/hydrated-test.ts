@@ -46,6 +46,8 @@ export async function create__DialecteName__TestProject(params: {
 export const create__DialecteName__TestRecord: ReturnType<typeof createTestRecordFactory<Config>> =
 	createTestRecordFactory<Config>(__DIALECTE_NAME___DIALECTE_CONFIG)
 
-export const { assertExpectedElementQueries, assertUnexpectedElementQueries } = createXmlAssertions({
-	namespaces: __DIALECTE_NAME___DIALECTE_CONFIG.namespaces,
-})
+export const { assertExpectedElementQueries, assertUnexpectedElementQueries } = createXmlAssertions(
+	{
+		namespaces: __DIALECTE_NAME___DIALECTE_CONFIG.namespaces,
+	},
+)

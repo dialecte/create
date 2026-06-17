@@ -1,5 +1,5 @@
-import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 // Resolved at runtime relative to the built CLI entry (dist/cli/index.js).
 // Package root is two levels up from dist/cli.

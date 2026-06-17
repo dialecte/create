@@ -1,8 +1,9 @@
 import { readdir, mkdir } from 'node:fs/promises'
 import { dirname, basename, resolve } from 'node:path'
-import { loadPyodide, type PyodideInterface } from 'pyodide'
 
 import { PYTHON_ENGINE_DIR, VENDOR_DIR } from './paths.js'
+
+import { loadPyodide, type PyodideInterface } from 'pyodide'
 
 export interface GenerateOptions {
 	/** Absolute path to the entry .xsd file. */
@@ -38,7 +39,11 @@ async function getPyodide(quiet: boolean): Promise<PyodideInterface> {
 	return pyodidePromise
 }
 
-async function mountReadOnly(py: PyodideInterface, mountPoint: string, hostRoot: string): Promise<void> {
+async function mountReadOnly(
+	py: PyodideInterface,
+	mountPoint: string,
+	hostRoot: string,
+): Promise<void> {
 	const f = fs(py)
 	try {
 		f.mkdir(mountPoint)

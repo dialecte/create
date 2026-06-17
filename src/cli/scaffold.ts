@@ -1,5 +1,5 @@
-import { readdir, mkdir, readFile, writeFile, rm } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
+import { readdir, mkdir, readFile, writeFile, rm } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 
 import { TEMPLATES_DIR } from './paths.js'

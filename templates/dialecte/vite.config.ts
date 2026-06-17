@@ -22,7 +22,9 @@ export default defineConfig({
 		lib: {
 			entry: {
 				'__version__/index': fileURLToPath(new URL('./src/__version__/index.ts', import.meta.url)),
-				'__version__/test': fileURLToPath(new URL('./src/__version__/test/index.ts', import.meta.url)),
+				'__version__/test': fileURLToPath(
+					new URL('./src/__version__/test/index.ts', import.meta.url),
+				),
 			},
 			name: '__DialecteName__Dialecte',
 			formats: ['es'],

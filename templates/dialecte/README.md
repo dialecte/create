@@ -1,4 +1,4 @@
-# __packageName__
+# **packageName**
 
 Dialecte SDK for `__dialecteId__`.
 

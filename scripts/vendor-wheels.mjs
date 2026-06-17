@@ -8,8 +8,8 @@
  * Usage: node scripts/vendor-wheels.mjs
  */
 import { mkdir, writeFile, readdir, rm } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const vendorDir = join(here, '..', 'vendor')
