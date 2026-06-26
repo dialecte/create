@@ -1,13 +1,12 @@
 {
 	"name": "@dialecte/create",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Scaffold and generate Dialecte SDKs from an XSD schema. Runs the Python generator in WebAssembly - no Python required.",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/dialecte/create.git"
 	},
-	"type": "module",
 	"bin": {
 		"create-dialecte": "./dist/cli/index.js"
 	},
@@ -19,17 +18,22 @@
 		"python/pyproject.toml",
 		"README.md"
 	],
-	"engines": {
-		"node": ">=20"
-	},
+	"type": "module",
 	"scripts": {
 		"build": "tsup",
 		"dev": "tsup --watch",
 		"start": "node dist/cli/index.js",
 		"vendor": "node scripts/vendor-wheels.mjs",
+		"type-check": "tsc --noEmit",
+		"lint:check": "oxlint",
+		"lint:fix": "oxlint . --fix -D correctness --ignore-path .gitignore",
+		"format:check": "oxfmt --check",
+		"format:fix": "oxfmt",
+		"check": "npm run type-check && npm run lint:check && npm run format:check",
 		"test:py": "cd python && python -m pytest",
 		"test:cli": "node scripts/smoke.mjs",
 		"prepack": "find python -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true",
+		"prepare": "husky",
 		"prepublishOnly": "npm run vendor && npm run build"
 	},
 	"dependencies": {
@@ -37,7 +41,13 @@
 	},
 	"devDependencies": {
 		"@types/node": "^22.0.0",
+		"husky": "^9.1.7",
+		"oxfmt": "^0.53.0",
+		"oxlint": "^1.68.0",
 		"tsup": "^8.5.1",
 		"typescript": "^5.6.0"
+	},
+	"engines": {
+		"node": ">=20"
 	}
 }

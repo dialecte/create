@@ -3,11 +3,11 @@
 	"version": "0.0.1",
 	"description": "Dialecte SDK for __dialecteId__",
 	"license": "MIT",
-	"type": "module",
 	"source": "src/index.ts",
 	"files": [
 		"dist"
 	],
+	"type": "module",
 	"exports": {
 		"./__version__": {
 			"types": "./dist/__version__/index.d.ts",
@@ -22,6 +22,11 @@
 		"build": "run-p type-check \"build-only {@}\" --",
 		"build-only": "tsc -p tsconfig.json && vite build",
 		"type-check": "tsc --noEmit",
+		"coverage:gen": "dialecte coverage",
+		"type-bench": "npm run coverage:gen && dialecte bench",
+		"type-bench:check": "npm run coverage:gen && dialecte bench --check",
+		"type-narrowing": "npm run coverage:gen && dialecte narrowing",
+		"type-audit": "dialecte audit",
 		"test": "vitest",
 		"doc:dev": "vitepress dev docs",
 		"doc:build": "vitepress build docs",
@@ -31,6 +36,7 @@
 		"@dialecte/core": "__coreVersion__"
 	},
 	"devDependencies": {
+		"@dialecte/cli": "0.0.1",
 		"@tsconfig/node24": "^24.0.4",
 		"@types/node": "^24.12.4",
 		"@vitest/browser-playwright": "^4.1.8",

@@ -2,3 +2,10 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
+
+# type-benchmark throwaways (harness + committed baseline.json are kept)
+.bench-dts
+.bench-trace
+.bench-*.tsconfig.json
+benchmarks/types/.audit-entry.ts
+benchmarks/types/*/generated/

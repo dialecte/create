@@ -30,7 +30,7 @@ export default defineConfig({
 			formats: ['es'],
 		},
 		rollupOptions: {
-			external: [/^@dialecte\/core/],
+			external: [/^@dialecte\/core/, 'dexie'],
 		},
 	},
 })
