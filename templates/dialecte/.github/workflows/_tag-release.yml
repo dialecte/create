@@ -12,7 +12,7 @@ on:
         required: true
 
 jobs:
-  tag:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

@@ -4,12 +4,12 @@ on:
   workflow_call:
     outputs:
       version_changed:
-        description: 'Whether the published package version has changed'
+        description: 'Whether the deployed package version has changed'
         value: ${{ jobs.check.outputs.version_changed }}
 
 jobs:
   check:
-    name: Get Published Version
+    name: Get Deployed Version
     runs-on: ubuntu-latest
     outputs:
       version_changed: ${{ steps.compare_versions.outputs.version_changed }}
