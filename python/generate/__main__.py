@@ -6,7 +6,13 @@ from pathlib import Path
 import xmlschema
 
 from generate.collector import collect
-from generate.deriver import derive_graph, derive_identity_fields, derive_root_element, derive_singleton_elements
+from generate.deriver import (
+    derive_graph,
+    derive_identity_fields,
+    derive_root_element,
+    derive_singleton_elements,
+    strip_canonical_child_namespaces,
+)
 from generate.emitters.constants import emit_constants
 from generate.emitters.definition import emit_definition
 from generate.emitters.types import emit_types
@@ -75,6 +81,7 @@ def main(argv: list[str] | None = None) -> None:
 
     # Phase 3: Derive
     print('Deriving graphs...')
+    strip_canonical_child_namespaces(elements)
     descendants, ancestors = derive_graph(elements)
     root_element = derive_root_element(elements, override=root_candidate)
     singleton_elements = derive_singleton_elements(elements, root_element)

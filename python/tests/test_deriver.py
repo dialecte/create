@@ -7,6 +7,7 @@ from generate.deriver import (
     derive_identity_fields,
     derive_root_element,
     derive_singleton_elements,
+    strip_canonical_child_namespaces,
     _extract_attribute_fields,
     _resolve_constraint_targets,
 )
@@ -72,6 +73,44 @@ class TestDeriveRootElement:
         }
         with pytest.raises(ValueError, match='Expected exactly 1 root'):
             derive_root_element(elems)
+
+
+class TestStripCanonicalChildNamespaces:
+    def test_nulls_matching_edge_keeps_override(self):
+        # `Labels` is canonically SCL but is re-declared in 6-100 under `DAS`.
+        scl = Namespace(prefix='', uri='http://www.iec.ch/61850/2003/SCL')
+        ext = Namespace(prefix='eIEC61850-6-100', uri='http://www.iec.ch/61850/2019/SCL/6-100')
+        elements = {
+            'Labels': ElementDef(tag='Labels', namespace=scl, parents=['Substation', 'DAS']),
+            'Substation': ElementDef(
+                tag='Substation', namespace=scl,
+                children={'Labels': ChildDef(namespace=scl)},
+            ),
+            'DAS': ElementDef(
+                tag='DAS', namespace=ext,
+                children={'Labels': ChildDef(namespace=ext)},
+            ),
+        }
+
+        strip_canonical_child_namespaces(elements)
+
+        # Edge matching the child's canonical namespace → dropped (core falls back).
+        assert elements['Substation'].children['Labels'].namespace is None
+        # Edge overriding the canonical namespace → kept (emitted as the sparse override).
+        assert elements['DAS'].children['Labels'].namespace == ext
+
+    def test_unknown_child_element_left_untouched(self):
+        ext = Namespace(prefix='x', uri='urn:x')
+        elements = {
+            'P': ElementDef(
+                tag='P', namespace=Namespace(prefix='', uri=''),
+                children={'Ghost': ChildDef(namespace=ext)},
+            ),
+        }
+
+        strip_canonical_child_namespaces(elements)
+
+        assert elements['P'].children['Ghost'].namespace == ext
 
 
 class TestDeriveSingletonElements:

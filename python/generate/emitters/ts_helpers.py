@@ -156,6 +156,8 @@ def _ts_child_def(child: ChildDef, indent: str) -> str:
         fields['maxOccurs'] = child.max_occurs
     if child.constraints:
         fields['constraints'] = child.constraints
+    if child.namespace is not None:
+        fields['namespace'] = child.namespace
 
     if not fields:
         return '{}'

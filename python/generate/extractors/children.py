@@ -3,6 +3,7 @@ from typing import Any
 
 from generate.extractors.constraints import extract_constraints
 from generate.extractors.facets import extract_facets
+from generate.extractors.namespace import extract_namespace
 from generate.ir import ChildDef, ChoiceGroup, TextContent
 def extract_children(xsd_elem: Any) -> tuple[list[str], bool, dict[str, ChildDef]]:
     """Extract child element definitions from an XSD element's content model.
@@ -65,6 +66,10 @@ def _extract_children_from_content(content: Any) -> tuple[list[str], bool, dict[
             max_occurs=max_occ,
             constraints=extract_constraints(child) or None,
             facets=None,  # Rare: child text content facets
+            # Per-context: the child's declaring-schema namespace. The same local name
+            # yields SCL under one type's content and 6-100 under another. Reduced to a
+            # sparse override later (strip_canonical_child_namespaces).
+            namespace=extract_namespace(child),
         )
 
     return sequence, any_child, details

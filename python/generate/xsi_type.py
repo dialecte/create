@@ -69,6 +69,7 @@ class XsiTypeExpander:
                     max_occurs=detail.max_occurs,
                     constraints=detail.constraints,
                     facets=detail.facets,
+                    namespace=detail.namespace,
                 )
                 child_seq.append(name)
 

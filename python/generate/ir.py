@@ -54,6 +54,10 @@ class ChildDef:
     max_occurs: int | None = None  # None = unbounded
     constraints: list[IdentityConstraint] | None = None
     facets: Facets | None = None
+    # Per-edge override: the child's declaring-schema namespace when it differs from
+    # the child element's canonical namespace (same local name declared in another
+    # namespace under this parent). Emitted sparsely; None ⇒ use the element's own.
+    namespace: Namespace | None = None
 
 @dataclass
 class ChoiceGroup:

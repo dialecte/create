@@ -30,6 +30,23 @@ def derive_graph(
     descendants = {name: transitive(children_map, name) for name in elements}
     ancestors = {name: transitive(parents_map, name) for name in elements}
     return descendants, ancestors
+def strip_canonical_child_namespaces(elements: dict[str, ElementDef]) -> None:
+    """Reduce per-edge child namespaces to sparse overrides (in place).
+
+    ``extract_children`` stamps every parent→child edge with the child's
+    declaring-schema namespace. Null the edge when it equals the child element's
+    canonical namespace, so only edges that OVERRIDE the canonical (the same local
+    name declared in a different namespace under this parent, e.g. ``{6-100}Labels``
+    under ``DAS`` vs canonical ``{SCL}Labels``) survive and get emitted. Core falls
+    back to the element's canonical namespace when an edge carries none.
+    """
+    for element in elements.values():
+        for child_name, child_def in element.children.items():
+            canonical = elements.get(child_name)
+            if canonical is not None and child_def.namespace == canonical.namespace:
+                child_def.namespace = None
+
+
 def derive_root_element(elements: dict[str, ElementDef], override: str | None = None) -> str:
     """Find the document root element.
 
