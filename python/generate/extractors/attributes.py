@@ -4,7 +4,7 @@ from typing import Any
 from generate.extractors.facets import extract_facets
 from generate.extractors.namespace import extract_attr_namespace
 from generate.helpers import local_name
-from generate.ir import AttributeDef, Namespace
+from generate.ir import AttributeDef
 
 # W3C XML namespace attrs (xml:base, xml:lang, xml:space, xml:id, etc.) are
 # implicitly valid on every XML element and have no meaning in IEC schemas.
@@ -14,9 +14,14 @@ _XML_NS_URI = 'http://www.w3.org/XML/1998/namespace'
 def extract_attributes(xsd_elem: Any) -> tuple[list[str], bool, dict[str, AttributeDef]]:
     """Extract attributes from an XSD element.
 
-    Uses qualify-on-collision keying: bare local name by default; a namespace-prefixed
-    key (``prefix:local``) only when two or more attributes on the same element share
-    the same local name (e.g. SCL ``version`` and 6-100 ``version``).
+    Keying follows two rules, so a name is predictable without knowing an element's other
+    attributes:
+      - an attribute in the element's own (default) namespace is keyed by its bare local name;
+      - any non-default-namespace attribute is always keyed ``prefix:local``
+        (e.g. ``eIEC61850-6-100:version``, ``xsi:type``) — regardless of collision.
+
+    A prefixed non-default name can never clash with a bare default name, so this is
+    collision-safe by construction.
 
     Returns:
         (attr_sequence, has_any_attribute, attribute_details)
@@ -40,25 +45,16 @@ def extract_attributes(xsd_elem: Any) -> tuple[list[str], bool, dict[str, Attrib
     if attributes is None:
         return sequence, any_attr, details
 
-    # Pass 1: collect raw (local_name, namespace, xsd_attr) for collision detection
-    raw: list[tuple[str, Namespace | None, Any]] = []
     for attr_name, xsd_attr in attributes.items():
         if attr_name is None:
             continue
         ns = extract_attr_namespace(xsd_attr)
         if ns and ns.uri == _XML_NS_URI:
             continue  # skip W3C XML namespace attrs (xml:base, xml:lang, xml:space, xml:id)
-        raw.append((local_name(attr_name), ns, xsd_attr))
 
-    # Detect local-name collisions
-    local_count: dict[str, int] = {}
-    for ln, _, _ in raw:
-        local_count[ln] = local_count.get(ln, 0) + 1
-    collision_locals = {ln for ln, cnt in local_count.items() if cnt > 1}
-
-    # Pass 2: build keys and AttributeDefs
-    for ln, ns, xsd_attr in raw:
-        key = f'{ns.prefix}:{ln}' if (ln in collision_locals and ns and ns.prefix) else ln
+        ln = local_name(attr_name)
+        # Default namespace → bare local; any non-default namespace → always prefixed.
+        key = f'{ns.prefix}:{ln}' if (ns and ns.prefix) else ln
 
         fixed = getattr(xsd_attr, 'fixed', None)
         default = getattr(xsd_attr, 'default', None) if fixed is None else None

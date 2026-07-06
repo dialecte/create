@@ -290,6 +290,35 @@ class TestExtractAttributes:
         assert details['ext:version'].namespace.uri == 'http://example.com/ext'
         assert seq == sorted(seq)
 
+    def test_lone_non_default_attr_is_always_prefixed(self):
+        # A non-default-namespace attribute is keyed 'prefix:local' even with no local-name
+        # collision on the element — the rule is predictable, not collision-dependent.
+        class _FakeSchema:
+            namespaces = {'ext': 'http://example.com/ext'}
+
+        class _FakeAttr:
+            def __init__(self, clark_name):
+                self.name = clark_name
+                self.use = 'optional'
+                self.fixed = None
+                self.default = None
+                self.type = None
+                self.schema = _FakeSchema()
+
+        class _FakeElem:
+            attributes = {
+                'name': _FakeAttr('name'),
+                '{http://example.com/ext}flavor': _FakeAttr('{http://example.com/ext}flavor'),
+            }
+
+        _seq, _, details = extract_attributes(_FakeElem())
+
+        assert 'name' in details  # default namespace → bare local
+        assert 'flavor' not in details  # not bare
+        assert 'ext:flavor' in details  # non-default → always prefixed
+        assert details['ext:flavor'].namespace is not None
+        assert details['ext:flavor'].namespace.uri == 'http://example.com/ext'
+
     def test_xml_namespace_attrs_filtered(self):
         # Attributes in the W3C XML namespace (xml:lang, xml:base...) must be excluded.
         class _FakeSchema:
