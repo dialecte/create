@@ -47,21 +47,39 @@ def strip_canonical_child_namespaces(elements: dict[str, ElementDef]) -> None:
                 child_def.namespace = None
 
 
-def derive_root_element(elements: dict[str, ElementDef], override: str | None = None) -> str:
-    """Find the document root element.
+def find_root_candidates(elements: dict[str, ElementDef]) -> list[str]:
+    """The elements no content model names: the only ones that can start a document."""
+    return sorted(name for name, e in elements.items() if not e.parents)
 
-    If *override* is provided, use it directly (raising if absent).
-    Otherwise expect exactly one parentless element.
+
+def derive_root_element(
+    elements: dict[str, ElementDef],
+    override: str | None = None,
+    exclude: set[str] | frozenset[str] = frozenset(),
+) -> str:
+    """The root of a document: the one root candidate, or the one chosen among several.
+
+    Several candidates are never decided silently - a wrong root corrupts every table derived from
+    it - so the schema author names one with `--root`. `exclude` holds the parentless elements
+    known not to be roots: the orphans a sidecar mapping is about to attach.
     """
-    if override:
-        if override not in elements:
-            raise ValueError(f'Root override {override!r} not found in elements')
+    candidates = [name for name in find_root_candidates(elements) if name not in exclude]
+    if override is not None:
+        if override not in candidates:
+            raise ValueError(
+                f'Root {override!r} is not a root candidate; the candidates are: {candidates}'
+            )
         return override
+    if len(candidates) == 1:
+        return candidates[0]
+    if not candidates:
+        raise ValueError('No root candidate: every element is the child of another')
+    raise ValueError(
+        'Several elements can start a document; choose one with --root <name>: '
+        + ', '.join(candidates)
+    )
 
-    roots = sorted(name for name, e in elements.items() if not e.parents)
-    if len(roots) != 1:
-        raise ValueError(f'Expected exactly 1 root element, found: {roots}')
-    return roots[0]
+
 def derive_singleton_elements(elements: dict[str, ElementDef], root_name: str) -> list[str]:
     """Find elements that can appear at most once in the entire document.
 
@@ -103,32 +121,94 @@ def derive_identity_fields(elements: dict[str, ElementDef]) -> dict[str, list[st
     result: dict[str, set[str]] = {}
     for element in elements.values():
         for constraint in element.constraints:
-            for target in _resolve_constraint_targets(constraint, elements):
+            for target in _resolve_constraint_targets(constraint, elements, declaring=element.tag):
                 result.setdefault(target, set())
                 result[target] |= _extract_attribute_fields(constraint)
     return {name: sorted(fields) for name, fields in result.items() if fields}
 
 
+def assign_identity_fields(elements: dict[str, ElementDef], identity_fields: dict[str, list[str]]) -> None:
+    """Write the derived identity fields onto each element, and onto each of its definitions by
+    parent restricted to the attributes that definition declares: an attribute a declaration does
+    not have cannot identify the element there."""
+    for name, fields in identity_fields.items():
+        element = elements[name]
+        element.identity_fields = fields
+        for declared in element.definitions_by_parent.values():
+            declared.identity_fields = [f for f in fields if f in declared.attributes]
+
+
 def _resolve_constraint_targets(
-    constraint: IdentityConstraint, elements: dict[str, ElementDef]
+    constraint: IdentityConstraint,
+    elements: dict[str, ElementDef],
+    declaring: str | None = None,
 ) -> set[str]:
-    """Find which element names a constraint's selector targets."""
+    """Find which element names a constraint's selector targets.
+
+    A selector selects the elements under constraint: the ones each of its paths ENDS at. The steps
+    before are only the route from the declaring element, walked as a set of context elements:
+    `.` keeps the context, a name replaces it, `*` opens to the children the definition allows
+    there (`ns:*` to those of that prefix), and a deep path to every descendant. An element a
+    wildcard reaches counts only if it MUST carry the fields: the author said "whatever is there",
+    and an element that may lack the attribute would have no identity without it.
+    """
     if constraint.kind == 'keyref':
         return set()
+    fields = _extract_attribute_fields(constraint)
     targets: set[str] = set()
     for path in constraint.selector:
+        if not path.steps:
+            continue
+        context: set[str] = {declaring} if declaring in elements else set()
+        reached_by_wildcard = False
         for step in path.steps:
-            if step.kind == 'name' and step.value in elements:
-                targets.add(step.value)
+            if step.kind == 'self':
+                continue
+            if step.kind == 'name':
+                context = {step.value} if step.value in elements else set()
+                reached_by_wildcard = False
+                continue
+            children = _children_of(context, elements, deep=path.deep)
+            if step.kind == 'ns-wildcard':
+                children = {name for name in children if elements[name].namespace.prefix == step.value}
+            context = children
+            reached_by_wildcard = True
+        if reached_by_wildcard:
+            context = {name for name in context if _requires_all(elements[name], fields)}
+        targets |= context
     return targets
 
 
+def _requires_all(element: ElementDef, attribute_names: set[str]) -> bool:
+    return all(
+        name in element.attributes and element.attributes[name].required for name in attribute_names
+    )
+
+
+def _children_of(context: set[str], elements: dict[str, ElementDef], deep: bool) -> set[str]:
+    """The elements the definition allows under the context elements; every descendant when deep."""
+    found: set[str] = set()
+    frontier = set(context)
+    while frontier:
+        parent = frontier.pop()
+        for child in elements[parent].children:
+            if child in elements and child not in found:
+                found.add(child)
+                if deep:
+                    frontier.add(child)
+    return found
+
+
 def _extract_attribute_fields(constraint: IdentityConstraint) -> set[str]:
-    """Extract attribute names from a constraint's field targets."""
+    """Extract the attribute names a constraint's fields read on the selected element itself.
+
+    A field is evaluated relative to the selected element: `@x` is its own attribute, `child/@x`
+    is an attribute of its child and does not identify it.
+    """
     if constraint.kind == 'keyref':
         return set()
     return {
         f.target.value
         for f in constraint.fields
-        if f.target.is_attribute and f.target.value
+        if f.target.is_attribute and f.target.value and not f.steps
     }

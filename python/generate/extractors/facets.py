@@ -104,8 +104,25 @@ def _collect_facets_from_type(current: Any, facets: Facets) -> None:
                 if facets.fraction_digits is None:
                     facets.fraction_digits = get_facet_value(facet)
             case 'whiteSpace':
-                if facets.white_space is None:
+                # The built-ins fix their own white space (string preserves, token collapses, ...)
+                # and a restriction may only tighten it: worth writing only when it does.
+                if facets.white_space is None and _white_space_is_a_restriction(current, facet):
                     facets.white_space = get_facet_value(facet)
+def _white_space_is_a_restriction(xsd_type: Any, facet: Any) -> bool:
+    """Whether this level sets a white space its base type does not already have.
+
+    xmlschema API:
+      XsdAtomicBuiltin / XsdList: the built-ins and lists, whose white space the spec fixes
+      XsdSimpleType.base_type.white_space: the effective white space inherited from the base
+    """
+    # a built-in's white space is what its name says; a list's is always collapse
+    if type(xsd_type).__name__ in ('XsdAtomicBuiltin', 'XsdList'):
+        return False
+    base = getattr(xsd_type, 'base_type', None)
+    inherited = getattr(base, 'white_space', None)
+    return get_facet_value(facet) != inherited
+
+
 def _extract_enumeration(xsd_type: Any, facet: Any) -> list[str]:
     """Extract enumeration values from a type or its facet object.
 

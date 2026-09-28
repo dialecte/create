@@ -1,7 +1,7 @@
 """Emit types.generated.ts — per-element attribute type interfaces."""
 from pathlib import Path
 
-from generate.emitters.ts_helpers import ts_key
+from generate.emitters.ts_helpers import ts_edge_type_name, ts_key, ts_string, ts_type_names
 from generate.ir import AttributeDef, ElementDef
 def emit_types(elements: dict[str, ElementDef], out: Path) -> None:
     """Write types.generated.ts with attribute type interfaces.
@@ -19,25 +19,42 @@ def emit_types(elements: dict[str, ElementDef], out: Path) -> None:
     ]
 
     sorted_names = sorted(elements)
+    type_names = ts_type_names(sorted_names)
 
     for name in sorted_names:
         elem = elements[name]
-        lines.append(f'export type Attributes{name} = {{')
-        for attr_name in elem.attr_sequence:
-            attr = elem.attributes[attr_name]
-            ts_type = _attr_to_ts_type(attr)
-            optional = '?' if not attr.required else ''
-            key = ts_key(attr_name)
-            lines.append(f'\t{key}{optional}: {ts_type}')
-        lines.append('}')
-        lines.append('')
+        _emit_attribute_type(lines, f'Attributes{type_names[name]}', elem.attr_sequence, elem.attributes)
+        # a homonym: one type per declaration, the way it reads under that parent
+        for parent, declared in sorted(elem.definitions_by_parent.items()):
+            _emit_attribute_type(
+                lines, ts_edge_type_name(type_names, name, parent), declared.attr_sequence, declared.attributes
+            )
 
     lines.append('export type AttributesMap = {')
     for name in sorted_names:
-        lines.append(f'\t{name}: Attributes{name}')
+        lines.append(f'\t{ts_key(name)}: Attributes{type_names[name]}')
     lines.append('}')
     lines.append('')
     lines.append('export type AttributesOf<T extends AvailableElement> = AttributesMap[T]')
+    lines.append('')
+    lines.append('/**')
+    lines.append(' * The attributes of a child AS DECLARED UNDER each parent. An element declared once has the')
+    lines.append(' * same type under every parent; a homonym has the type of its declaration under each. Read')
+    lines.append(" * through the dialecte's `AttributesOf<Element, Parent>`; the constant `ATTRIBUTES.byParent`")
+    lines.append(' * is checked against this map.')
+    lines.append(' */')
+    lines.append('export type AttributesByParent = {')
+    for parent in sorted_names:
+        children = [c for c in elements[parent].child_sequence if c in elements]
+        if not children:
+            continue
+        lines.append(f'\t{ts_key(parent)}: {{')
+        for child in children:
+            declared = parent in elements[child].definitions_by_parent
+            child_type = ts_edge_type_name(type_names, child, parent) if declared else f'Attributes{type_names[child]}'
+            lines.append(f'\t\t{ts_key(child)}: {child_type}')
+        lines.append('\t}')
+    lines.append('}')
     lines.append('')
     lines.append('export type RequiredAttributeNames<T extends AvailableElement> =')
     lines.append('\t(typeof REQUIRED_ATTRIBUTES)[T][number]')
@@ -48,6 +65,18 @@ def emit_types(elements: dict[str, ElementDef], out: Path) -> None:
     lines.append('')
 
     out.write_text('\n'.join(lines), encoding='utf-8')
+def _emit_attribute_type(
+    lines: list[str], type_name: str, sequence: list[str], attributes: dict[str, AttributeDef]
+) -> None:
+    lines.append(f'export type {type_name} = {{')
+    for attr_name in sequence:
+        attr = attributes[attr_name]
+        optional = '?' if not attr.required else ''
+        lines.append(f'\t{ts_key(attr_name)}{optional}: {_attr_to_ts_type(attr)}')
+    lines.append('}')
+    lines.append('')
+
+
 def _attr_to_ts_type(attr: AttributeDef) -> str:
     """Generate a TS type annotation from an attribute definition.
 
@@ -58,10 +87,10 @@ def _attr_to_ts_type(attr: AttributeDef) -> str:
     facets = attr.facets
 
     if facets and facets.enumeration:
-        literals = ' | '.join(f"'{v}'" for v in facets.enumeration)
+        literals = ' | '.join(ts_string(v) for v in facets.enumeration)
         return f'{literals} | (string & {{}})'
 
     if attr.fixed:
-        return f"'{attr.fixed}'"
+        return ts_string(attr.fixed)
 
     return 'string'

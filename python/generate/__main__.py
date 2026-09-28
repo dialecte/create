@@ -2,11 +2,13 @@
 import argparse
 import sys
 from pathlib import Path
+from typing import Any
 
 import xmlschema
 
 from generate.collector import collect
 from generate.deriver import (
+    assign_identity_fields,
     derive_graph,
     derive_identity_fields,
     derive_root_element,
@@ -16,10 +18,11 @@ from generate.deriver import (
 from generate.emitters.constants import emit_constants
 from generate.emitters.definition import emit_definition
 from generate.emitters.types import emit_types
+from generate.example import example_facts
 from generate.globals import inject_mapped_attributes, load_attr_mapping
 from generate.orphans import detect_orphans, inject_orphan_parents, load_parent_mapping
 from generate.xsi_type import XsiTypeExpander
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> dict[str, Any]:
     parser = argparse.ArgumentParser(
         description='Generate TypeScript definition files from XSD schemas.',
     )
@@ -34,6 +37,10 @@ def main(argv: list[str] | None = None) -> None:
         type=Path,
         required=True,
         help='Output directory for generated .ts files',
+    )
+    parser.add_argument(
+        '--root',
+        help='The element that starts a document, when more than one could',
     )
     args = parser.parse_args(argv)
 
@@ -58,20 +65,31 @@ def main(argv: list[str] | None = None) -> None:
 
     # Phase 2b: Orphan injection
     mapping = load_parent_mapping(entry)
-    # Determine root before injection so orphans don't compete
-    roots = sorted(n for n, e in elements.items() if not e.parents)
-    root_candidate = max(roots, key=lambda n: len(elements[n].children)) if roots else None
+    # The root is settled before injection: the orphans the mapping attaches are not candidates,
+    # and among the others the choice is never a guess.
+    root_element = derive_root_element(elements, override=args.root, exclude=set(mapping))
 
     orphans_injected = 0
     unmapped_count = 0
     if mapping:
-        orphans = detect_orphans(elements, root_candidate or '')
+        orphans = detect_orphans(elements, root_element)
         if orphans:
-            unmapped = inject_orphan_parents(elements, mapping, root_name=root_candidate or '')
+            unmapped = inject_orphan_parents(elements, mapping, root_name=root_element)
             orphans_injected = len(orphans) - len(unmapped)
             unmapped_count = len(unmapped)
             for name in unmapped:
                 print(f'  WARNING: unmapped orphan element: {name}', file=sys.stderr)
+
+    # Phase 2b': Homonyms - one name, several declarations. Merged by union, and said out loud.
+    # The parents concerned are those holding a declaration of their own, every one of them.
+    homonyms = sorted(name for name, e in elements.items() if e.definitions_by_parent)
+    for name in homonyms:
+        print(
+            f"  WARNING: {name!r} is declared with different content under: "
+            + ', '.join(sorted(elements[name].definitions_by_parent))
+            + ' - its definition is the union of those declarations',
+            file=sys.stderr,
+        )
 
     # Phase 2c: Mapped attribute injection (attribute-mapping.json sidecar)
     attr_mapping = load_attr_mapping(entry)
@@ -83,11 +101,8 @@ def main(argv: list[str] | None = None) -> None:
     print('Deriving graphs...')
     strip_canonical_child_namespaces(elements)
     descendants, ancestors = derive_graph(elements)
-    root_element = derive_root_element(elements, override=root_candidate)
     singleton_elements = derive_singleton_elements(elements, root_element)
-    identity_fields = derive_identity_fields(elements)
-    for name, fields in identity_fields.items():
-        elements[name].identity_fields = fields
+    assign_identity_fields(elements, derive_identity_fields(elements))
     print(f'  Root: {root_element}')
     print(f'  Singletons: {len(singleton_elements)}')
 
@@ -105,6 +120,10 @@ def main(argv: list[str] | None = None) -> None:
     print(f'  {const_path}')
     print(f'  {types_path}')
     warnings = f', {unmapped_count} unmapped warnings' if unmapped_count else ', 0 unmapped warnings'
-    print(f'Done. {len(elements)} elements, {orphans_injected} orphans injected{warnings}, ROOT={root_element}')
+    counted_homonyms = f', {len(homonyms)} homonym{"s" if len(homonyms) != 1 else ""}'
+    print(f'Done. {len(elements)} elements, {orphans_injected} orphans injected{warnings}{counted_homonyms}, ROOT={root_element}')
+
+    # what a scaffold writes its worked example with
+    return example_facts(elements, root_element)
 if __name__ == '__main__':
     main()

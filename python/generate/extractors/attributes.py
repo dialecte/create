@@ -1,6 +1,7 @@
 """Extract attributes from an XSD element."""
 from typing import Any
 
+from generate.extractors.datatypes import extract_datatype
 from generate.extractors.facets import extract_facets
 from generate.extractors.namespace import extract_attr_namespace
 from generate.helpers import local_name
@@ -12,6 +13,14 @@ _XML_NS_URI = 'http://www.w3.org/XML/1998/namespace'
 
 
 def extract_attributes(xsd_elem: Any) -> tuple[list[str], bool, dict[str, AttributeDef]]:
+    """Attributes of an element: see `extract_attribute_model` for the wildcard's namespace."""
+    sequence, any_attr, details, _namespace = extract_attribute_model(xsd_elem)
+    return sequence, any_attr, details
+
+
+def extract_attribute_model(
+    xsd_elem: Any,
+) -> tuple[list[str], bool, dict[str, AttributeDef], list[str] | None]:
     """Extract attributes from an XSD element.
 
     Keying follows two rules, so a name is predictable without knowing an element's other
@@ -35,7 +44,7 @@ def extract_attributes(xsd_elem: Any) -> tuple[list[str], bool, dict[str, Attrib
       XsdAttributeGroup[attr_name]: XsdAttribute
 
       Wildcards:
-      XsdElement.attributes.wildcard → XsdAnyAttribute | None (xs:anyAttribute)
+      XsdElement.attributes[None] → XsdAnyAttribute (xs:anyAttribute), when declared
     """
     sequence: list[str] = []
     details: dict[str, AttributeDef] = {}
@@ -43,7 +52,7 @@ def extract_attributes(xsd_elem: Any) -> tuple[list[str], bool, dict[str, Attrib
 
     attributes = getattr(xsd_elem, 'attributes', None)
     if attributes is None:
-        return sequence, any_attr, details
+        return sequence, any_attr, details, None
 
     for attr_name, xsd_attr in attributes.items():
         if attr_name is None:
@@ -67,13 +76,16 @@ def extract_attributes(xsd_elem: Any) -> tuple[list[str], bool, dict[str, Attrib
             fixed=fixed,
             namespace=ns,
             facets=extract_facets(attr_type),
+            type=extract_datatype(attr_type),
         )
         sequence.append(key)
 
     sequence.sort()
 
-    # Check xs:anyAttribute
-    wildcard = getattr(attributes, 'wildcard', None)
+    # xs:anyAttribute: the wildcard is the entry without a name
+    wildcard = attributes.get(None) if hasattr(attributes, 'get') else None
     any_attr = wildcard is not None
+    namespace = getattr(wildcard, 'namespace', None)
+    any_namespace = sorted(namespace) if namespace else None
 
-    return sequence, any_attr, details
+    return sequence, any_attr, details, any_namespace

@@ -1,10 +1,11 @@
-"""Extract child elements, choices, and text content from an XSD element."""
+"""Extract child elements and text content from an XSD element."""
 from typing import Any
 
 from generate.extractors.constraints import extract_constraints
+from generate.extractors.datatypes import extract_datatype
 from generate.extractors.facets import extract_facets
 from generate.extractors.namespace import extract_namespace
-from generate.ir import ChildDef, ChoiceGroup, TextContent
+from generate.ir import ChildDef, TextContent
 def extract_children(xsd_elem: Any) -> tuple[list[str], bool, dict[str, ChildDef]]:
     """Extract child element definitions from an XSD element's content model.
 
@@ -41,7 +42,7 @@ def _extract_children_from_content(content: Any) -> tuple[list[str], bool, dict[
 
     seen_names: set[str] = set()
 
-    for child in _iter_child_elements(content):
+    for child, min_occ, max_occ in _iter_child_particles(content):
         # Check if it's a wildcard (xs:any)
         cls_name = type(child).__name__
         if 'Any' in cls_name and 'Element' in cls_name:
@@ -55,9 +56,6 @@ def _extract_children_from_content(content: Any) -> tuple[list[str], bool, dict[
         if name in seen_names:
             continue
         seen_names.add(name)
-
-        min_occ = getattr(child, 'min_occurs', 0)
-        max_occ = getattr(child, 'max_occurs', None)  # None = unbounded
 
         sequence.append(name)
         details[name] = ChildDef(
@@ -73,20 +71,6 @@ def _extract_children_from_content(content: Any) -> tuple[list[str], bool, dict[
         )
 
     return sequence, any_child, details
-def extract_choices(xsd_elem: Any) -> list[ChoiceGroup]:
-    """Extract xs:choice groups from the content model.
-
-    xmlschema API:
-      XsdGroup.model: str ('sequence' | 'choice' | 'all')
-      XsdGroup is iterable — yields XsdElement | XsdGroup | XsdAnyElement
-    """
-    content = _get_content_model(xsd_elem)
-    if content is None:
-        return []
-
-    choices: list[ChoiceGroup] = []
-    _walk_groups_for_choices(content, choices)
-    return choices
 def extract_text_content(xsd_elem: Any) -> TextContent | None:
     """Extract text content definition for elements with simple or mixed content.
 
@@ -115,7 +99,11 @@ def extract_text_content(xsd_elem: Any) -> TextContent | None:
     )
 
     facets = extract_facets(facets_source)
-    return TextContent(facets=facets) if facets else TextContent()
+    fixed = getattr(xsd_elem, 'fixed', None)
+    default = getattr(xsd_elem, 'default', None) if fixed is None else None
+    return TextContent(
+        facets=facets, type=extract_datatype(facets_source), default=default, fixed=fixed
+    )
 # --- Internal helpers ---
 def _get_content_model(xsd_elem: Any) -> Any:
     """Get the content model (XsdGroup) from an element's type."""
@@ -123,15 +111,36 @@ def _get_content_model(xsd_elem: Any) -> Any:
     if xsd_type is None:
         return None
     return getattr(xsd_type, 'content', None)
-def _iter_child_elements(content: Any):
-    """Iterate child elements from a content model.
+def _iter_child_particles(content: Any):
+    """Iterate (element, min_occurs, max_occurs) from a content model, substitution groups resolved.
+
+    A member of a substitution group may appear wherever its head may: the head particle stands
+    for the head itself (unless abstract) and for every member, transitively. A member takes the
+    occurrence of the head particle, since that is the slot it fills.
 
     xmlschema API:
       XsdGroup.iter_elements() → yields XsdElement | XsdAnyElement
+      XsdElement.abstract: bool
+      XsdElement.iter_substitutes() → concrete members, transitively
     """
     iter_fn = getattr(content, 'iter_elements', None)
-    if iter_fn and callable(iter_fn):
-        yield from iter_fn()
+    if not (iter_fn and callable(iter_fn)):
+        return
+    for particle in iter_fn():
+        min_occ = getattr(particle, 'min_occurs', 0)
+        max_occ = getattr(particle, 'max_occurs', None)
+        if not getattr(particle, 'abstract', False):
+            yield particle, min_occ, max_occ
+        iter_substitutes = getattr(particle, 'iter_substitutes', None)
+        if callable(iter_substitutes):
+            # the members come as a set: sorted, so the output is the same on every run
+            members = sorted(iter_substitutes(), key=lambda member: member.local_name or '')
+            for member in members:
+                yield member, min_occ, max_occ
+def _iter_child_elements(content: Any):
+    """Iterate child elements from a content model, substitution groups resolved."""
+    for element, _min_occ, _max_occ in _iter_child_particles(content):
+        yield element
 def iter_child_elements(xsd_elem: Any):
     """Public helper: iterate XsdElement children of an element for recursive walking."""
     yield from _iter_named_child_elements(_get_content_model(xsd_elem))
@@ -147,34 +156,3 @@ def _iter_named_child_elements(content: Any):
         if 'Any' in cls_name and 'Element' in cls_name:
             continue
         yield child
-def _walk_groups_for_choices(group: Any, out: list[ChoiceGroup]) -> None:
-    """Recursively walk model groups to find xs:choice groups.
-
-    xmlschema API:
-      XsdGroup.model: str
-      XsdGroup is iterable (yields children)
-    """
-    model = getattr(group, 'model', None)
-    if model is None:
-        return
-
-    if model == 'choice':
-        options: list[str] = []
-        for item in group:
-            name = getattr(item, 'local_name', None)
-            if name:
-                options.append(name)
-            # Recurse into nested groups
-            if getattr(item, 'model', None) is not None:
-                _walk_groups_for_choices(item, out)
-        if options:
-            out.append(ChoiceGroup(
-                options=sorted(options),
-                min_occurs=getattr(group, 'min_occurs', 0),
-                max_occurs=getattr(group, 'max_occurs', None),
-            ))
-    else:
-        # sequence or all — recurse into nested groups
-        for item in group:
-            if getattr(item, 'model', None) is not None:
-                _walk_groups_for_choices(item, out)

@@ -1,14 +1,19 @@
 """Tests for extractors using inline XSD schemas loaded via xmlschema."""
 
+import textwrap
+
 import pytest
 import xmlschema
 
 from generate.extractors.attributes import extract_attributes
-from generate.extractors.children import extract_children, extract_choices, extract_text_content
+from generate.collector import collect
+from generate.emitters.definition import emit_definition
+from generate.extractors.children import extract_children, extract_text_content
 from generate.extractors.constraints import extract_constraints
 from generate.extractors.docs import extract_docs
 from generate.extractors.facets import extract_facets
 from generate.extractors.namespace import extract_attr_namespace, extract_namespace
+from generate.extractors.particles import extract_content_model
 
 
 # --- Test XSD fixtures ---
@@ -204,7 +209,34 @@ class TestExtractFacets:
         facets = extract_facets(name_attr.type)
         assert facets is not None
         assert facets.min_length == 1
-        assert facets.white_space == 'replace'
+        # `replace` is what normalizedString already does: a restriction repeating it says nothing
+        assert facets.white_space is None
+
+    def test_white_space_is_kept_only_when_a_restriction_changes_it(self):
+        schema = xmlschema.XMLSchema(textwrap.dedent("""\
+            <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+              <xs:simpleType name="tCollapsed">
+                <xs:restriction base="xs:string"><xs:whiteSpace value="collapse"/></xs:restriction>
+              </xs:simpleType>
+              <xs:simpleType name="tRepeated">
+                <xs:restriction base="xs:token"><xs:whiteSpace value="collapse"/></xs:restriction>
+              </xs:simpleType>
+              <xs:element name="Root"><xs:complexType>
+                <xs:attribute name="collapsed" type="tCollapsed"/>
+                <xs:attribute name="repeated" type="tRepeated"/>
+                <xs:attribute name="token" type="xs:token"/>
+                <xs:attribute name="plain" type="xs:string"/>
+              </xs:complexType></xs:element>
+            </xs:schema>
+        """))
+        attributes = schema.elements['Root'].type.attributes
+        # string preserves; a restriction collapsing it changes something: written
+        assert extract_facets(attributes['collapsed'].type).white_space == 'collapse'
+        # token collapses already; repeating it changes nothing: not written
+        assert extract_facets(attributes['repeated'].type) is None
+        # the built-ins themselves say nothing: their name is the rule
+        assert extract_facets(attributes['token'].type) is None
+        assert extract_facets(attributes['plain'].type) is None
 
     def test_enumeration(self, simple_schema):
         child = _get_element(simple_schema, 'Child')
@@ -369,15 +401,28 @@ class TestExtractChildren:
         assert details['Single'].max_occurs == 1
 
 
-class TestExtractChoices:
-    def test_choice_group(self, choice_schema):
+class TestChoiceGroups:
+    """A choice lives in the content model, where its position and occurrence survive; there is no
+    second, flat list of choice groups to keep in step with it."""
+
+    def _choices(self, particle):
+        if particle is None or particle.particles is None:
+            return []
+        own = [particle] if particle.kind == 'choice' else []
+        return own + [c for p in particle.particles for c in self._choices(p)]
+
+    def test_a_choice_group_is_a_choice_node_of_the_content_model(self, choice_schema):
         container = _get_element(choice_schema, 'Container')
-        choices = extract_choices(container)
-        assert len(choices) >= 1
-        opts = choices[0].options
-        assert 'OptionA' in opts
-        assert 'OptionB' in opts
-        assert 'OptionC' in opts
+        [choice] = self._choices(extract_content_model(container))
+        assert [p.name for p in choice.particles] == ['OptionA', 'OptionB', 'OptionC']
+
+    def test_the_definition_writes_no_flat_choices_table(self, choice_schema, tmp_path):
+        elements = collect(choice_schema)
+        out = tmp_path / 'definition.generated.ts'
+        emit_definition(elements, out)
+        content = out.read_text()
+        assert "kind: 'choice'" in content
+        assert 'choices' not in content
 
 
 class TestExtractTextContent:
