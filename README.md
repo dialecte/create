@@ -32,30 +32,41 @@ npx @dialecte/create generate --entry ./my-schema.xsd --out-dir ./src/v1/definit
 Scaffolds a new dialecte package (built on `@dialecte/core`) and generates its
 element definitions from the schema in one step.
 
-| Option                 | Default                       | Description                    |
-| ---------------------- | ----------------------------- | ------------------------------ |
-| `--name <pkg>`         | `@dialecte/<schema basename>` | npm package name               |
-| `--out <dir>`          | `./<dialecte id>`             | target directory               |
-| `--version <vN>`       | `v1`                          | version folder name            |
-| `--namespace <uri>`    | `urn:dialecte:<id>`           | default XML namespace URI      |
-| `--core-version <ver>` | `^0.2.19`                     | `@dialecte/core` version range |
+| Option                 | Default                        | Description                                         |
+| ---------------------- | ------------------------------ | --------------------------------------------------- |
+| `--name <pkg>`         | `@dialecte/<schema basename>`  | npm package name                                    |
+| `--out <dir>`          | `./<dialecte id>`              | target directory                                    |
+| `--version <vN>`       | `v1`                           | version folder name                                 |
+| `--namespace <uri>`    | the schema's `targetNamespace` | default XML namespace URI                           |
+| `--core-version <ver>` | `^0.5.0`                       | `@dialecte/core` version range                      |
+| `--root <element>`     | the one root candidate         | which element starts a document, when several could |
 
 The generated package includes:
 
 - Hydrated type aliases bound to your config (`Dialecte.Project`, `Dialecte.Query`, ...)
 - A project factory (`create<Name>Project`)
-- Test hydration utilities wired to `@dialecte/core/test`
+- Test hydration utilities wired to `@dialecte/core/test`: the three table-driven runners
+  (`generic`, `withoutExport`, `withExport`)
+- A `helloWorld` extension - one query, one transaction, their tests - that runs green against the
+  schema you gave, as a worked example to copy from and then delete
 - VitePress documentation scaffolding
+
+The default namespace is read from the schema: its `targetNamespace`, or none at all for a schema
+that declares none. After `npm install`, run `npm run format:fix` once - names of any length are
+substituted into the template, so its line breaks cannot suit every package.
 
 ### `generate`
 
 Generates only the three definition files
-(`definition.generated.ts`, `constants.generated.ts`, `types.generated.ts`).
+(`definition.generated.ts`, `constants.generated.ts`, `types.generated.ts`), formatted with the
+oxfmt of the project they land in when one is installed (its own copy otherwise), so that
+regenerating shows the schema change and nothing else.
 
-| Option                 | Description                 |
-| ---------------------- | --------------------------- |
-| `--entry <schema.xsd>` | entry XSD file (required)   |
-| `--out-dir <dir>`      | output directory (required) |
+| Option                 | Description                                         |
+| ---------------------- | --------------------------------------------------- |
+| `--root <element>`     | which element starts a document, when several could |
+| `--entry <schema.xsd>` | entry XSD file (required)                           |
+| `--out-dir <dir>`      | output directory (required)                         |
 
 ## Bring your own XSD
 
@@ -71,8 +82,8 @@ The generator engine is a Python package under `python/`. Develop and test it
 with native Python (fast loop), then ship it to users via WebAssembly.
 
 ```sh
-# Engine (Python) tests
-cd python && python -m pytest
+# Engine (Python) tests - python/.venv when present, python3 otherwise
+npm run test:py
 
 # Vendor the runtime wheels (network required; run once / on dep bump)
 npm run vendor
@@ -83,6 +94,11 @@ npm run build
 # Try it
 node dist/cli/index.js generate --entry ./xsd/SCL/IEC61850-6-100.xsd --out-dir .tmp/out
 ```
+
+`npm run test:cli` builds and runs the smoke test: generation, scaffolds and their files, flags.
+`npm run test:cli:install` also installs a scaffolded package and type-checks it against the
+engine it targets; set `DIALECTE_CORE=../core` (a checkout, or a `.tgz`) to check against an
+unreleased engine.
 
 `xsd/` and `local/` are git-ignored: they hold local-only schemas and the
 maintainer's batch generation script.
