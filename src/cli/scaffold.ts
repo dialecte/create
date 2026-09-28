@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { readdir, mkdir, readFile, writeFile, rm } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 
+import { writeExample } from './example.js'
 import { TEMPLATES_DIR } from './paths.js'
 import { runGenerator } from './pyodide-runner.js'
 
@@ -18,6 +19,8 @@ export interface ScaffoldOptions {
 	namespaceUri: string
 	/** Pinned @dialecte/core version. */
 	coreVersion: string
+	/** The element that starts a document, when more than one could. */
+	root?: string
 }
 
 export interface Replacements {
@@ -28,6 +31,8 @@ export interface Replacements {
 	version: string
 	namespaceUri: string
 	coreVersion: string
+	/** The `generate` options a regeneration must repeat, `--root` included, as one string. */
+	generateOptions: string
 }
 
 /** Derive a bare dialecte id (e.g. "foo") from a package name (e.g. "@dialecte/foo"). */
@@ -49,7 +54,13 @@ export function buildReplacements(options: ScaffoldOptions): Replacements {
 		version: options.version,
 		namespaceUri: options.namespaceUri,
 		coreVersion: options.coreVersion,
+		generateOptions: options.root === undefined ? '' : ` --root ${options.root}`,
 	}
+}
+
+/** The namespace URI lands inside a single-quoted TypeScript string: it must not end it. */
+function escapeForSingleQuotedString(value: string): string {
+	return value.replaceAll('\\', '\\\\').replaceAll("'", "\\'")
 }
 
 function applyReplacements(text: string, r: Replacements): string {
@@ -59,8 +70,9 @@ function applyReplacements(text: string, r: Replacements): string {
 		.replaceAll('__DialecteName__', r.DialecteName)
 		.replaceAll('__dialecteId__', r.dialecteId)
 		.replaceAll('__version__', r.version)
-		.replaceAll('__namespaceUri__', r.namespaceUri)
+		.replaceAll('__namespaceUri__', escapeForSingleQuotedString(r.namespaceUri))
 		.replaceAll('__coreVersion__', r.coreVersion)
+		.replaceAll('__generateOptions__', r.generateOptions)
 }
 
 function applyPathReplacements(path: string, r: Replacements): string {
@@ -100,7 +112,8 @@ export async function scaffoldDialecte(options: ScaffoldOptions): Promise<void> 
 	const targetDir = resolve(options.targetDir)
 	const templateRoot = join(TEMPLATES_DIR, 'dialecte')
 
-	if (existsSync(targetDir)) {
+	const existedBefore = existsSync(targetDir)
+	if (existedBefore) {
 		const remaining = await readdir(targetDir)
 		if (remaining.length > 0) {
 			throw new Error(`Target directory is not empty: ${targetDir}`)
@@ -110,18 +123,39 @@ export async function scaffoldDialecte(options: ScaffoldOptions): Promise<void> 
 	const replacements = buildReplacements(options)
 
 	console.log(`Scaffolding ${options.packageName} -> ${targetDir}`)
-	await copyTemplateTree(templateRoot, targetDir, replacements)
+	try {
+		await copyTemplateTree(templateRoot, targetDir, replacements)
 
-	const definitionDir = join(targetDir, 'src', options.version, 'definition')
-	console.log(`Generating definitions from ${options.entry}`)
-	await runGenerator({ entry: options.entry, outDir: definitionDir })
+		const definitionDir = join(targetDir, 'src', options.version, 'definition')
+		console.log(`Generating definitions from ${options.entry}`)
+		const facts = await runGenerator({
+			entry: options.entry,
+			outDir: definitionDir,
+			root: options.root,
+		})
 
-	// Remove the placeholder keep-file if it slipped through.
-	await rm(join(definitionDir, '.gitkeep'), { force: true })
+		// Remove the placeholder keep-file if it slipped through.
+		await rm(join(definitionDir, '.gitkeep'), { force: true })
+
+		// the example names real elements: they are known now that the schema has been read
+		await writeExample({
+			exampleDir: join(targetDir, 'src', options.version, 'extensions', 'hello-world'),
+			otherFiles: [join(targetDir, 'README.md')],
+			facts,
+			defaultNamespaceUri: options.namespaceUri,
+		})
+	} catch (error) {
+		// A half-written package would only make the next attempt fail on a non-empty directory.
+		await rm(targetDir, { recursive: true, force: true })
+		if (existedBefore) await mkdir(targetDir)
+		throw error
+	}
 
 	console.log('')
 	console.log('Done. Next steps:')
 	console.log(`  cd ${options.targetDir}`)
 	console.log('  npm install')
+	// Names of any length are substituted into the template, so line breaks cannot be right for all.
+	console.log('  npm run format:fix')
 	console.log('  npm run build')
 }

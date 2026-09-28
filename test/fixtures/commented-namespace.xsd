@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- An earlier draft read: <xs:schema targetNamespace="urn:draft:do-not-pick"> -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	elementFormDefault="qualified"
+	targetNamespace="urn:it's:real"
+	xmlns="urn:it's:real">
+	<xs:element name="Root">
+		<xs:complexType>
+			<xs:attribute name="kind">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="don't" />
+						<xs:enumeration value="plain" />
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

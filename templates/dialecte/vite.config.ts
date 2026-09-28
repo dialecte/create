@@ -1,4 +1,3 @@
-import path from 'node:path'
 /// <reference types="vite/client" />
 import { fileURLToPath, URL } from 'node:url'
 
@@ -8,7 +7,7 @@ import dts from 'vite-plugin-dts'
 export default defineConfig({
 	plugins: [
 		dts({
-			tsconfigPath: path.resolve(__dirname, './tsconfig.build.json'),
+			tsconfigPath: fileURLToPath(new URL('./tsconfig.build.json', import.meta.url)),
 			insertTypesEntry: true,
 		}),
 	],

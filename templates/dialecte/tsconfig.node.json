@@ -8,6 +8,8 @@
 		"types": ["node"],
 		"paths": {
 			"@/*": ["./src/*"]
-		}
+		},
+		"allowImportingTsExtensions": true,
+		"noEmit": true
 	}
 }

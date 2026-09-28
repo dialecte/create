@@ -1,19 +1,30 @@
 import { existsSync } from 'node:fs'
-import { basename, resolve } from 'node:path'
+import { readFile } from 'node:fs/promises'
+import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { PACKAGE_ROOT } from './paths.js'
 import { runGenerator } from './pyodide-runner.js'
 import { scaffoldDialecte, dialecteIdFromPackageName } from './scaffold.js'
+import { extractTargetNamespace } from './target-namespace.js'
 
 export { runGenerator } from './pyodide-runner.js'
 export { scaffoldDialecte } from './scaffold.js'
 
-const DEFAULT_CORE_VERSION = '^0.2.19'
+const DEFAULT_CORE_VERSION = '^0.5.0'
 const DEFAULT_VERSION = 'v1'
 
 interface ParsedArgs {
 	_: string[]
 	flags: Record<string, string | boolean>
+}
+
+/**
+ * A flag is `--name` or a single-letter `-x`. Anything else after a flag is its value, so a value
+ * that starts with a dash (`--namespace -x`) is not mistaken for the next flag.
+ */
+function isFlag(arg: string): boolean {
+	return arg.startsWith('--') ? arg.length > 2 : /^-[a-zA-Z]$/.test(arg)
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -22,10 +33,10 @@ function parseArgs(argv: string[]): ParsedArgs {
 
 	for (let i = 0; i < argv.length; i++) {
 		const arg = argv[i]
-		if (arg.startsWith('--')) {
-			const key = arg.slice(2)
+		if (isFlag(arg)) {
+			const key = arg.startsWith('--') ? arg.slice(2) : arg.slice(1)
 			const next = argv[i + 1]
-			if (next === undefined || next.startsWith('--')) {
+			if (next === undefined || isFlag(next)) {
 				flags[key] = true
 			} else {
 				flags[key] = next
@@ -51,15 +62,25 @@ create options:
   --name <pkg>           npm package name (default: @dialecte/<schema basename>)
   --out <dir>            target directory (default: ./<dialecte id>)
   --version <vN>         version folder name (default: ${DEFAULT_VERSION})
-  --namespace <uri>      default XML namespace URI (default: derived placeholder)
+  --namespace <uri>      default XML namespace URI (default: the schema's targetNamespace)
   --core-version <ver>   @dialecte/core version range (default: ${DEFAULT_CORE_VERSION})
+  --root <element>       the element that starts a document, when more than one could
 
 generate options:
   --entry <schema.xsd>   entry XSD file (required)
   --out-dir <dir>        output directory for generated .ts files (required)
+  --root <element>       the element that starts a document, when more than one could
 
   -h, --help             show this help
+  -v, --version          show the version
 `)
+}
+
+async function printVersion(): Promise<void> {
+	const manifest = JSON.parse(await readFile(join(PACKAGE_ROOT, 'package.json'), 'utf8')) as {
+		version: string
+	}
+	console.log(manifest.version)
 }
 
 async function runGenerateCommand(flags: Record<string, string | boolean>): Promise<void> {
@@ -73,7 +94,8 @@ async function runGenerateCommand(flags: Record<string, string | boolean>): Prom
 		throw new Error(`XSD file not found: ${entry}`)
 	}
 
-	await runGenerator({ entry, outDir })
+	const root = typeof flags.root === 'string' ? flags.root : undefined
+	await runGenerator({ entry, outDir, root })
 }
 
 async function runCreateCommand(
@@ -94,12 +116,14 @@ async function runCreateCommand(
 	const dialecteId = dialecteIdFromPackageName(packageName)
 
 	const version = typeof flags.version === 'string' ? flags.version : DEFAULT_VERSION
+	const schemaSource = await readFile(resolve(entry), 'utf8')
 	const namespaceUri =
-		typeof flags.namespace === 'string' ? flags.namespace : `urn:dialecte:${dialecteId}`
+		typeof flags.namespace === 'string' ? flags.namespace : extractTargetNamespace(schemaSource)
 	const coreVersion =
 		typeof flags['core-version'] === 'string' ? flags['core-version'] : DEFAULT_CORE_VERSION
 	const targetDir =
 		typeof flags.out === 'string' ? flags.out : (positionals[1] ?? `./${dialecteId}`)
+	const root = typeof flags.root === 'string' ? flags.root : undefined
 
 	await scaffoldDialecte({
 		entry,
@@ -108,13 +132,14 @@ async function runCreateCommand(
 		version,
 		namespaceUri,
 		coreVersion,
+		root,
 	})
 
 	if (typeof flags.namespace !== 'string') {
+		const described =
+			namespaceUri === '' ? 'none (the schema declares no targetNamespace)' : `"${namespaceUri}"`
 		console.log('')
-		console.log(
-			`Note: default namespace set to "${namespaceUri}". Update src/${version}/config/namespaces.ts if needed.`,
-		)
+		console.log(`Note: default namespace taken from the schema: ${described}.`)
 	}
 }
 
@@ -123,6 +148,10 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
 
 	if (flags.help || flags.h || (_.length === 0 && Object.keys(flags).length === 0)) {
 		printHelp()
+		return
+	}
+	if (flags.version === true || flags.v === true) {
+		await printVersion()
 		return
 	}
 

@@ -15,8 +15,10 @@ export function create__DialecteName__Project<
 >(params?: {
 	storage?: StorageParam
 	extensions?: CustomModules
+	/** Development switches of the engine, e.g. `{ perf: true }` to collect timings. */
+	dev?: { perf?: boolean }
 }): __DialecteName__.Project<CustomModules> {
-	const { storage = { type: 'local' }, extensions } = params ?? {}
+	const { storage = { type: 'local' }, extensions, dev } = params ?? {}
 
 	return new Project({
 		configs: { __dialecteId__: __DIALECTE_NAME___DIALECTE_CONFIG },
@@ -26,5 +28,6 @@ export function create__DialecteName__Project<
 			base: __DIALECTE_NAME___EXTENSION_MODULES,
 			custom: extensions,
 		},
+		dev,
 	}) as __DialecteName__.Project<CustomModules>
 }
