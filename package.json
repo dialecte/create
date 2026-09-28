@@ -30,19 +30,20 @@
 		"format:check": "oxfmt --check",
 		"format:fix": "oxfmt",
 		"check": "npm run type-check && npm run lint:check && npm run format:check",
-		"test:py": "cd python && python -m pytest",
-		"test:cli": "node scripts/smoke.mjs",
+		"test:py": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m pytest",
+		"test:cli": "npm run build && node scripts/smoke.mjs",
+		"test:cli:install": "SMOKE_INSTALL=1 npm run test:cli",
 		"prepack": "find python -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true",
 		"prepare": "husky",
 		"prepublishOnly": "npm run vendor && npm run build"
 	},
 	"dependencies": {
+		"oxfmt": "^0.66.0",
 		"pyodide": "^0.27.2"
 	},
 	"devDependencies": {
 		"@types/node": "^22.0.0",
 		"husky": "^9.1.7",
-		"oxfmt": "^0.53.0",
 		"oxlint": "^1.68.0",
 		"tsup": "^8.5.1",
 		"typescript": "^5.6.0"
