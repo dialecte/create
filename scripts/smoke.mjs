@@ -21,6 +21,7 @@ const NO_NAMESPACE_FIXTURE = new URL('../test/fixtures/no-namespace.xsd', import
 const COMMENTED_FIXTURE = new URL('../test/fixtures/commented-namespace.xsd', import.meta.url)
 	.pathname
 const TWO_ROOTS_FIXTURE = new URL('../test/fixtures/two-roots.xsd', import.meta.url).pathname
+const EXTENSION_FIXTURE = new URL('../test/fixtures/extension/entry.xsd', import.meta.url).pathname
 const EXPECTED = ['definition.generated.ts', 'constants.generated.ts', 'types.generated.ts']
 
 /** Scaffold a package and check what a consumer relies on in the files it gets. */
@@ -220,6 +221,16 @@ async function main() {
 					reason: 'the generated map the by-parent half is checked against',
 				},
 				{
+					file: 'src/v1/test/assert-valid-xml.ts',
+					includes: 'export const assertValidWidgetTestCases = assertValidXmlTestCases',
+					reason: 'fixtures are checked against the schema, with the validator core provides',
+				},
+				{
+					file: 'src/v1/test/hydrated-test.ts',
+					includes: 'assertValidWidgetTestCases({ testCases: params.testCases })',
+					reason: 'the runner checks every case before the suite runs',
+				},
+				{
 					file: 'src/v1/extensions/index.ts',
 					includes: 'WIDGET_EXTENSION_MODULES = { helloWorld }',
 					reason: 'the hello-world example ships registered, so its tests run out of the box',
@@ -329,6 +340,22 @@ async function main() {
 					file: 'README.md',
 					excludes: 'tx.helloWorld',
 					reason: 'the readme shows no write the example does not have',
+				},
+			],
+		})
+		await assertScaffold({
+			fixture: EXTENSION_FIXTURE,
+			packageName: '@acme/extended',
+			expectations: [
+				{
+					file: 'src/v1/config/namespaces.ts',
+					includes: "default: { uri: 'urn:base'",
+					reason: 'documents live in the namespace of their root element, not of the entry schema',
+				},
+				{
+					file: 'src/v1/extensions/hello-world/transaction/ensure-part.test.ts',
+					includes: "'/default:Root/default:Part'",
+					reason: 'the root and its child are in the default namespace',
 				},
 			],
 		})
