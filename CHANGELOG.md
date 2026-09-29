@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.6] - 2026-09-29
+
+### Added
+
+- A scaffolded package checks every test fixture against its schema before the suite runs: a mistyped tag, a wrong namespace or an unknown attribute fails with a clear message.
+
+### Fixed
+
+- The default namespace of a scaffolded package is its root element's: an extension schema (IEC 61850-6-100 over SCL) used to give the extension's namespace to every document.
+
 ## [0.0.5] - 2026-09-29
 
 ### Changed
