@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -175,9 +175,11 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
 	throw new Error(`Unknown command: ${command ?? '(none)'}`)
 }
 
-// Auto-run only when invoked directly as the CLI (not when imported, e.g. by tests).
+// Auto-run only when invoked as the CLI (not when imported, e.g. by tests). npm runs a bin through
+// a symlink (node_modules/.bin/create-dialecte, npm create, npx): both sides are compared as real paths.
 const invokedDirectly =
-	process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+	process.argv[1] !== undefined &&
+	realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))
 
 if (invokedDirectly) {
 	main().catch((err) => {

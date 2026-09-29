@@ -10,7 +10,7 @@
  * .tgz> installs that engine instead of the default range, to test against an unreleased core.
  */
 import { spawnSync } from 'node:child_process'
-import { mkdtemp, readdir, rm, stat, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, readdir, rm, stat, readFile, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -100,6 +100,27 @@ async function assertFailedScaffoldLeavesNothing() {
 		console.log('A failed scaffold leaves nothing behind, and the next run works.')
 	} finally {
 		await rm(parent, { recursive: true, force: true })
+	}
+}
+
+/**
+ * npm runs a bin through a symlink (`node_modules/.bin/create-dialecte`), and so do `npm create` and
+ * `npx`. The CLI must start when invoked that way, not only when its file is run directly.
+ */
+async function assertRunsThroughABinLink() {
+	const dir = await mkdtemp(join(tmpdir(), 'dialecte-bin-'))
+	try {
+		const link = join(dir, 'create-dialecte')
+		await symlink(new URL('../dist/cli/index.js', import.meta.url).pathname, link)
+		const result = spawnSync(process.execPath, [link, '--version'], { encoding: 'utf8' })
+		if (!/^\d+\.\d+\.\d+/.test(result.stdout.trim())) {
+			throw new Error(
+				`run through a bin link, the CLI printed ${JSON.stringify(result.stdout.trim())} instead of its version: npm create / npx would do nothing`,
+			)
+		}
+		console.log('The CLI runs through a bin link, as npm create and npx invoke it.')
+	} finally {
+		await rm(dir, { recursive: true, force: true })
 	}
 }
 
@@ -398,6 +419,7 @@ async function main() {
 
 		await assertFailedScaffoldLeavesNothing()
 		await assertHelpAndVersion()
+		await assertRunsThroughABinLink()
 		await assertInstalledScaffoldTypeChecks()
 	} finally {
 		await rm(outDir, { recursive: true, force: true })
