@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-09-29
+
+### Fixed
+
+- `npm create @dialecte`, `npx @dialecte/create` and a scaffolded package's `npm run generate` do something: run through npm's bin link, the CLI used to exit without a word.
+
 ## [0.0.6] - 2026-09-29
 
 ### Added
