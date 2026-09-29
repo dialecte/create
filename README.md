@@ -32,14 +32,14 @@ npx @dialecte/create generate --entry ./my-schema.xsd --out-dir ./src/v1/definit
 Scaffolds a new dialecte package (built on `@dialecte/core`) and generates its
 element definitions from the schema in one step.
 
-| Option                 | Default                        | Description                                         |
-| ---------------------- | ------------------------------ | --------------------------------------------------- |
-| `--name <pkg>`         | `@dialecte/<schema basename>`  | npm package name                                    |
-| `--out <dir>`          | `./<dialecte id>`              | target directory                                    |
-| `--version <vN>`       | `v1`                           | version folder name                                 |
-| `--namespace <uri>`    | the schema's `targetNamespace` | default XML namespace URI                           |
-| `--core-version <ver>` | `^0.5.0`                       | `@dialecte/core` version range                      |
-| `--root <element>`     | the one root candidate         | which element starts a document, when several could |
+| Option                 | Default                       | Description                                         |
+| ---------------------- | ----------------------------- | --------------------------------------------------- |
+| `--name <pkg>`         | `@dialecte/<schema basename>` | npm package name                                    |
+| `--out <dir>`          | `./<dialecte id>`             | target directory                                    |
+| `--version <vN>`       | `v1`                          | version folder name                                 |
+| `--namespace <uri>`    | the root element's namespace  | default XML namespace URI                           |
+| `--core-version <ver>` | `^0.5.0`                      | `@dialecte/core` version range                      |
+| `--root <element>`     | the one root candidate        | which element starts a document, when several could |
 
 The generated package includes:
 
@@ -51,8 +51,8 @@ The generated package includes:
   schema you gave, as a worked example to copy from and then delete
 - VitePress documentation scaffolding
 
-The default namespace is read from the schema: its `targetNamespace`, or none at all for a schema
-that declares none. After `npm install`, run `npm run format:fix` once - names of any length are
+The default namespace is the one the root element lives in, or none for a schema without one. For
+an extension schema (IEC 61850-6-100 over SCL) that is the base schema's namespace, not the entry's. After `npm install`, run `npm run format:fix` once - names of any length are
 substituted into the template, so its line breaks cannot suit every package.
 
 ### `generate`

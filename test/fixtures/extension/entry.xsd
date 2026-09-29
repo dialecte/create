@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- An extension schema, the entry point, in its own namespace: documents still start with the
+     base's Root, in the base namespace (IEC 61850-6-100 over SCL is built this way). -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="urn:ext" xmlns:base="urn:base" elementFormDefault="qualified">
+	<xs:import namespace="urn:base" schemaLocation="base.xsd" />
+	<xs:complexType name="tExtensionOnly">
+		<xs:attribute name="note" type="xs:string" />
+	</xs:complexType>
+</xs:schema>

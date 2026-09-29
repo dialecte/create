@@ -6,7 +6,6 @@ import { fileURLToPath } from 'node:url'
 import { PACKAGE_ROOT } from './paths.js'
 import { runGenerator } from './pyodide-runner.js'
 import { scaffoldDialecte, dialecteIdFromPackageName } from './scaffold.js'
-import { extractTargetNamespace } from './target-namespace.js'
 
 export { runGenerator } from './pyodide-runner.js'
 export { scaffoldDialecte } from './scaffold.js'
@@ -62,7 +61,7 @@ create options:
   --name <pkg>           npm package name (default: @dialecte/<schema basename>)
   --out <dir>            target directory (default: ./<dialecte id>)
   --version <vN>         version folder name (default: ${DEFAULT_VERSION})
-  --namespace <uri>      default XML namespace URI (default: the schema's targetNamespace)
+  --namespace <uri>      default XML namespace URI (default: the namespace of the root element)
   --core-version <ver>   @dialecte/core version range (default: ${DEFAULT_CORE_VERSION})
   --root <element>       the element that starts a document, when more than one could
 
@@ -116,30 +115,29 @@ async function runCreateCommand(
 	const dialecteId = dialecteIdFromPackageName(packageName)
 
 	const version = typeof flags.version === 'string' ? flags.version : DEFAULT_VERSION
-	const schemaSource = await readFile(resolve(entry), 'utf8')
-	const namespaceUri =
-		typeof flags.namespace === 'string' ? flags.namespace : extractTargetNamespace(schemaSource)
+	const namespaceOverride = typeof flags.namespace === 'string' ? flags.namespace : undefined
 	const coreVersion =
 		typeof flags['core-version'] === 'string' ? flags['core-version'] : DEFAULT_CORE_VERSION
 	const targetDir =
 		typeof flags.out === 'string' ? flags.out : (positionals[1] ?? `./${dialecteId}`)
 	const root = typeof flags.root === 'string' ? flags.root : undefined
 
-	await scaffoldDialecte({
+	const { namespaceUri, rootElement } = await scaffoldDialecte({
 		entry,
 		targetDir,
 		packageName,
 		version,
-		namespaceUri,
+		namespaceUri: namespaceOverride,
 		coreVersion,
 		root,
 	})
 
-	if (typeof flags.namespace !== 'string') {
-		const described =
-			namespaceUri === '' ? 'none (the schema declares no targetNamespace)' : `"${namespaceUri}"`
+	if (namespaceOverride === undefined) {
+		const described = namespaceUri === '' ? 'none' : `"${namespaceUri}"`
 		console.log('')
-		console.log(`Note: default namespace taken from the schema: ${described}.`)
+		console.log(
+			`Note: default namespace taken from the root element <${rootElement}>: ${described}.`,
+		)
 	}
 }
 
