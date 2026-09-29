@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2026-09-29
+
+### Changed
+
+- A scaffolded package uses `@dialecte/cli` 0.0.3: its type bench measures the package's own types, library declarations skipped.
+
 ## [0.0.4] - 2026-09-28
 
 ### Added
