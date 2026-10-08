@@ -15,7 +15,11 @@ from xmlschema.validators import (
     XsdComponent,
     XsdElement,
     XsdGroup,
+    XsdIdentity,
+    XsdKey,
+    XsdKeyref,
     XsdSimpleType,
+    XsdUnique,
 )
 
 from generate_next.errors import SchemaNotReadable, SchemaNotRepresentable
@@ -24,12 +28,14 @@ from generate_next.model.declarations import (
     ElementDeclaration,
     ElementParticle,
     GroupParticle,
+    IdentityConstraint,
     Namespace,
     Particle,
     Schema,
     TextDeclaration,
     WildcardParticle,
 )
+from generate_next.model.identity_paths import parse_field, parse_selector
 from generate_next.model.particles import emptiable, held_leaves
 from generate_next.model.wildcards import attribute_wildcard_of, wildcard_of
 
@@ -235,7 +241,33 @@ def _declaration(
         content_model=content_model,
         text=_text(element),
         parent_names=parent_names,
+        constraints=tuple(_constraint(identity) for identity in element.identities),
     )
+
+
+def _constraint(identity: XsdIdentity) -> IdentityConstraint:
+    """An identity constraint as written, its paths parsed with the namespaces in scope where it is written."""
+    if isinstance(identity, XsdKeyref):
+        kind = 'keyref'
+        refer = identity.refer if isinstance(identity.refer, str) else identity.refer.name
+    elif isinstance(identity, XsdKey | XsdUnique):
+        kind, refer = ('key' if isinstance(identity, XsdKey) else 'unique'), None
+    else:
+        raise SchemaNotRepresentable(f'{identity.name}: an identity constraint of an unknown kind')
+    return IdentityConstraint(
+        kind=kind,
+        name=identity.local_name,
+        namespace=_namespace_of(identity.name),
+        refer=(_namespace_of(refer), refer[refer.index('}') + 1 :] if refer.startswith('{') else refer) if refer else None,
+        selector=parse_selector(identity.selector.path, namespaces=_in_scope(identity.selector)),
+        fields=tuple(parse_field(field.path, namespaces=_in_scope(field)) for field in identity.fields),
+    )
+
+
+def _in_scope(component: XsdComponent) -> dict[str, str]:
+    """The prefixes bound where the component is written - on it or on an element around it - and `xml`, always
+    bound. Not the document's: a prefix may be bound again closer to a constraint."""
+    return {**(component.schema.source.get_nsmap(component.elem) or {}), 'xml': 'http://www.w3.org/XML/1998/namespace'}
 
 
 def _text(element: XsdElement) -> TextDeclaration | None:

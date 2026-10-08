@@ -12,8 +12,12 @@ from generate_next.model.declarations import (
     AttributeDeclaration,
     ElementDeclaration,
     ElementParticle,
+    FieldPath,
     GroupParticle,
+    IdentityConstraint,
+    NameTest,
     Particle,
+    SelectorPath,
     TextDeclaration,
     Wildcard,
     WildcardParticle,
@@ -22,9 +26,11 @@ from generate_next.definition.sidecars import (
     attach_mapped_attributes,
     attach_mapped_children,
     mapped_attribute_names,
+    mapped_parents,
     read_attribute_mapping,
     read_parent_mapping,
 )
+from generate_next.definition.identity_fields import identity_fields
 from generate_next.model.particles import held_leaves
 from generate_next.model.read_schema import read_schema
 from generate_next.model.wildcards import union, weakest_process_contents
@@ -36,10 +42,14 @@ def generate_definition(entry: Path) -> dict[str, Any]:
     attribute_mapping = read_attribute_mapping(entry)
     schema = read_schema(entry, global_attributes=mapped_attribute_names(attribute_mapping))
     declarations = attach_mapped_attributes(schema.elements, attribute_mapping, global_attributes=schema.global_attributes)
-    return attach_mapped_children(build_definition(declarations), read_parent_mapping(entry), declarations=declarations)
+    parent_mapping = mapped_parents(read_parent_mapping(entry))
+    definition = build_definition(declarations, parent_mapping=parent_mapping)
+    return attach_mapped_children(definition, parent_mapping, declarations=declarations)
 
 
-def build_definition(declarations: tuple[ElementDeclaration, ...]) -> dict[str, Any]:
+def build_definition(
+    declarations: tuple[ElementDeclaration, ...], *, parent_mapping: dict[str, list[str]] | None = None
+) -> dict[str, Any]:
     by_tag: dict[str, list[ElementDeclaration]] = {}
     for declaration in declarations:
         by_tag.setdefault(declaration.name, []).append(declaration)
@@ -52,7 +62,10 @@ def build_definition(declarations: tuple[ElementDeclaration, ...]) -> dict[str, 
         for number, way in enumerate(tag_ways, start=1)
         for declaration in way
     }
-    return {tag: _element(tag, by_tag[tag], ways=ways[tag], numbers=numbers) for tag in sorted(by_tag)}
+    identities = identity_fields(declarations, parent_mapping=parent_mapping or {})
+    return {
+        tag: _element(tag, by_tag[tag], ways=ways[tag], numbers=numbers, identities=identities) for tag in sorted(by_tag)
+    }
 
 
 def _ways(declarations: list[ElementDeclaration]) -> list[list[ElementDeclaration]]:
@@ -68,6 +81,7 @@ def _ways(declarations: list[ElementDeclaration]) -> list[list[ElementDeclaratio
             text.default if text is not None else None,
             text.fixed if text is not None else None,
             declaration.block,
+            tuple((constraint.namespace, constraint.name) for constraint in declaration.constraints),
         )
         grouped.setdefault(same_way, []).append(declaration)
     return sorted(grouped.values(), key=_way_order)
@@ -93,6 +107,7 @@ def _way_order(way: list[ElementDeclaration]) -> tuple[Any, ...]:
         optional(text.default if text is not None else None),
         optional(text.fixed if text is not None else None),
         first.block,
+        tuple((constraint.namespace, constraint.name) for constraint in first.constraints),
         tuple(attribute.key for attribute in first.attributes),
         text.builtin or '' if text is not None else '',
         tuple(leaf.name if isinstance(leaf, ElementParticle) else '*' for leaf in held_leaves(first.content_model)),
@@ -101,27 +116,34 @@ def _way_order(way: list[ElementDeclaration]) -> tuple[Any, ...]:
 
 
 def _element(
-    tag: str, declarations: list[ElementDeclaration], *, ways: list[list[ElementDeclaration]], numbers: dict[int, str]
+    tag: str,
+    declarations: list[ElementDeclaration],
+    *,
+    ways: list[list[ElementDeclaration]],
+    numbers: dict[int, str],
+    identities: dict[int, set[str]],
 ) -> dict[str, Any]:
     """A tag: the union of its declarations; and, when it is declared several ways, each way as it is."""
     # the namespace of the tag: its global declaration's, else the first one met
     canonical = next((declaration for declaration in declarations if declaration.is_global), declarations[0])
     element: dict[str, Any] = {'tag': tag, **_heading(declarations, canonical=canonical, global_known=len(ways) == 1)}
     element['parents'] = sorted({parent for declaration in declarations for parent in declaration.parent_names})
-    element.update(_content(declarations, holder=canonical.namespace.uri, numbers=numbers))
+    element.update(_content(declarations, holder=canonical.namespace.uri, numbers=numbers, identities=identities))
     if len(ways) > 1:
         element['declarations'] = {
-            str(number): _declaration(way, numbers=numbers) for number, way in enumerate(ways, start=1)
+            str(number): _declaration(way, numbers=numbers, identities=identities) for number, way in enumerate(ways, start=1)
         }
     return element
 
 
-def _declaration(way: list[ElementDeclaration], *, numbers: dict[int, str]) -> dict[str, Any]:
+def _declaration(
+    way: list[ElementDeclaration], *, numbers: dict[int, str], identities: dict[int, set[str]]
+) -> dict[str, Any]:
     """One way a tag is declared: the element as those declarations have it."""
     canonical = next((declaration for declaration in way if declaration.is_global), way[0])
     return {
         **_heading(way, canonical=canonical, global_known=True),
-        **_content(way, holder=canonical.namespace.uri, numbers=numbers),
+        **_content(way, holder=canonical.namespace.uri, numbers=numbers, identities=identities),
     }
 
 
@@ -136,13 +158,18 @@ def _heading(declarations: list[ElementDeclaration], *, canonical: ElementDeclar
     return heading
 
 
-def _content(declarations: list[ElementDeclaration], *, holder: str, numbers: dict[int, str]) -> dict[str, Any]:
+def _content(
+    declarations: list[ElementDeclaration], *, holder: str, numbers: dict[int, str], identities: dict[int, set[str]]
+) -> dict[str, Any]:
     """What the declarations let an element hold, as one: what a record may hold under some parent."""
     content: dict[str, Any] = {}
     # nil where one declaration allows it
     if any(declaration.nillable for declaration in declarations):
         content['nillable'] = True
     content['attributes'] = _attributes(declarations)
+    identifying = sorted({key for declaration in declarations for key in identities.get(declaration.key, ())})
+    if identifying:
+        content['attributes']['identityFields'] = identifying
     leaves = [leaf for declaration in declarations for leaf in held_leaves(declaration.content_model)]
     # each child once, in content order; a particle no document may hold names no child
     child_names = list(dict.fromkeys(leaf.name for leaf in leaves if isinstance(leaf, ElementParticle)))
@@ -161,7 +188,37 @@ def _content(declarations: list[ElementDeclaration], *, holder: str, numbers: di
     texts = [declaration.text for declaration in declarations if declaration.text is not None]
     if texts:
         content['textContent'] = _text_content(texts)
+    # the constraints of a declaration, never of a union: they hold only where it is the one that applies
+    constraints = declarations[0].constraints
+    if constraints and all(declaration.constraints == constraints for declaration in declarations):
+        content['constraints'] = [_written_constraint(constraint) for constraint in constraints]
     return content
+
+
+def _written_constraint(constraint: IdentityConstraint) -> dict[str, Any]:
+    written: dict[str, Any] = {'kind': constraint.kind, 'name': constraint.name, 'namespace': constraint.namespace}
+    if constraint.refer is not None:
+        written['refer'] = {'name': constraint.refer[1], 'namespace': constraint.refer[0]}
+    written['selector'] = [_written_path(path) for path in constraint.selector]
+    written['fields'] = [[_written_path(path) for path in field] for field in constraint.fields]
+    return written
+
+
+def _written_path(path: SelectorPath | FieldPath) -> dict[str, Any]:
+    written: dict[str, Any] = {'deep': True} if path.deep else {}
+    written['steps'] = [_written_name_test(step) for step in path.steps]
+    if isinstance(path, FieldPath) and path.attribute is not None:
+        written['attribute'] = _written_name_test(path.attribute)
+    return written
+
+
+def _written_name_test(test: NameTest) -> dict[str, str]:
+    written: dict[str, str] = {}
+    if test.name is not None:
+        written['name'] = test.name
+    if test.namespace is not None:
+        written['namespace'] = test.namespace
+    return written
 
 
 def _shape(particle: dict[str, Any] | None) -> Any:

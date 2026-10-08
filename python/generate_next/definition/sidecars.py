@@ -95,20 +95,28 @@ def _declares(declaration: ElementDeclaration, attribute: AttributeDeclaration) 
     return any(declared.key == attribute.key for declared in declaration.attributes)
 
 
+def mapped_parents(mapping: Any) -> dict[str, list[str]]:
+    """The parent mapping, each element to the parents it is attached under; a mapping of the wrong shape is
+    refused."""
+    if not isinstance(mapping, dict):
+        raise SidecarMistake(f'{PARENT_MAPPING}: it must be an object mapping each element to its parents')
+    for child, parents in mapping.items():
+        if not isinstance(parents, list) or not all(isinstance(parent, str) for parent in parents):
+            raise SidecarMistake(f'{PARENT_MAPPING}: {child} must map to a list of parent names')
+    return mapping
+
+
 def attach_mapped_children(
     definition: dict[str, Any], mapping: Any, *, declarations: tuple[ElementDeclaration, ...]
 ) -> dict[str, Any]:
     """`definition` with each mapped element listed under the parents the mapping names. Refused as a
     mistake: a name the schema does not declare - element or parent -, a parent named twice or already holding
     the element, a parent one declaration of which admits no such element, a mapping that leaves no root."""
-    if not isinstance(mapping, dict):
-        raise SidecarMistake(f'{PARENT_MAPPING}: it must be an object mapping each element to its parents')
+    mapping = mapped_parents(mapping)
     by_tag: dict[str, list[ElementDeclaration]] = {}
     for declaration in declarations:
         by_tag.setdefault(declaration.name, []).append(declaration)
     for child, parents in mapping.items():
-        if not isinstance(parents, list) or not all(isinstance(parent, str) for parent in parents):
-            raise SidecarMistake(f'{PARENT_MAPPING}: {child} must map to a list of parent names')
         unknown = [name for name in [child, *parents] if name not in definition]
         if unknown:
             raise SidecarMistake(f'{PARENT_MAPPING}: the schema declares no element {", ".join(unknown)}')

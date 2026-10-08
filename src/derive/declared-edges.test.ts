@@ -133,6 +133,27 @@ describe('declared-edges', () => {
 		assert.deepEqual(findDeclaredEdges({ definition: sameAttributes }), [])
 	})
 
+	it('attributesDeclaredUnder: a referenced declaration differing only by its identity fields -> none, its type is the same', () => {
+		const identified: DefinitionData = {
+			...byReference,
+			Item: {
+				...byReference.Item,
+				attributes: { sequence: ['b'], details: {} },
+				declarations: {
+					'1': { attributes: { sequence: ['a'], details: {} }, children: noAttributes },
+					'2': {
+						attributes: { sequence: ['b'], details: {}, identityFields: ['b'] },
+						children: noAttributes,
+					},
+				},
+			} as DefinitionData[string],
+		}
+		assert.equal(
+			attributesDeclaredUnder({ definition: identified, parent: 'Left', child: 'Item' }),
+			undefined,
+		)
+	})
+
 	it('findDeclaredEdges: an edge referencing one declaration of the child declares it', () => {
 		assert.deepEqual(
 			findDeclaredEdges({ definition: byReference }).map(

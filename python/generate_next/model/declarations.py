@@ -79,6 +79,42 @@ class TextDeclaration:
 
 
 @dataclass(frozen=True)
+class NameTest:
+    """What a step or an attribute of an identity constraint path matches: absent = any."""
+
+    name: str | None
+    # '' for no namespace
+    namespace: str | None
+
+
+@dataclass(frozen=True)
+class SelectorPath:
+    deep: bool
+    # () is the element the constraint is declared on
+    steps: tuple[NameTest, ...]
+
+
+@dataclass(frozen=True)
+class FieldPath:
+    deep: bool
+    steps: tuple[NameTest, ...]
+    # None: the value of the element the steps reach (the selected one when there is no step)
+    attribute: NameTest | None
+
+
+@dataclass(frozen=True)
+class IdentityConstraint:
+    kind: str  # 'unique' | 'key' | 'keyref'
+    name: str
+    namespace: str
+    # the (namespace, name) of the key or unique a keyref refers to
+    refer: tuple[str, str] | None
+    selector: tuple[SelectorPath, ...]
+    # each field: its alternatives
+    fields: tuple[tuple[FieldPath, ...], ...]
+
+
+@dataclass(frozen=True)
 class ElementDeclaration:
     """One declaration of an element: a global one, or a local one inside a content model."""
 
@@ -106,6 +142,8 @@ class ElementDeclaration:
     text: TextDeclaration | None
     # the names of the elements whose content holds this declaration, sorted
     parent_names: tuple[str, ...]
+    # the identity constraints it declares, in schema order
+    constraints: tuple[IdentityConstraint, ...]
 
 
 @dataclass(frozen=True)

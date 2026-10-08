@@ -44,9 +44,14 @@ export function attributesDeclaredUnder(params: {
 	if (isDeclaredEdge(edge)) return edge.attributes
 	const declared = declaredUnder({ definition, parent, child })
 	if (declared === undefined) return undefined
-	return sameData(declared.attributes, definition[child]?.attributes)
+	// what the attribute type is made of: the attributes and what each is, not which identify the element
+	return sameData(typed(declared.attributes), typed(definition[child]?.attributes))
 		? undefined
 		: declared.attributes
+}
+
+function typed(attributes: ElementData['attributes'] | undefined): unknown {
+	return attributes && { sequence: attributes.sequence, details: attributes.details }
 }
 
 /** Whether two pieces of definition data say the same, whatever the order of their keys. */
