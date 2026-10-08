@@ -1,5 +1,5 @@
 # Local-only inputs (bring your own XSD + dev wrapper)
-xsd/
+/xsd/
 local/
 
 # Build output
