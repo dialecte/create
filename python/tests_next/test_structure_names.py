@@ -207,6 +207,18 @@ CASES: dict[str, tuple[str, dict[str, str], str, Any]] = {
         '',
         {'Root.documentation': 'The root element.'},
     ),
+    # the globals are walked in namespace order, then name: urn:dialecte:ext's Holder before urn:dialecte:test's Root
+    'a tag declared only locally, in two namespaces -> the namespace of the declaration walked first': (
+        xsd(
+            TARGET,
+            '<xs:element name="Root"><xs:complexType><xs:sequence>'
+            '<xs:element name="Label"/><xs:element ref="e:Holder"/></xs:sequence></xs:complexType></xs:element>',
+            imports=f'<xs:import namespace="{EXT}" schemaLocation="ext.xsd"/>',
+        ).replace('<xs:schema ', f'<xs:schema xmlns:e="{EXT}" '),
+        {'ext.xsd': xsd(EXT, '<xs:element name="Holder"><xs:complexType><xs:sequence><xs:element name="Label"/></xs:sequence></xs:complexType></xs:element>')},
+        '',
+        {'Label.namespace.uri': EXT},
+    ),
     'a documented declaration -> its first documentation text': (
         schema('<xs:element name="Root"><xs:annotation><xs:documentation>  The root.  </xs:documentation></xs:annotation></xs:element>'),
         {},

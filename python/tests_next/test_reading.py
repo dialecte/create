@@ -1,7 +1,7 @@
 """How the schema is read: deep schemas, documents out of reach, immutable records, what is refused."""
 import pytest
 
-from generate_next.errors import SchemaNotReadable, SchemaNotRepresentable
+from generate_next.errors import SchemaNotReadable
 from generate_next.model.read_schema import read_schema
 from tests_next.conftest import pick, schema
 
@@ -34,14 +34,14 @@ def test_the_declarations_read_are_immutable_records(tmp_path) -> None:
         encoding='utf-8',
     )
     root = next(declaration for declaration in read_schema(entry) if declaration.name == 'Root')
-    assert isinstance(root.child_names, tuple)
+    assert isinstance(root.content_model.particles, tuple)
     assert isinstance(root.attributes, tuple)
-    assert isinstance(root.any_attribute, tuple)
+    assert isinstance(root.any_attribute.not_namespace, tuple)
     with pytest.raises(AttributeError):
         root.name = 'Other'  # type: ignore[misc]
 
 
-def test_one_key_bound_to_two_namespaces_by_two_declarations_of_a_tag_is_refused(definition_of) -> None:
+def test_one_name_in_two_namespaces_across_the_declarations_of_a_tag_gets_two_keys(definition_of) -> None:
     def attribute_in(uri: str) -> str:
         """A document declaring a global attribute x in `uri`, which it binds to the prefix e."""
         return (
@@ -60,5 +60,15 @@ def test_one_key_bound_to_two_namespaces_by_two_declarations_of_a_tag_is_refused
         '<xs:attribute ref="b:x"/></xs:complexType></xs:element></xs:sequence></xs:complexType></xs:element>'
         '</xs:sequence></xs:complexType></xs:element></xs:schema>'
     )
-    with pytest.raises(SchemaNotRepresentable, match='e:x'):
-        definition_of(entry, imports={'a.xsd': attribute_in('urn:a'), 'b.xsd': attribute_in('urn:b')})
+    # both documents bind their namespace to e: the namespace needed second takes the entry's prefix for it
+    data = definition_of(entry, imports={'a.xsd': attribute_in('urn:a'), 'b.xsd': attribute_in('urn:b')})
+    assert pick(data, 'P.attributes.details') == {
+        'b:x': {'namespace': {'prefix': 'b', 'uri': 'urn:b'}, 'type': {'builtin': 'token'}},
+        'e:x': {'namespace': {'prefix': 'e', 'uri': 'urn:a'}, 'type': {'builtin': 'token'}},
+    }
+
+
+def test_a_document_an_include_names_but_that_is_out_of_reach_is_refused(definition_of) -> None:
+    entry = schema('<xs:include schemaLocation="missing.xsd"/><xs:element name="Root"/>')
+    with pytest.raises(SchemaNotReadable, match='missing.xsd'):
+        definition_of(entry)

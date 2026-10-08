@@ -15,14 +15,27 @@ CASES: dict[str, tuple[str, dict[str, Any]]] = {
                 'parents': [],
                 'attributes': {'sequence': [], 'details': {}},
                 'children': {'sequence': ['Child'], 'details': {}},
+                'contentModel': {
+                    'kind': 'sequence',
+                    'minOccurs': 1,
+                    'maxOccurs': 1,
+                    'particles': [{'kind': 'element', 'name': 'Child', 'minOccurs': 1, 'maxOccurs': 1}],
+                },
             },
-            # declared without a type: xs:anyType, which accepts any attribute
+            # declared without a type: xs:anyType, any attribute and any element content, lax
             'Child': {
                 'tag': 'Child',
                 'namespace': {'prefix': '', 'uri': TARGET},
                 'parents': ['Root'],
-                'attributes': {'sequence': [], 'any': True, 'anyNamespace': ['##any'], 'details': {}},
-                'children': {'sequence': [], 'details': {}},
+                'attributes': {'sequence': [], 'any': {'notNamespace': [], 'processContents': 'lax'}, 'details': {}},
+                'children': {'sequence': [], 'any': True, 'details': {}},
+                'textContent': {},
+                'contentModel': {
+                    'kind': 'sequence',
+                    'minOccurs': 1,
+                    'maxOccurs': 1,
+                    'particles': [{'kind': 'any', 'notNamespace': [], 'processContents': 'lax'}],
+                },
             },
         },
     ),

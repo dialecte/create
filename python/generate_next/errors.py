@@ -7,3 +7,7 @@ class SchemaNotReadable(Exception):
 
 class SchemaNotRepresentable(Exception):
     """The schema declares something the definition cannot write faithfully."""
+
+
+class SidecarMistake(Exception):
+    """A sidecar file next to the entry document names what the schema does not declare."""
