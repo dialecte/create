@@ -113,6 +113,8 @@ def test_a_parent_declared_twice_admits_what_a_wildcard_of_each_declaration_admi
     data = definition_of(entry, imports={'parent-mapping.json': json.dumps({'Resources': ['Bay']})})
     assert 'contentModel' not in data['Bay']
     assert pick(data, 'Resources.parents') == ['Bay']
+    # listed in each way Bay is declared too: a reader going through the parent's declaration finds it
+    assert [pick(data, f'Bay.declarations.{id}.children.sequence') for id in ('1', '2')] == [['Name', 'Resources'], ['Resources']]
 
 
 @pytest.mark.parametrize(

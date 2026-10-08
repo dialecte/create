@@ -12,6 +12,8 @@ export type DifferenceCategory =
 	| 'children'
 	| 'occurrence'
 	| 'edge-definition'
+	| 'declarations'
+	| 'global'
 	| 'content-model'
 	| 'constraints'
 	| 'identity-fields'

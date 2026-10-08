@@ -1,4 +1,10 @@
-import type { DeclaredEdge, DefinitionData, EdgeData } from './derive.types.ts'
+import type {
+	DeclarationData,
+	DeclaredEdge,
+	DefinitionData,
+	EdgeData,
+	ElementData,
+} from './derive.types.ts'
 
 /**
  * An edge carries its own declaration of the child when it holds attributes and children, both -
@@ -10,27 +16,71 @@ export function isDeclaredEdge(
 	return edge?.attributes !== undefined && edge.children !== undefined
 }
 
-/** Every edge that carries its own declaration of the child. */
+/** Every edge whose child carries other attributes there than at its tag level: each gets a type of its own. */
 export function findDeclaredEdges(params: { definition: DefinitionData }): DeclaredEdge[] {
 	const { definition } = params
 	const edges: DeclaredEdge[] = []
 	for (const [parent, element] of Object.entries(definition)) {
-		for (const [child, edge] of Object.entries(element.children.details)) {
-			if (isDeclaredEdge(edge)) edges.push({ parent, child, attributes: edge.attributes })
+		for (const child of Object.keys(element.children.details)) {
+			const attributes = attributesDeclaredUnder({ definition, parent, child })
+			if (attributes !== undefined) edges.push({ parent, child, attributes })
 		}
 	}
 	return edges
 }
 
-/** The declaration of `child` under `parent`, when that edge carries one. */
+/**
+ * The attributes of `child` under `parent` when they are not its tag level's: those of the declaration the edge
+ * carries inline (always - the definitions committed before the rebuilt generator), or of the one it references
+ * when they differ (a tag declared two ways by namespace alone keeps one type).
+ */
+export function attributesDeclaredUnder(params: {
+	definition: DefinitionData
+	parent: string
+	child: string
+}): ElementData['attributes'] | undefined {
+	const { definition, parent, child } = params
+	const edge = definition[parent]?.children.details[child]
+	if (isDeclaredEdge(edge)) return edge.attributes
+	const declared = declaredUnder({ definition, parent, child })
+	if (declared === undefined) return undefined
+	return sameData(declared.attributes, definition[child]?.attributes)
+		? undefined
+		: declared.attributes
+}
+
+/** Whether two pieces of definition data say the same, whatever the order of their keys. */
+function sameData(first: unknown, second: unknown): boolean {
+	return canonical(first) === canonical(second)
+}
+
+function canonical(value: unknown): string {
+	return JSON.stringify(value, (_key, item: unknown) =>
+		item !== null && typeof item === 'object' && !Array.isArray(item)
+			? Object.fromEntries(
+					Object.entries(item).sort(([first], [second]) => (first < second ? -1 : 1)),
+				)
+			: item,
+	)
+}
+
+/**
+ * The declaration of `child` under `parent`, when the edge decides one: the only one it references - one
+ * namespace, one id -, or the one it carries inline (the definitions committed before the rebuilt generator).
+ * Otherwise none: the namespace or the particle matched decides, the tag level stands for all of them.
+ */
 export function declaredUnder(params: {
 	definition: DefinitionData
 	parent: string
 	child: string
-}): (EdgeData & Required<Pick<EdgeData, 'attributes' | 'children'>>) | undefined {
+}): DeclarationData | undefined {
 	const { definition, parent, child } = params
 	const edge = definition[parent]?.children.details[child]
-	return isDeclaredEdge(edge) ? edge : undefined
+	if (isDeclaredEdge(edge)) return edge
+	const [ids, ...otherNamespaces] = Object.values(edge?.declarations ?? {})
+	const [only, ...others] = ids ?? []
+	if (only === undefined || others.length > 0 || otherNamespaces.length > 0) return undefined
+	return definition[child]?.declarations?.[only]
 }
 
 /** The children of `parent` that are elements of the definition, in the definition's order. */

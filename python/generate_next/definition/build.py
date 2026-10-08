@@ -1,7 +1,9 @@
 """The definition data of a dialecte: the schema's declarations, keyed exactly as `definition.generated.ts`.
 
 A tag declared more than once is the union of its declarations: what a record of that tag may carry
-under some parent (an attribute is required only where every declaration requires it).
+under some parent (an attribute is required only where every declaration requires it). A tag declared
+several ways - declarations validation tells apart - also keeps each way, numbered, and every particle
+holding it names the one it holds.
 """
 from pathlib import Path
 from typing import Any
@@ -16,7 +18,13 @@ from generate_next.model.declarations import (
     Wildcard,
     WildcardParticle,
 )
-from generate_next.definition.sidecars import attach_mapped_children, read_parent_mapping
+from generate_next.definition.sidecars import (
+    attach_mapped_attributes,
+    attach_mapped_children,
+    mapped_attribute_names,
+    read_attribute_mapping,
+    read_parent_mapping,
+)
 from generate_next.model.particles import held_leaves
 from generate_next.model.read_schema import read_schema
 from generate_next.model.wildcards import union, weakest_process_contents
@@ -25,7 +33,9 @@ from generate_next.model.wildcards import union, weakest_process_contents
 def generate_definition(entry: Path) -> dict[str, Any]:
     """The definition data of the schema whose entry document is `entry`, with what the sidecar files
     beside it add."""
-    declarations = read_schema(entry)
+    attribute_mapping = read_attribute_mapping(entry)
+    schema = read_schema(entry, global_attributes=mapped_attribute_names(attribute_mapping))
+    declarations = attach_mapped_attributes(schema.elements, attribute_mapping, global_attributes=schema.global_attributes)
     return attach_mapped_children(build_definition(declarations), read_parent_mapping(entry), declarations=declarations)
 
 
@@ -33,41 +43,159 @@ def build_definition(declarations: tuple[ElementDeclaration, ...]) -> dict[str, 
     by_tag: dict[str, list[ElementDeclaration]] = {}
     for declaration in declarations:
         by_tag.setdefault(declaration.name, []).append(declaration)
-    return {tag: _element(tag, by_tag[tag]) for tag in sorted(by_tag)}
+    ways = {tag: _ways(tag_declarations) for tag, tag_declarations in by_tag.items()}
+    # a tag declared several ways: each way numbered; particles and children details name it by its number
+    numbers = {
+        declaration.key: str(number)
+        for tag_ways in ways.values()
+        if len(tag_ways) > 1
+        for number, way in enumerate(tag_ways, start=1)
+        for declaration in way
+    }
+    return {tag: _element(tag, by_tag[tag], ways=ways[tag], numbers=numbers) for tag in sorted(by_tag)}
 
 
-def _element(tag: str, declarations: list[ElementDeclaration]) -> dict[str, Any]:
+def _ways(declarations: list[ElementDeclaration]) -> list[list[ElementDeclaration]]:
+    """The declarations of a tag grouped by what validation tells apart - namespace, type, nillable, default and
+    fixed text, blocked derivations -, in a canonical order that a change elsewhere in the schema leaves alone."""
+    grouped: dict[tuple[Any, ...], list[ElementDeclaration]] = {}
+    for declaration in declarations:
+        text = declaration.text
+        same_way = (
+            declaration.namespace.uri,
+            declaration.type_key,
+            declaration.nillable,
+            text.default if text is not None else None,
+            text.fixed if text is not None else None,
+            declaration.block,
+        )
+        grouped.setdefault(same_way, []).append(declaration)
+    return sorted(grouped.values(), key=_way_order)
+
+
+def _way_order(way: list[ElementDeclaration]) -> tuple[Any, ...]:
+    """A global declaration first, then by namespace, type name (anonymous types last), the parents holding it,
+    what else sets it apart, and what it holds; the order the schema was read in only breaks what is left of a
+    tie (ways that hold the same)."""
+    first = way[0]
+    text = first.text
+
+    def optional(value: str | None) -> tuple[bool, str]:
+        return (value is not None, value or '')
+
+    return (
+        not any(declaration.is_global for declaration in way),
+        first.namespace.uri,
+        first.type_name is None,
+        first.type_name or '',
+        tuple(sorted({parent for declaration in way for parent in declaration.parent_names})),
+        first.nillable,
+        optional(text.default if text is not None else None),
+        optional(text.fixed if text is not None else None),
+        first.block,
+        tuple(attribute.key for attribute in first.attributes),
+        text.builtin or '' if text is not None else '',
+        tuple(leaf.name if isinstance(leaf, ElementParticle) else '*' for leaf in held_leaves(first.content_model)),
+        min(declaration.key for declaration in way),
+    )
+
+
+def _element(
+    tag: str, declarations: list[ElementDeclaration], *, ways: list[list[ElementDeclaration]], numbers: dict[int, str]
+) -> dict[str, Any]:
+    """A tag: the union of its declarations; and, when it is declared several ways, each way as it is."""
     # the namespace of the tag: its global declaration's, else the first one met
     canonical = next((declaration for declaration in declarations if declaration.is_global), declarations[0])
-    element: dict[str, Any] = {
-        'tag': tag,
-        'namespace': {'prefix': canonical.namespace.prefix, 'uri': canonical.namespace.uri},
+    element: dict[str, Any] = {'tag': tag, **_heading(declarations, canonical=canonical, global_known=len(ways) == 1)}
+    element['parents'] = sorted({parent for declaration in declarations for parent in declaration.parent_names})
+    element.update(_content(declarations, holder=canonical.namespace.uri, numbers=numbers))
+    if len(ways) > 1:
+        element['declarations'] = {
+            str(number): _declaration(way, numbers=numbers) for number, way in enumerate(ways, start=1)
+        }
+    return element
+
+
+def _declaration(way: list[ElementDeclaration], *, numbers: dict[int, str]) -> dict[str, Any]:
+    """One way a tag is declared: the element as those declarations have it."""
+    canonical = next((declaration for declaration in way if declaration.is_global), way[0])
+    return {
+        **_heading(way, canonical=canonical, global_known=True),
+        **_content(way, holder=canonical.namespace.uri, numbers=numbers),
     }
+
+
+def _heading(declarations: list[ElementDeclaration], *, canonical: ElementDeclaration, global_known: bool) -> dict[str, Any]:
+    heading: dict[str, Any] = {'namespace': {'prefix': canonical.namespace.prefix, 'uri': canonical.namespace.uri}}
     documentation = next((declaration.documentation for declaration in declarations if declaration.documentation), None)
     if documentation is not None:
-        element['documentation'] = documentation
-    element['parents'] = sorted({parent for declaration in declarations for parent in declaration.parent_names})
-    element['attributes'] = _attributes(declarations)
+        heading['documentation'] = documentation
+    # what an element a wildcard admits is validated by; said where it is one declaration's, never of a union
+    if global_known and canonical.is_global:
+        heading['global'] = True
+    return heading
+
+
+def _content(declarations: list[ElementDeclaration], *, holder: str, numbers: dict[int, str]) -> dict[str, Any]:
+    """What the declarations let an element hold, as one: what a record may hold under some parent."""
+    content: dict[str, Any] = {}
+    # nil where one declaration allows it
+    if any(declaration.nillable for declaration in declarations):
+        content['nillable'] = True
+    content['attributes'] = _attributes(declarations)
     leaves = [leaf for declaration in declarations for leaf in held_leaves(declaration.content_model)]
     # each child once, in content order; a particle no document may hold names no child
     child_names = list(dict.fromkeys(leaf.name for leaf in leaves if isinstance(leaf, ElementParticle)))
     children: dict[str, Any] = {'sequence': child_names}
     if any(isinstance(leaf, WildcardParticle) for leaf in leaves):
         children['any'] = True
-    # an edge gets details once there is something to say about it (its declaration, its constraints)
-    children['details'] = {}
-    element['children'] = children
-    # one content model when every declaration agrees on it; each parent's own comes with its edge
-    # written relative to the tag's own namespace, so declarations in two namespaces compare as particles
-    content_models = [
-        _particle(declaration.content_model, holder=canonical.namespace.uri) for declaration in declarations
-    ]
-    if content_models[0] is not None and all(model == content_models[0] for model in content_models):
-        element['contentModel'] = content_models[0]
+    children['details'] = _child_details(leaves, numbers=numbers)
+    content['children'] = children
+    # one content model when every declaration has the same shape, written relative to the holder's namespace so
+    # declarations in two namespaces compare as particles; a particle names the declaration it holds only where
+    # they all hold the same one
+    content_models = [_particle(declaration.content_model, holder=holder, numbers=numbers) for declaration in declarations]
+    first = content_models[0]
+    if first is not None and all(_shape(model) == _shape(first) for model in content_models):
+        content['contentModel'] = _shared(content_models)
     texts = [declaration.text for declaration in declarations if declaration.text is not None]
     if texts:
-        element['textContent'] = _text_content(texts)
-    return element
+        content['textContent'] = _text_content(texts)
+    return content
+
+
+def _shape(particle: dict[str, Any] | None) -> Any:
+    """A written particle without the declarations it names."""
+    if particle is None:
+        return None
+    shape = {key: value for key, value in particle.items() if key not in ('declaration', 'particles')}
+    if 'particles' in particle:
+        shape['particles'] = [_shape(nested) for nested in particle['particles']]
+    return shape
+
+
+def _shared(particles: list[dict[str, Any]]) -> dict[str, Any]:
+    """Particles of one shape as one: each element particle names a declaration only where all of them do."""
+    first = particles[0]
+    shared = {key: value for key, value in first.items() if key not in ('declaration', 'particles')}
+    if 'declaration' in first and all(particle.get('declaration') == first['declaration'] for particle in particles):
+        shared['declaration'] = first['declaration']
+    if 'particles' in first:
+        shared['particles'] = [_shared(list(nested)) for nested in zip(*(particle['particles'] for particle in particles))]
+    return shared
+
+
+def _child_details(leaves: list[ElementParticle | WildcardParticle], *, numbers: dict[int, str]) -> dict[str, Any]:
+    """For each child declared several ways, per namespace it is held in here, the declarations its particles hold:
+    one decides it; several leave it to the particle the child matches."""
+    named: dict[str, dict[str, set[str]]] = {}
+    for leaf in leaves:
+        if isinstance(leaf, ElementParticle) and leaf.declaration in numbers:
+            named.setdefault(leaf.name, {}).setdefault(leaf.namespace, set()).add(numbers[leaf.declaration])
+    return {
+        name: {'declarations': {uri: sorted(by_namespace[uri], key=int) for uri in sorted(by_namespace)}}
+        for name, by_namespace in named.items()
+    }
 
 
 def _text_content(texts: list[TextDeclaration]) -> dict[str, Any]:
@@ -84,9 +212,10 @@ def _text_content(texts: list[TextDeclaration]) -> dict[str, Any]:
     return text
 
 
-def _particle(particle: Particle | None, *, holder: str) -> dict[str, Any] | None:
+def _particle(particle: Particle | None, *, holder: str, numbers: dict[int, str]) -> dict[str, Any] | None:
     """A particle as the definition writes it: `minOccurs` only when not 0, `maxOccurs` only when
-    bounded; an element's namespace only when it is not the one of the element holding the model."""
+    bounded; an element's namespace only when it is not the one of the element holding the model; the
+    declaration it holds when its tag is declared several ways."""
     if particle is None:
         return None
     match particle:
@@ -102,8 +231,10 @@ def _particle(particle: Particle | None, *, holder: str) -> dict[str, Any] | Non
         written['minOccurs'] = particle.min_occurs
     if particle.max_occurs is not None:
         written['maxOccurs'] = particle.max_occurs
+    if isinstance(particle, ElementParticle) and particle.declaration in numbers:
+        written['declaration'] = numbers[particle.declaration]
     if isinstance(particle, GroupParticle):
-        written['particles'] = [_particle(nested, holder=holder) for nested in particle.particles]
+        written['particles'] = [_particle(nested, holder=holder, numbers=numbers) for nested in particle.particles]
     return written
 
 

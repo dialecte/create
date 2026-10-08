@@ -1,4 +1,4 @@
-import { declaredUnder, elementChildren, findDeclaredEdges } from './declared-edges.ts'
+import { attributesDeclaredUnder, elementChildren, findDeclaredEdges } from './declared-edges.ts'
 import { deriveGraph } from './derive-graph.ts'
 import { deriveSingletons } from './derive-singletons.ts'
 import {
@@ -92,13 +92,13 @@ function attributesByParent(params: {
 		if (children.length === 0) continue
 		lines.push(`\t\t${tsKey(parent)}: {`)
 		for (const child of children) {
-			const declared = declaredUnder({ definition, parent, child })
+			const declared = attributesDeclaredUnder({ definition, parent, child })
 			if (declared === undefined) {
 				lines.push(`\t\t\t${tsKey(child)}: ATTRIBUTES_BY_TAG${tsMember(child)},`)
 				continue
 			}
 			const typeName = edgeTypeName({ typeNames, element: child, parent })
-			lines.push(`\t\t\t${tsKey(child)}: ${skeleton(declared.attributes.sequence)} as ${typeName},`)
+			lines.push(`\t\t\t${tsKey(child)}: ${skeleton(declared.sequence)} as ${typeName},`)
 		}
 		lines.push('\t\t},')
 	}

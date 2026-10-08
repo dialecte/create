@@ -37,6 +37,11 @@ function choice(...particles: ParticleData[]): ParticleData {
 	return { kind: 'choice', minOccurs: 1, maxOccurs: 1, particles }
 }
 
+/** The children of a parent holding `child` through its declaration `id`. */
+function byReference(child: string, id: string): ElementData['children'] {
+	return { sequence: [child], details: { [child]: { declarations: { 'urn:t': [id] } } } }
+}
+
 type SingletonCase = { definition: DefinitionData; root: string; expected: string[] }
 
 const cases: Record<string, SingletonCase> = {
@@ -244,6 +249,141 @@ const cases: Record<string, SingletonCase> = {
 			root: 'Root',
 			expected: ['Leaf', 'Left', 'Part', 'Right', 'Root'],
 		},
+	'a child once in each way its parent is declared, referenced from the grandparents -> a singleton':
+		{
+			definition: {
+				Root: element({ contentModel: sequence(once('Left'), once('Right')) }),
+				Left: {
+					...element({ parents: ['Root'], contentModel: sequence(once('Part')) }),
+					children: byReference('Part', '1'),
+				},
+				Right: {
+					...element({ parents: ['Root'], contentModel: sequence(once('Part')) }),
+					children: byReference('Part', '2'),
+				},
+				// the tag level: the declarations disagree, so no content model
+				Part: {
+					...element({ parents: ['Left', 'Right'] }),
+					declarations: {
+						'1': {
+							attributes: { sequence: [], details: {} },
+							children: { sequence: ['Leaf'], details: {} },
+							contentModel: sequence(once('Leaf')),
+						},
+						'2': {
+							attributes: { sequence: [], details: {} },
+							children: { sequence: ['Leaf', 'Other'], details: {} },
+							contentModel: sequence(once('Leaf'), once('Other')),
+						},
+					},
+				},
+				Leaf: element({ parents: ['Part'] }),
+				Other: element({ parents: ['Part'] }),
+			},
+			root: 'Root',
+			expected: ['Leaf', 'Left', 'Other', 'Part', 'Right', 'Root'],
+		},
+	'a child once in each way its parent is declared, the grandparent naming no one way -> a singleton':
+		{
+			definition: {
+				Root: element({ contentModel: sequence(once('Left')) }),
+				// Part in two namespaces under Left: no one declaration to name
+				Left: {
+					...element({ parents: ['Root'], contentModel: sequence(once('Part')) }),
+					children: {
+						sequence: ['Part'],
+						details: { Part: { declarations: { 'urn:a': ['1'], 'urn:b': ['2'] } } },
+					},
+				},
+				Part: {
+					...element({ parents: ['Left'] }),
+					declarations: {
+						'1': {
+							attributes: { sequence: [], details: {} },
+							children: { sequence: ['Leaf'], details: {} },
+							contentModel: sequence(once('Leaf')),
+						},
+						'2': {
+							attributes: { sequence: [], details: {} },
+							children: { sequence: ['Leaf'], details: {} },
+							contentModel: choice(once('Leaf')),
+						},
+					},
+				},
+				Leaf: element({ parents: ['Part'] }),
+			},
+			root: 'Root',
+			expected: ['Leaf', 'Left', 'Part', 'Root'],
+		},
+	'a child once in each way its parent is declared and twice in an xsi:type variant -> not a singleton':
+		{
+			definition: {
+				Root: element({ contentModel: sequence(once('Left')) }),
+				Left: {
+					...element({ parents: ['Root'], contentModel: sequence(once('Part')) }),
+					children: {
+						sequence: ['Part'],
+						details: {
+							Part: {
+								declarations: { 'urn:t': ['1'] },
+								variants: {
+									'{urn:t}tTwice': { contentModel: sequence(once('Leaf'), once('Leaf')) },
+								},
+							},
+						},
+					},
+				},
+				Part: {
+					...element({ parents: ['Left'] }),
+					declarations: {
+						'1': {
+							attributes: { sequence: [], details: {} },
+							children: { sequence: ['Leaf'], details: {} },
+							contentModel: sequence(once('Leaf')),
+						},
+						'2': {
+							attributes: { sequence: [], details: {} },
+							children: { sequence: ['Leaf'], details: {} },
+							contentModel: sequence(once('Leaf')),
+						},
+					},
+				},
+				Leaf: element({ parents: ['Part'] }),
+			},
+			root: 'Root',
+			expected: ['Left', 'Part', 'Root'],
+		},
+	'a child once in one way its parent is declared and twice in the other -> not a singleton': {
+		definition: {
+			Root: element({ contentModel: sequence(once('Left'), once('Right')) }),
+			Left: {
+				...element({ parents: ['Root'], contentModel: sequence(once('Part')) }),
+				children: byReference('Part', '1'),
+			},
+			Right: {
+				...element({ parents: ['Root'], contentModel: sequence(once('Part')) }),
+				children: byReference('Part', '2'),
+			},
+			Part: {
+				...element({ parents: ['Left', 'Right'] }),
+				declarations: {
+					'1': {
+						attributes: { sequence: [], details: {} },
+						children: { sequence: ['Leaf'], details: {} },
+						contentModel: sequence(once('Leaf')),
+					},
+					'2': {
+						attributes: { sequence: [], details: {} },
+						children: { sequence: ['Leaf'], details: {} },
+						contentModel: sequence(once('Leaf'), once('Leaf')),
+					},
+				},
+			},
+			Leaf: element({ parents: ['Part'] }),
+		},
+		root: 'Root',
+		expected: ['Left', 'Part', 'Right', 'Root'],
+	},
 	'a child once in one declaration of its parent and twice in the other -> not a singleton': {
 		definition: {
 			Root: element({ contentModel: sequence(once('Left'), once('Right')) }),

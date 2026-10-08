@@ -64,6 +64,8 @@ function categoryOf(path: readonly string[]): DifferenceCategory {
 	if (section === 'documentation') return 'documentation'
 	if (section === 'nillable') return 'text-content'
 	if (section === 'parents') return 'parents'
+	if (section === 'declarations') return 'declarations'
+	if (section === 'global') return 'global'
 	if (section === 'contentModel') return 'content-model'
 	if (section === 'constraints') return 'constraints'
 	if (section === 'textContent') return isValueFacet(second) ? 'facets' : 'text-content'
@@ -88,6 +90,7 @@ const CHILD_EDGE_CATEGORIES: Readonly<Record<string, DifferenceCategory>> = {
 	namespace: 'namespace',
 	constraints: 'constraints',
 	variants: 'xsi-type',
+	declarations: 'declarations',
 	nillable: 'edge-definition',
 	attributes: 'edge-definition',
 	children: 'edge-definition',

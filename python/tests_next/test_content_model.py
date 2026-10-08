@@ -265,9 +265,9 @@ CASES: dict[str, tuple[str, dict[str, str], dict[str, Any]]] = {
                     'minOccurs': 1,
                     'maxOccurs': 1,
                     'particles': [
-                        {'kind': 'element', 'name': 'Box', 'namespace': 'urn:aaa', 'minOccurs': 1, 'maxOccurs': 1},
-                        {'kind': 'element', 'name': 'Box', 'namespace': 'urn:mmm', 'minOccurs': 1, 'maxOccurs': 1},
-                        {'kind': 'element', 'name': 'Box', 'namespace': 'urn:zzz', 'minOccurs': 1, 'maxOccurs': 1},
+                        {'kind': 'element', 'name': 'Box', 'namespace': 'urn:aaa', 'minOccurs': 1, 'maxOccurs': 1, 'declaration': '1'},
+                        {'kind': 'element', 'name': 'Box', 'namespace': 'urn:mmm', 'minOccurs': 1, 'maxOccurs': 1, 'declaration': '2'},
+                        {'kind': 'element', 'name': 'Box', 'namespace': 'urn:zzz', 'minOccurs': 1, 'maxOccurs': 1, 'declaration': '3'},
                     ],
                 }
             ],
@@ -311,8 +311,9 @@ CASES: dict[str, tuple[str, dict[str, str], dict[str, Any]]] = {
         {'ext.xsd': f'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="{EXT}"><xs:element name="Label"/></xs:schema>'},
         {
             'Root.contentModel.particles': [
-                {'kind': 'element', 'name': 'Label', 'namespace': EXT, 'minOccurs': 1, 'maxOccurs': 1},
-                {'kind': 'element', 'name': 'Label', 'minOccurs': 1, 'maxOccurs': 1},
+                # Label is declared two ways, the global one first
+                {'kind': 'element', 'name': 'Label', 'namespace': EXT, 'minOccurs': 1, 'maxOccurs': 1, 'declaration': '1'},
+                {'kind': 'element', 'name': 'Label', 'minOccurs': 1, 'maxOccurs': 1, 'declaration': '2'},
             ],
             'Root.children.sequence': ['Label'],
         },

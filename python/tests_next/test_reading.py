@@ -33,7 +33,7 @@ def test_the_declarations_read_are_immutable_records(tmp_path) -> None:
                '<xs:anyAttribute namespace="##other"/></xs:complexType></xs:element>'),
         encoding='utf-8',
     )
-    root = next(declaration for declaration in read_schema(entry) if declaration.name == 'Root')
+    root = next(declaration for declaration in read_schema(entry).elements if declaration.name == 'Root')
     assert isinstance(root.content_model.particles, tuple)
     assert isinstance(root.attributes, tuple)
     assert isinstance(root.any_attribute.not_namespace, tuple)
@@ -72,3 +72,26 @@ def test_a_document_an_include_names_but_that_is_out_of_reach_is_refused(definit
     entry = schema('<xs:include schemaLocation="missing.xsd"/><xs:element name="Root"/>')
     with pytest.raises(SchemaNotReadable, match='missing.xsd'):
         definition_of(entry)
+
+
+def test_an_element_particle_names_the_declaration_it_holds(tmp_path) -> None:
+    entry = tmp_path / 'entry.xsd'
+    entry.write_text(
+        schema(
+            '<xs:element name="Root"><xs:complexType><xs:sequence>'
+            '<xs:element name="P" type="xs:token" fixed="a"/><xs:element ref="Shared"/>'
+            '<xs:element name="Never" minOccurs="0" maxOccurs="0"/>'
+            '<xs:element name="P" type="xs:token" fixed="b"/></xs:sequence></xs:complexType></xs:element>'
+            '<xs:element name="Shared"/>'
+        ),
+        encoding='utf-8',
+    )
+    elements = read_schema(entry).elements
+    by_key = {declaration.key: declaration for declaration in elements}
+    root = next(declaration for declaration in elements if declaration.name == 'Root')
+    named = [by_key.get(particle.declaration) for particle in root.content_model.particles]
+    assert [(declaration.name, declaration.text.fixed) for declaration in (named[0], named[3])] == [('P', 'a'), ('P', 'b')]
+    assert named[1].name == 'Shared' and named[1].is_global
+    # a particle no document may hold names no declaration: it is never walked
+    assert root.content_model.particles[2].declaration is None
+    assert len({declaration.key for declaration in elements}) == len(elements)

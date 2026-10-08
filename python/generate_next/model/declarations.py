@@ -30,6 +30,8 @@ class ElementParticle:
     min_occurs: int
     # None: unbounded
     max_occurs: int | None
+    # the `key` of the declaration it holds; None for a particle no document may hold (never walked)
+    declaration: int | None
 
 
 @dataclass(frozen=True)
@@ -80,9 +82,19 @@ class TextDeclaration:
 class ElementDeclaration:
     """One declaration of an element: a global one, or a local one inside a content model."""
 
+    # what the element particles holding this declaration name it by, unique in the schema
+    key: int
     name: str
     namespace: Namespace
     is_global: bool
+    # the Clark QName of its type when the type is named; None for an anonymous one
+    type_name: str | None
+    # a number per type: two declarations of one type share it, each anonymous type has its own
+    type_key: int
+    # the derivations an instance may not substitute for its type with xsi:type, sorted
+    block: tuple[str, ...]
+    # an instance may say it has no value (`xsi:nil`)
+    nillable: bool
     documentation: str | None
     attributes: tuple[AttributeDeclaration, ...]
     # None: no attribute wildcard
@@ -94,3 +106,12 @@ class ElementDeclaration:
     text: TextDeclaration | None
     # the names of the elements whose content holds this declaration, sorted
     parent_names: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class Schema:
+    """What the generator reads of a schema."""
+
+    elements: tuple[ElementDeclaration, ...]
+    # the global attribute declarations asked for (what `attribute-mapping.json` names), by namespace and local name
+    global_attributes: dict[tuple[str, str], AttributeDeclaration]

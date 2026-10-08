@@ -1,4 +1,4 @@
-import { declaredUnder, elementChildren, findDeclaredEdges } from './declared-edges.ts'
+import { attributesDeclaredUnder, elementChildren, findDeclaredEdges } from './declared-edges.ts'
 import { deriveTypeNames, edgeTypeName, tsKey, tsString } from './ts-syntax.ts'
 
 import type { AttributeData, DeclaredEdge, DefinitionData, ElementData } from './derive.types.ts'
@@ -62,7 +62,7 @@ export function emitTypesSource(params: { definition: DefinitionData }): string 
 		if (children.length === 0) continue
 		lines.push(`\t${tsKey(parent)}: {`)
 		for (const child of children) {
-			const declared = declaredUnder({ definition, parent, child }) !== undefined
+			const declared = attributesDeclaredUnder({ definition, parent, child }) !== undefined
 			const childType = declared
 				? edgeTypeName({ typeNames, element: child, parent })
 				: `Attributes${typeNames.get(child)}`

@@ -12,6 +12,8 @@ CASES: dict[str, tuple[str, dict[str, Any]]] = {
             'Root': {
                 'tag': 'Root',
                 'namespace': {'prefix': '', 'uri': TARGET},
+                # a global declaration: what an element a wildcard admits is validated by
+                'global': True,
                 'parents': [],
                 'attributes': {'sequence': [], 'details': {}},
                 'children': {'sequence': ['Child'], 'details': {}},
@@ -45,6 +47,8 @@ CASES: dict[str, tuple[str, dict[str, Any]]] = {
             'Root': {
                 'tag': 'Root',
                 'namespace': {'prefix': '', 'uri': TARGET},
+                # a global declaration: what an element a wildcard admits is validated by
+                'global': True,
                 'parents': [],
                 'attributes': {'sequence': [], 'details': {}},
                 'children': {'sequence': [], 'details': {}},

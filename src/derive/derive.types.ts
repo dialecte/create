@@ -15,6 +15,15 @@ export type ElementData = {
 		readonly details: Readonly<Record<string, EdgeData>>
 	}
 	readonly contentModel?: ParticleData
+	/** Each way a tag declared several ways is declared, by number; the tag level is their union. */
+	readonly declarations?: Readonly<Record<string, DeclarationData>>
+}
+
+/** The element as one of its declarations has it. */
+export type DeclarationData = {
+	readonly attributes: ElementData['attributes']
+	readonly children: ElementData['children']
+	readonly contentModel?: ParticleData
 }
 
 export type AttributeData = {
@@ -23,8 +32,13 @@ export type AttributeData = {
 	readonly facets?: { readonly enumeration?: readonly string[] }
 }
 
-/** A parent → child edge; it carries the child as declared under that parent when it differs. */
+/**
+ * A parent → child edge: per namespace the child is held in there, the numbers of the declarations its particles
+ * hold - one decides it, several leave it to the particle matched -; or, the form the definitions committed before
+ * the rebuilt generator use, the child as declared under that parent, inline.
+ */
 export type EdgeData = {
+	readonly declarations?: Readonly<Record<string, readonly string[]>>
 	readonly attributes?: ElementData['attributes']
 	readonly children?: ElementData['children']
 	readonly contentModel?: ParticleData

@@ -39,15 +39,20 @@ export function deriveSingletons(params: { definition: DefinitionData; root: str
 		return named ? most : Number.POSITIVE_INFINITY
 	}
 
-	/** Every content model `parent` may hold: as declared under each of its parents, and per variant. */
+	/** Every content model `parent` may hold: each way it is declared, or as declared under each of its parents, and per variant. */
 	function contentModelsOf(parent: string): Set<ParticleData | undefined> {
 		const element = definition[parent]
 		if (element === undefined) return new Set([undefined])
 		const models = new Set<ParticleData | undefined>()
-		if (element.parents.length === 0) models.add(element.contentModel)
+		// a tag declared several ways: each of its declarations; otherwise as declared under each parent
+		if (element.declarations !== undefined) {
+			for (const declared of Object.values(element.declarations)) models.add(declared.contentModel)
+		} else if (element.parents.length === 0) models.add(element.contentModel)
 		for (const grandparent of element.parents) {
-			const declared = declaredUnder({ definition, parent: grandparent, child: parent })
-			models.add(declared?.contentModel ?? element.contentModel)
+			if (element.declarations === undefined) {
+				const declared = declaredUnder({ definition, parent: grandparent, child: parent })
+				models.add(declared?.contentModel ?? element.contentModel)
+			}
 			const variants = definition[grandparent]?.children.details[parent]?.variants ?? {}
 			for (const variant of Object.values(variants)) models.add(variant.contentModel)
 		}

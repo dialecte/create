@@ -26,14 +26,16 @@ from generate_next.model.declarations import (
     GroupParticle,
     Namespace,
     Particle,
+    Schema,
     TextDeclaration,
     WildcardParticle,
 )
 from generate_next.model.particles import emptiable, held_leaves
 from generate_next.model.wildcards import attribute_wildcard_of, wildcard_of
 
-def read_schema(entry: Path) -> tuple[ElementDeclaration, ...]:
-    """Every element declaration the schema whose entry document is `entry` makes."""
+def read_schema(entry: Path, *, global_attributes: list[tuple[str, str]] | None = None) -> Schema:
+    """Every element declaration the schema whose entry document is `entry` makes, and the declarations of the
+    global attributes asked for by (namespace, local name), those it declares."""
     schema = _load(entry)
     reader = _Reader(schema)
     # the globals of the schema's own documents - not those of the XML Schema meta-schema, whatever
@@ -41,7 +43,7 @@ def read_schema(entry: Path) -> tuple[ElementDeclaration, ...]:
     reader.read(
         [element for _, element in sorted(schema.maps.elements.items()) if element.schema.meta_schema is not None]
     )
-    return reader.declarations()
+    return reader.schema_model(global_attributes=global_attributes or [])
 
 
 def _load(entry: Path) -> xmlschema.XMLSchema:
@@ -63,6 +65,12 @@ class _Reader:
     found: dict[int, XsdElement] = field(default_factory=dict)
     parents: dict[int, set[str]] = field(default_factory=dict)
     content_models: dict[int, GroupParticle | None] = field(default_factory=dict)
+    # a number per declaration, given when first met - read or named by a particle
+    keys: dict[int, int] = field(default_factory=dict)
+    type_keys: dict[int, int] = field(default_factory=dict)
+
+    def key_of(self, element: XsdElement) -> int:
+        return self.keys.setdefault(id(element), len(self.keys))
 
     def read(self, roots: list[XsdElement]) -> None:
         """Every declaration reachable from `roots`, depth first, each walked once; no recursion, so a
@@ -81,16 +89,18 @@ class _Reader:
             self.content_models[identity] = content_model
             pending.extend((child, element.local_name) for child in reversed(declarations))
 
-    def declarations(self) -> tuple[ElementDeclaration, ...]:
+    def schema_model(self, *, global_attributes: list[tuple[str, str]]) -> Schema:
         elements = [element for element in self.found.values() if not element.abstract]
         element_prefixes: dict[str, set[str]] = {}
         for element in elements:
             uri = _namespace_of(element.name)
             element_prefixes.setdefault(_element_prefix(element, uri), set()).add(uri)
         prefixes = _AttributePrefixes(self.schema, element_prefixes=element_prefixes)
-        return tuple(
+        declarations = tuple(
             _declaration(
                 prefixes=prefixes,
+                key=self.key_of(element),
+                type_key=self.type_keys.setdefault(id(element.type), len(self.type_keys)),
                 element=element,
                 content_model=self.content_models[identity],
                 parent_names=tuple(sorted(self.parents[identity])),
@@ -98,6 +108,10 @@ class _Reader:
             for identity, element in self.found.items()
             if not element.abstract
         )
+        # after the elements' attributes, whose prefixes are chosen first; in the order asked
+        declared = {(_namespace_of(name), attribute.local_name): attribute for name, attribute in self.schema.maps.attributes.items()}
+        attributes = {name: _attribute(prefixes, declared[name]) for name in global_attributes if name in declared}
+        return Schema(elements=declarations, global_attributes=attributes)
 
     def _content_of(self, element: XsdElement) -> tuple[GroupParticle | None, list[XsdElement]]:
         """The particle tree of the element content of `element`, and the declarations it names in
@@ -134,19 +148,24 @@ class _Reader:
         def element_particle(item: XsdElement, *, held: bool) -> Particle:
             if not held or item.max_occurs == 0:
                 written = item.ref if item.ref is not None else item
-                return _element_particle(written, min_occurs=item.min_occurs, max_occurs=item.max_occurs)
+                return _element_particle(written, min_occurs=item.min_occurs, max_occurs=item.max_occurs, declaration=None)
             # only a reference to a global can be substituted; a local declaration is itself
             alternatives = self._with_substitutes(item.ref) if item.ref is not None else [item]
             declarations.extend(alternatives)
             if alternatives == [item.ref if item.ref is not None else item]:
-                return _element_particle(alternatives[0], min_occurs=item.min_occurs, max_occurs=item.max_occurs)
+                return _element_particle(
+                    alternatives[0], min_occurs=item.min_occurs, max_occurs=item.max_occurs, declaration=self.key_of(alternatives[0])
+                )
             # a substitution head stands for one of the elements that may replace it, per occurrence; an
             # abstract head nothing replaces is an empty choice, which nothing satisfies
             return GroupParticle(
                 kind='choice',
                 min_occurs=item.min_occurs,
                 max_occurs=item.max_occurs,
-                particles=tuple(_element_particle(alternative, min_occurs=1, max_occurs=1) for alternative in alternatives),
+                particles=tuple(
+                    _element_particle(alternative, min_occurs=1, max_occurs=1, declaration=self.key_of(alternative))
+                    for alternative in alternatives
+                ),
             )
 
         model = group_particle(content, held=True)
@@ -175,6 +194,8 @@ class _Reader:
 def _declaration(
     *,
     prefixes: '_AttributePrefixes',
+    key: int,
+    type_key: int,
     element: XsdElement,
     content_model: GroupParticle | None,
     parent_names: tuple[str, ...],
@@ -200,9 +221,14 @@ def _declaration(
     except SchemaNotRepresentable as failure:
         raise SchemaNotRepresentable(f'{element.name}: {failure}') from failure
     return ElementDeclaration(
+        key=key,
         name=element.local_name,
         namespace=namespace,
         is_global=element.is_global(),
+        type_name=element.type.name,
+        type_key=type_key,
+        block=tuple(sorted((element.block or '').split())),
+        nillable=element.nillable,
         documentation=_documentation(element),
         attributes=attributes,
         any_attribute=any_attribute,
@@ -227,9 +253,15 @@ def _text(element: XsdElement) -> TextDeclaration | None:
     return TextDeclaration(builtin=_builtin_of(element_type), default=element.default, fixed=element.fixed)
 
 
-def _element_particle(element: XsdElement, *, min_occurs: int, max_occurs: int | None) -> ElementParticle:
+def _element_particle(
+    element: XsdElement, *, min_occurs: int, max_occurs: int | None, declaration: int | None
+) -> ElementParticle:
     return ElementParticle(
-        name=element.local_name, namespace=_namespace_of(element.name), min_occurs=min_occurs, max_occurs=max_occurs
+        name=element.local_name,
+        namespace=_namespace_of(element.name),
+        min_occurs=min_occurs,
+        max_occurs=max_occurs,
+        declaration=declaration,
     )
 
 

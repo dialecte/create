@@ -134,6 +134,28 @@ const cases: Record<string, DiffCase> = {
 			},
 		],
 	},
+	'the ways a tag is declared, and a parent naming the one it holds -> declarations differences': {
+		before: { Bay: element({ children: { sequence: ['P'], details: { P: {} } } }) },
+		after: {
+			Bay: element({
+				children: { sequence: ['P'], details: { P: { declarations: { 'urn:t': ['2'] } } } },
+				declarations: { '1': { attributes: { sequence: [], details: {} } } },
+			}),
+		},
+		expected: [
+			differenceAt(['children', 'details', 'P', 'declarations'], 'declarations', undefined, {
+				'urn:t': ['2'],
+			}),
+			differenceAt(['declarations'], 'declarations', undefined, {
+				'1': { attributes: { sequence: [], details: {} } },
+			}),
+		],
+	},
+	'a tag now said to have a global declaration -> a global difference': {
+		before: { Bay: element() },
+		after: { Bay: element({ global: true }) },
+		expected: [differenceAt(['global'], 'global', undefined, true)],
+	},
 	'the synthesized xsi:type attribute gone -> an xsi-type difference': {
 		before: {
 			Bay: element({
