@@ -11,5 +11,8 @@ dev = ["pytest>=9.0.2", "lxml>=6.0"]
 [project.scripts]
 dialecte-generate = "generate.__main__:main"
 
+[tool.setuptools.packages.find]
+include = ["generate*"]
+
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "tests_next"]
