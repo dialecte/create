@@ -95,6 +95,15 @@ npm run build
 node dist/cli/index.js generate --entry ./xsd/SCL/IEC61850-6-100.xsd --out-dir .tmp/out
 ```
 
+The TypeScript side runs its `.ts` files directly with Node (type stripping), so the development
+scripts need **Node 22.18 or later** (the published CLI is bundled and runs on Node 20):
+
+```sh
+npm run test:ts          # unit tests of src/ and scripts/ (node:test)
+npm run derive:check     # constants and types derived from the committed definitions of the sibling dialectes
+npm run definition:diff -- <before.generated.ts> <after.generated.ts>   # semantic difference of two definitions
+```
+
 `npm run test:cli` builds and runs the smoke test: generation, scaffolds and their files, flags.
 `npm run test:cli:install` also installs a scaffolded package and type-checks it against the
 engine it targets; set `DIALECTE_CORE=../core` (a checkout, or a `.tgz`) to check against an

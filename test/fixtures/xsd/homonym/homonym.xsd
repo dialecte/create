@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	A schema written for the generator's tests: a tag declared differently under two parents (P under
+	Address and under PhysConn), an element without attributes (Empty), an enumeration and a fixed value.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="urn:dialecte:homonym" targetNamespace="urn:dialecte:homonym" elementFormDefault="qualified">
+	<xs:element name="Root">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="PhysConn" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="P" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:simpleContent>
+										<xs:extension base="xs:string">
+											<xs:attribute name="type" type="xs:normalizedString" fixed="Plug" use="required"/>
+										</xs:extension>
+									</xs:simpleContent>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Address" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="P" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:simpleContent>
+										<xs:extension base="xs:string">
+											<xs:attribute name="type" use="required">
+												<xs:simpleType>
+													<xs:restriction base="xs:token">
+														<xs:enumeration value="IP"/>
+														<xs:enumeration value="MAC"/>
+													</xs:restriction>
+												</xs:simpleType>
+											</xs:attribute>
+										</xs:extension>
+									</xs:simpleContent>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Empty" minOccurs="0"/>
+			</xs:sequence>
+			<xs:attribute name="version" type="xs:token" use="required"/>
+			<xs:attribute name="id" type="xs:token" use="required"/>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>
