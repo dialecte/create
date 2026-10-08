@@ -33,16 +33,16 @@ CASES: dict[str, tuple[str, dict[str, str], str, Any]] = {
             },
         },
     ),
-    'an attribute typed by a restriction of a built-in -> the built-in it derives from': (
+    'an attribute typed by a restriction of a built-in -> the built-in it derives from, with what the restriction adds': (
         root(
             '<xs:attribute name="name" type="tName"/>',
             more='<xs:simpleType name="tName"><xs:restriction base="xs:Name"><xs:maxLength value="32"/></xs:restriction></xs:simpleType>',
         ),
         {},
         'Root.attributes.details.name',
-        {'type': {'builtin': 'Name'}},
+        {'type': {'builtin': 'Name', 'facets': {'maxLength': 32}}},
     ),
-    'a plain string, a list and a union -> no built-in type yet': (
+    'a plain string, a built-in list and a union -> no type for the string, the others as they are': (
         root(
             '<xs:attribute name="text" type="xs:string"/>'
             '<xs:attribute name="items" type="xs:NMTOKENS"/>'
@@ -50,7 +50,11 @@ CASES: dict[str, tuple[str, dict[str, str], str, Any]] = {
         ),
         {},
         'Root.attributes.details',
-        {'either': {}, 'items': {}, 'text': {}},
+        {
+            'either': {'type': {'union': [{'builtin': 'int'}, {'builtin': 'boolean'}]}},
+            'items': {'type': {'builtin': 'NMTOKENS'}},
+            'text': {},
+        },
     ),
     'an attribute a restriction prohibits -> absent': (
         root(

@@ -53,6 +53,51 @@ Particle = ElementParticle | WildcardParticle | GroupParticle
 
 
 @dataclass(frozen=True)
+class Facets:
+    """What the restrictions of a datatype add, as they apply: the most derived level's value of each facet, the
+    patterns of every level (each level must match, one pattern of a level is enough). Enumeration values are
+    lexical - white space normalized as an atomic or list type does, a QName / NOTATION as `{uri}local` - and, like
+    the range values, compared in the value space of the built-in by core (`1.0` is `1`, a time zone counts): no
+    generator can canonicalize them all; a union's own stay as written, each member parses them."""
+
+    enumeration: tuple[str, ...] | None = None
+    pattern: tuple[tuple[str, ...], ...] | None = None
+    length: int | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    # range values as written: their built-in parses them
+    min_inclusive: str | None = None
+    max_inclusive: str | None = None
+    min_exclusive: str | None = None
+    max_exclusive: str | None = None
+    total_digits: int | None = None
+    fraction_digits: int | None = None
+    # only when a restriction changed the built-in's
+    white_space: str | None = None
+
+
+@dataclass(frozen=True)
+class AtomicType:
+    builtin: str
+    facets: Facets
+
+
+@dataclass(frozen=True)
+class ListType:
+    item: 'DataType'
+    facets: Facets
+
+
+@dataclass(frozen=True)
+class UnionType:
+    members: tuple['DataType', ...]
+    facets: Facets
+
+
+DataType = AtomicType | ListType | UnionType
+
+
+@dataclass(frozen=True)
 class AttributeDeclaration:
     """An attribute an element may carry (a prohibited one is not declared at all)."""
 
@@ -63,8 +108,8 @@ class AttributeDeclaration:
     required: bool
     default: str | None
     fixed: str | None
-    # the most specific built-in datatype the value derives from; None for a plain string
-    builtin: str | None
+    # None when the declaration says nothing of the value (a plain string, anySimpleType)
+    datatype: DataType | None
 
 
 @dataclass(frozen=True)
@@ -72,8 +117,8 @@ class TextDeclaration:
     """The text an element may hold: typed for a simple type or simple content, untyped beside the
     elements of mixed content."""
 
-    # the most specific built-in datatype of the text; None for a plain string or mixed content
-    builtin: str | None
+    # None when the declaration says nothing of the text (a plain string, mixed content)
+    datatype: DataType | None
     default: str | None
     fixed: str | None
 

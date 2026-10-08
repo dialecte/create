@@ -29,6 +29,16 @@ export type DeclarationData = {
 export type AttributeData = {
 	readonly required?: true
 	readonly fixed?: string
+	/** The enumeration as the definitions committed before the rebuilt generator write it, beside the type. */
+	readonly facets?: { readonly enumeration?: readonly string[] }
+	readonly type?: DataTypeData
+}
+
+/** What a simple value is: a built-in, a list of one, a union of several, with the facets restrictions add. */
+export type DataTypeData = {
+	readonly builtin?: string
+	readonly list?: DataTypeData
+	readonly union?: readonly DataTypeData[]
 	readonly facets?: { readonly enumeration?: readonly string[] }
 }
 

@@ -5,11 +5,16 @@ under some parent (an attribute is required only where every declaration require
 several ways - declarations validation tells apart - also keeps each way, numbered, and every particle
 holding it names the one it holds.
 """
+import json
 from pathlib import Path
 from typing import Any
 
 from generate_next.model.declarations import (
+    AtomicType,
     AttributeDeclaration,
+    DataType,
+    ListType,
+    UnionType,
     ElementDeclaration,
     ElementParticle,
     FieldPath,
@@ -109,7 +114,7 @@ def _way_order(way: list[ElementDeclaration]) -> tuple[Any, ...]:
         first.block,
         tuple((constraint.namespace, constraint.name) for constraint in first.constraints),
         tuple(attribute.key for attribute in first.attributes),
-        text.builtin or '' if text is not None else '',
+        json.dumps(_written_datatype(text.datatype), sort_keys=True) if text is not None and text.datatype is not None else '',
         tuple(leaf.name if isinstance(leaf, ElementParticle) else '*' for leaf in held_leaves(first.content_model)),
         min(declaration.key for declaration in way),
     )
@@ -260,8 +265,8 @@ def _text_content(texts: list[TextDeclaration]) -> dict[str, Any]:
     only where they all agree."""
     first = texts[0]
     text: dict[str, Any] = {}
-    if first.builtin is not None and all(other.builtin == first.builtin for other in texts):
-        text['type'] = {'builtin': first.builtin}
+    if first.datatype is not None and all(other.datatype == first.datatype for other in texts):
+        text['type'] = _written_datatype(first.datatype)
     for name in ('default', 'fixed'):
         value = getattr(first, name)
         if value is not None and all(getattr(other, name) == value for other in texts):
@@ -335,7 +340,42 @@ def _attribute_detail(attributes: list[AttributeDeclaration], *, everywhere: boo
             detail[name] = getattr(first, name)
     if first.namespace is not None:
         detail['namespace'] = {'prefix': first.namespace.prefix, 'uri': first.namespace.uri}
-    builtins = {attribute.builtin for attribute in attributes}
-    if len(builtins) == 1 and first.builtin is not None:
-        detail['type'] = {'builtin': first.builtin}
+    if first.datatype is not None and all(attribute.datatype == first.datatype for attribute in attributes):
+        detail['type'] = _written_datatype(first.datatype)
     return detail
+
+
+_FACET_KEYS = (
+    ('enumeration', 'enumeration'),
+    ('pattern', 'pattern'),
+    ('length', 'length'),
+    ('min_length', 'minLength'),
+    ('max_length', 'maxLength'),
+    ('min_inclusive', 'minInclusive'),
+    ('max_inclusive', 'maxInclusive'),
+    ('min_exclusive', 'minExclusive'),
+    ('max_exclusive', 'maxExclusive'),
+    ('total_digits', 'totalDigits'),
+    ('fraction_digits', 'fractionDigits'),
+    ('white_space', 'whiteSpace'),
+)
+
+
+def _written_datatype(datatype: DataType) -> dict[str, Any]:
+    """A datatype as the definition writes it: `{ builtin | list | union, facets? }`, facets only when a
+    restriction adds some."""
+    match datatype:
+        case AtomicType():
+            written: dict[str, Any] = {'builtin': datatype.builtin}
+        case ListType():
+            written = {'list': _written_datatype(datatype.item)}
+        case UnionType():
+            written = {'union': [_written_datatype(member) for member in datatype.members]}
+    facets = {}
+    for field, key in _FACET_KEYS:
+        value = getattr(datatype.facets, field)
+        if value is not None:
+            facets[key] = [list(level) for level in value] if field == 'pattern' else list(value) if field == 'enumeration' else value
+    if facets:
+        written['facets'] = facets
+    return written

@@ -35,6 +35,7 @@ from generate_next.model.declarations import (
     TextDeclaration,
     WildcardParticle,
 )
+from generate_next.model.datatypes import datatype_of
 from generate_next.model.identity_paths import parse_field, parse_selector
 from generate_next.model.particles import emptiable, held_leaves
 from generate_next.model.wildcards import attribute_wildcard_of, wildcard_of
@@ -279,10 +280,10 @@ def _text(element: XsdElement) -> TextDeclaration | None:
         if element_type.has_simple_content():
             element_type = element_type.content
         elif element_type.mixed:
-            return TextDeclaration(builtin=None, default=element.default, fixed=element.fixed)
+            return TextDeclaration(datatype=None, default=element.default, fixed=element.fixed)
         else:
             return None
-    return TextDeclaration(builtin=_builtin_of(element_type), default=element.default, fixed=element.fixed)
+    return TextDeclaration(datatype=datatype_of(element_type), default=element.default, fixed=element.fixed)
 
 
 def _element_particle(
@@ -314,19 +315,8 @@ def _attribute(prefixes: '_AttributePrefixes', attribute: XsdAttribute) -> Attri
         required=attribute.use == 'required',
         default=attribute.default,
         fixed=attribute.fixed,
-        builtin=_builtin_of(attribute.type),
+        datatype=datatype_of(attribute.type),
     )
-
-
-def _builtin_of(simple_type: XsdSimpleType | None) -> str | None:
-    """The most specific built-in datatype a type derives from; None for a plain string, a list or a union."""
-    current = simple_type
-    # a list or a union has no base type: the walk ends there, without a built-in
-    while current is not None and not isinstance(current, XsdAtomicBuiltin):
-        current = current.base_type
-    if current is None:
-        return None
-    return None if current.local_name == 'string' else current.local_name
 
 
 def _documentation(element: XsdElement) -> str | None:

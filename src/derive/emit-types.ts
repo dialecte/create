@@ -1,11 +1,25 @@
 import { attributesDeclaredUnder, elementChildren, findDeclaredEdges } from './declared-edges.ts'
 import { deriveTypeNames, edgeTypeName, tsKey, tsString } from './ts-syntax.ts'
 
-import type { AttributeData, DeclaredEdge, DefinitionData, ElementData } from './derive.types.ts'
+import type {
+	AttributeData,
+	DataTypeData,
+	DeclaredEdge,
+	DefinitionData,
+	ElementData,
+} from './derive.types.ts'
 
-/** `types.generated.ts`: one attribute type per element (and per declaration of a homonym), derived from the definition. */
-export function emitTypesSource(params: { definition: DefinitionData }): string {
-	const { definition } = params
+/**
+ * `types.generated.ts`: one attribute type per element (and per declaration of a homonym), derived from the definition.
+ * `typedValues`: the definition comes from the rebuilt generator, its enumerations in each datatype; otherwise (the
+ * definitions committed before it) in the attribute's `facets`, its tag-level union types being unions of
+ * declarations, not of values. Goes with the old shape at the switch.
+ */
+export function emitTypesSource(params: {
+	definition: DefinitionData
+	typedValues?: boolean
+}): string {
+	const { definition, typedValues = false } = params
 	const names = Object.keys(definition).sort()
 	const typeNames = deriveTypeNames(names)
 	const lines = [
@@ -29,6 +43,7 @@ export function emitTypesSource(params: { definition: DefinitionData }): string 
 			...attributeType({
 				typeName: `Attributes${typeNames.get(name)}`,
 				attributes: element.attributes,
+				typedValues,
 			}),
 		)
 		// a homonym: one type per declaration, the way it reads under that parent
@@ -40,6 +55,7 @@ export function emitTypesSource(params: { definition: DefinitionData }): string 
 				...attributeType({
 					typeName: edgeTypeName({ typeNames, element: name, parent }),
 					attributes,
+					typedValues,
 				}),
 			)
 		}
@@ -87,21 +103,41 @@ export function emitTypesSource(params: { definition: DefinitionData }): string 
 function attributeType(params: {
 	typeName: string
 	attributes: ElementData['attributes']
+	typedValues: boolean
 }): string[] {
-	const { typeName, attributes } = params
+	const { typeName, attributes, typedValues } = params
 	const lines = [`export type ${typeName} = {`]
 	for (const name of attributes.sequence) {
 		const attribute = attributes.details[name] ?? {}
 		const optional = attribute.required === true ? '' : '?'
-		lines.push(`\t${tsKey(name)}${optional}: ${valueType(attribute)}`)
+		lines.push(`\t${tsKey(name)}${optional}: ${valueType({ attribute, typedValues })}`)
 	}
 	lines.push('}', '')
 	return lines
 }
 
+/**
+ * The values a datatype enumerates: its own enumeration, else those its union members enumerate (hints - the type
+ * stays open). A qualified name's values are written `{uri}local`, never what a document holds: none.
+ */
+function enumerated(datatype: DataTypeData | undefined): readonly string[] | undefined {
+	if (datatype === undefined || holdsQualifiedNames(datatype)) return undefined
+	if (datatype.facets?.enumeration !== undefined) return datatype.facets.enumeration
+	const members = (datatype.union ?? []).flatMap((member) => enumerated(member) ?? [])
+	return members.length > 0 ? [...new Set(members)] : undefined
+}
+
+/** Whether the datatype's values are, or hold, qualified names: their written form depends on prefixes. */
+function holdsQualifiedNames(datatype: DataTypeData): boolean {
+	if (datatype.builtin === 'QName' || datatype.builtin === 'NOTATION') return true
+	if (datatype.list !== undefined) return holdsQualifiedNames(datatype.list)
+	return (datatype.union ?? []).some(holdsQualifiedNames)
+}
+
 /** An enumeration becomes a union of its values (open to others), a fixed value its literal, the rest `string`. */
-function valueType(attribute: AttributeData): string {
-	const enumeration = attribute.facets?.enumeration
+function valueType(params: { attribute: AttributeData; typedValues: boolean }): string {
+	const { attribute, typedValues } = params
+	const enumeration = typedValues ? enumerated(attribute.type) : attribute.facets?.enumeration
 	if (enumeration !== undefined && enumeration.length > 0) {
 		return `${enumeration.map(tsString).join(' | ')} | (string & {})`
 	}

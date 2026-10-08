@@ -119,3 +119,49 @@ describe('emitTypesSource', () => {
 		)
 	})
 })
+
+describe('emitTypesSource - values typed by their datatype', () => {
+	const typed: DefinitionData = {
+		Root: {
+			parents: [],
+			attributes: {
+				sequence: ['color', 'either', 'name', 'names', 'nameOrInt', 'plain'],
+				details: {
+					color: { type: { builtin: 'token', facets: { enumeration: ['red', 'blue'] } } },
+					either: {
+						type: {
+							union: [{ builtin: 'int' }, { builtin: 'token', facets: { enumeration: ['none'] } }],
+						},
+					},
+					name: { type: { builtin: 'QName', facets: { enumeration: ['{urn:t}here'] } } },
+					names: { type: { list: { builtin: 'QName' }, facets: { enumeration: ['t:x t:y'] } } },
+					nameOrInt: {
+						type: {
+							union: [{ builtin: 'QName' }, { builtin: 'int' }],
+							facets: { enumeration: ['t:x'] },
+						},
+					},
+					plain: { type: { builtin: 'int' } },
+				},
+			},
+			children: { sequence: [], details: {} },
+		},
+	}
+	const source = emitTypesSource({ definition: typed, typedValues: true })
+
+	const expectedLines: Record<string, string> = {
+		'an enumeration in the datatype -> the union of its values, open to others':
+			"\tcolor?: 'red' | 'blue' | (string & {})",
+		'a union whose members enumerate values -> those values, open to others':
+			"\teither?: 'none' | (string & {})",
+		'an enumeration of qualified names -> a string, the values are not what is written':
+			'\tname?: string',
+		'a datatype without enumeration -> a string': '\tplain?: string',
+		'a list of qualified names, enumerated -> a string, its values depend on prefixes':
+			'\tnames?: string',
+		'a union holding qualified names, enumerated -> a string': '\tnameOrInt?: string',
+	}
+	for (const [name, line] of Object.entries(expectedLines)) {
+		it(name, () => assert.ok(source.split('\n').includes(line), `missing line: ${line}`))
+	}
+})
