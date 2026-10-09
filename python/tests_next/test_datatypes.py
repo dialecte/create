@@ -27,7 +27,11 @@ CASES: dict[str, tuple[str, Any]] = {
     'patterns on two levels -> one list per level: each level must match, one pattern of a level is enough': (
         typed('<xs:restriction base="tA"><xs:pattern value="a.*"/></xs:restriction>',
               more='<xs:simpleType name="tA"><xs:restriction base="xs:token"><xs:pattern value="[a-z]+"/><xs:pattern value="[0-9]+"/></xs:restriction></xs:simpleType>'),
-        {'builtin': 'token', 'facets': {'pattern': [['[a-z]+', '[0-9]+'], ['a.*']]}},
+        {'builtin': 'token', 'facets': {'pattern': [['[a-z]+', '[0-9]+'], ['a[^\\n\\r]*']]}},
+    ),
+    'a pattern with XSD escapes -> written as a JS source with XSD\'s meaning': (
+        typed('<xs:restriction base="xs:token"><xs:pattern value="\\d+\\.\\s"/></xs:restriction>'),
+        {'builtin': 'token', 'facets': {'pattern': [['\\p{Nd}+\\.[\\t\\n\\r ]']]}},
     ),
     'an enumeration restricting another -> only the derived one, it replaces the base': (
         typed('<xs:restriction base="tColors"><xs:enumeration value="red"/></xs:restriction>',
@@ -96,7 +100,7 @@ CASES: dict[str, tuple[str, Any]] = {
     'a restriction of an inline base -> both levels\' facets, from each its own restriction': (
         typed('<xs:restriction><xs:simpleType><xs:restriction base="xs:token"><xs:maxLength value="9"/><xs:pattern value="a.*"/></xs:restriction>'
               '</xs:simpleType><xs:minLength value="2"/><xs:pattern value=".*z"/></xs:restriction>'),
-        {'builtin': 'token', 'facets': {'pattern': [['a.*'], ['.*z']], 'minLength': 2, 'maxLength': 9}},
+        {'builtin': 'token', 'facets': {'pattern': [['a[^\\n\\r]*'], ['[^\\n\\r]*z']], 'minLength': 2, 'maxLength': 9}},
     ),
     'a restriction with an annotation and a fixed facet -> the facets only, fixed or not': (
         typed('<xs:restriction base="xs:token"><xs:annotation><xs:documentation>no facet</xs:documentation></xs:annotation>'

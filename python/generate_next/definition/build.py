@@ -36,6 +36,7 @@ from generate_next.definition.sidecars import (
     read_parent_mapping,
 )
 from generate_next.definition.identity_fields import identity_fields
+from generate_next.definition.patterns import pattern_to_js
 from generate_next.model.particles import held_leaves
 from generate_next.model.read_schema import read_schema
 from generate_next.model.wildcards import union, weakest_process_contents
@@ -375,7 +376,11 @@ def _written_datatype(datatype: DataType) -> dict[str, Any]:
     for field, key in _FACET_KEYS:
         value = getattr(datatype.facets, field)
         if value is not None:
-            facets[key] = [list(level) for level in value] if field == 'pattern' else list(value) if field == 'enumeration' else value
+            facets[key] = (
+                [[pattern_to_js(pattern) for pattern in level] for level in value]
+                if field == 'pattern'
+                else list(value) if field == 'enumeration' else value
+            )
     if facets:
         written['facets'] = facets
     return written
