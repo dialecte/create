@@ -5,7 +5,8 @@
  *
  *   node scripts/derive-check/derive-check.ts [dialecte ...]
  *
- * Local only: it reads the sibling repositories (core, scl, nsd, plc). Exit 1 on any difference.
+ * Local only: it reads the sibling repositories (core, scl, nsd, plc), beside create or in $DIALECTE_ROOT.
+ * Exit 1 on any difference.
  */
 import { spawnSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -21,7 +22,8 @@ import type { DefinitionData } from '../../src/derive/derive.types.ts'
 import type { DialecteLocation, ProofRoot } from './derive-check.types.ts'
 
 const CREATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
-const DIALECTE_ROOT = resolve(CREATE_ROOT, '..')
+// the folder holding the sibling repositories; DIALECTE_ROOT overrides it (a worktree of create lives elsewhere)
+const DIALECTE_ROOT = resolve(process.env.DIALECTE_ROOT ?? resolve(CREATE_ROOT, '..'))
 
 /** Each dialecte: its package root and the folder of its generated definition. */
 const DIALECTES: Readonly<Record<string, DialecteLocation>> = {

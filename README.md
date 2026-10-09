@@ -112,5 +112,24 @@ npm run definition:diff -- <before.generated.ts> <after.generated.ts>   # semant
 engine it targets; set `DIALECTE_CORE=../core` (a checkout, or a `.tgz`) to check against an
 unreleased engine.
 
+### Proving the generator
+
+`npm run proof` runs every check of the generator that has its input and prints what ran. Without
+network it checks types, lint and format, runs both suites with their libxml2 oracles and the
+construct inventory, and regenerates the committed fixtures through the shipped engine
+(`test/fixtures/xsd`, among them a torture schema that writes every construct the generator reads).
+With the sibling dialectes checked out beside `create` (or in `$DIALECTE_ROOT`) it also derives
+their constants and types. `PROOF_REQUIRE=iec` makes a skipped tier fail.
+
+`npm run mutants [module ...]` changes the generator's code one point at a time and runs the suite on
+each change, in copies of the package. A change no test notices must be listed in
+`python/mutants/records/` with the reason it cannot alter any output; `--record` writes the new ones
+with an empty reason to fill. Run it before committing a change to `python/generate`: it takes the
+better part of an hour on the whole generator, less on the modules named.
+
+A construct of XSD the generator has never been shown to read fails the suite: every construct a
+schema writes is classified in `python/proof/constructs.json` as handled, excluded with the reason, or
+XSD 1.1.
+
 `xsd/` and `local/` are git-ignored: they hold local-only schemas and the
 maintainer's batch generation script.
