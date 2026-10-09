@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Nested choices, a repeating group, all in another order, a restriction of a complex type, the included and
+     redefined documents. -->
+<Torture xmlns="urn:dialecte:torture" version="1.0" schemaVersion="1" id="t1" note="structure">
+	<Choices>
+		<Up n="1"/>
+		<Plain>text</Plain>
+		<Right/>
+	</Choices>
+	<Pairs>
+		<A n="1"/>
+		<B/>
+		<A n="2"/>
+	</Pairs>
+	<Bag>
+		<Three/>
+		<Two n="2"/>
+	</Bag>
+	<Measures>
+		<Measure unit="kg">12.5</Measure>
+		<Ranged unit="m" min="0">3</Ranged>
+		<Bounded unit="%">99.5</Bounded>
+	</Measures>
+	<Restricted kept="yes">
+		<Must/>
+	</Restricted>
+	<Extras xmlns:t="urn:dialecte:torture" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+		<Legacy><Old>before</Old><New>after</New></Legacy>
+		<Level>1</Level>
+		<Loose t:qualified="yes" plain="yes"><Bit/></Loose>
+		<A/>
+		<Rich>Some <Bold>bold</Bold> text</Rich>
+		<Ride xsi:type="t:tTruck"><Plate>GH-1</Plate><Load unit="t">2</Load></Ride>
+		<Gadget xsi:type="t:tGadgetLite" model="x"/>
+		<Level>2</Level>
+	</Extras>
+</Torture>

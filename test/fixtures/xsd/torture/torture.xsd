@@ -1,0 +1,570 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	The torture schema: every XSD 1.0 feature the generator reads, at least once, several of them together, in two
+	namespaces and none. Each section of the root names the feature it holds and the plan-10 lot that owns it.
+	Committed with its generated files (test/fixtures/definition/torture) and valid instances (instances/), checked
+	against libxml2 by the generator's tests.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="urn:dialecte:torture" xmlns:t="urn:dialecte:torture"
+	xmlns:x="urn:dialecte:torture-ext" targetNamespace="urn:dialecte:torture" elementFormDefault="qualified">
+
+	<xs:import namespace="urn:dialecte:torture-ext" schemaLocation="torture-ext.xsd"/>
+	<xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+	<xs:include schemaLocation="torture-included.xsd"/>
+	<xs:redefine schemaLocation="torture-redefined.xsd">
+		<xs:complexType name="tLegacy">
+			<xs:complexContent>
+				<xs:extension base="tLegacy">
+					<xs:sequence>
+						<xs:element name="New" type="xs:string" minOccurs="0"/>
+					</xs:sequence>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:redefine>
+
+	<!-- B2: attributes - required, fixed, default, ID, an attribute group, the XML namespace, a mapped global
+	     (attribute-mapping.json) admitted by the wildcard -->
+	<xs:attributeGroup name="agCommon">
+		<xs:attribute name="note" type="xs:string"/>
+		<xs:attribute ref="xml:lang"/>
+	</xs:attributeGroup>
+
+	<xs:element name="Torture">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Choices" type="tChoices" minOccurs="0"/>
+				<xs:element name="Pairs" minOccurs="0">
+					<xs:complexType>
+						<xs:group ref="gPair" maxOccurs="unbounded"/>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Bag" type="tBag" minOccurs="0"/>
+				<xs:element name="Measures" type="tMeasures" minOccurs="0"/>
+				<xs:element name="Restricted" type="tRestricted" minOccurs="0"/>
+				<xs:element ref="Code" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element name="Shapes" type="tShapes" minOccurs="0"/>
+				<xs:element name="Garage" type="tGarage" minOccurs="0"/>
+				<xs:element name="Homonyms" type="tHomonyms" minOccurs="0"/>
+				<xs:element name="Open" type="tOpen" minOccurs="0"/>
+				<xs:element name="Text" type="tText" minOccurs="0"/>
+				<xs:element name="Keys" type="tKeys" minOccurs="0">
+					<xs:key name="entryKey">
+						<xs:selector xpath=".//t:Entry"/>
+						<xs:field xpath="@id"/>
+					</xs:key>
+					<xs:unique name="kindAndValueUnique">
+						<xs:selector xpath="t:Entry | t:Group/t:Entry"/>
+						<xs:field xpath="@kind"/>
+						<xs:field xpath="."/>
+					</xs:unique>
+					<xs:keyref name="refToEntry" refer="t:entryKey">
+						<xs:selector xpath="t:Ref"/>
+						<xs:field xpath="@to"/>
+					</xs:keyref>
+					<xs:unique name="flagUnique">
+						<xs:selector xpath="x:Flag"/>
+						<xs:field xpath="."/>
+					</xs:unique>
+				</xs:element>
+				<!-- the included and redefined documents: their defaults, a redefined type, mixed complex content -->
+				<xs:element name="Extras" type="tExtras" minOccurs="0"/>
+			</xs:sequence>
+			<xs:attribute name="version" type="xs:token" use="required"/>
+			<xs:attribute name="schemaVersion" type="xs:string" fixed="1"/>
+			<xs:attribute name="id" type="xs:ID"/>
+			<xs:attributeGroup ref="agCommon"/>
+			<xs:anyAttribute namespace="##other" processContents="lax"/>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- B3: nested choices and sequences, an empty element, a simple-typed element -->
+	<xs:complexType name="tChoices">
+		<xs:choice maxOccurs="3">
+			<xs:element name="Plain" type="xs:string"/>
+			<xs:sequence>
+				<xs:element name="Up" type="tEmpty"/>
+				<xs:element name="Down" type="tEmpty" minOccurs="0"/>
+			</xs:sequence>
+			<xs:choice>
+				<xs:element name="Left" type="tEmpty"/>
+				<xs:element name="Right" type="tEmpty"/>
+			</xs:choice>
+		</xs:choice>
+	</xs:complexType>
+
+	<xs:complexType name="tEmpty">
+		<xs:attribute name="n" type="xs:int"/>
+	</xs:complexType>
+
+	<!-- B3: a repeating sequence group, through a named group -->
+	<xs:group name="gPair">
+		<xs:sequence>
+			<xs:element name="A" type="tEmpty"/>
+			<xs:element name="B" type="tEmpty" minOccurs="0"/>
+		</xs:sequence>
+	</xs:group>
+
+	<!-- B3: all -->
+	<xs:complexType name="tBag">
+		<xs:all>
+			<xs:element name="One" type="tEmpty" minOccurs="0"/>
+			<xs:element name="Two" type="tEmpty"/>
+			<xs:element name="Three" type="tEmpty" minOccurs="0"/>
+		</xs:all>
+	</xs:complexType>
+
+	<!-- B6: an extension chain over simple content, then a restriction of it -->
+	<xs:complexType name="tMeasure">
+		<xs:simpleContent>
+			<xs:extension base="xs:decimal">
+				<xs:attribute name="unit" type="xs:token" use="required"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="tRangedMeasure">
+		<xs:simpleContent>
+			<xs:extension base="tMeasure">
+				<xs:attribute name="min" type="xs:decimal"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="tBoundedMeasure">
+		<xs:simpleContent>
+			<xs:restriction base="tRangedMeasure">
+				<xs:maxInclusive value="100"/>
+				<xs:fractionDigits value="1"/>
+			</xs:restriction>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="tMeasures">
+		<xs:sequence>
+			<xs:element name="Measure" type="tMeasure" minOccurs="0"/>
+			<xs:element name="Ranged" type="tRangedMeasure" minOccurs="0"/>
+			<xs:element name="Bounded" type="tBoundedMeasure" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- B2 / B3: a restriction of a complex type - an optional child left out, an attribute prohibited -->
+	<xs:complexType name="tFull">
+		<xs:sequence>
+			<xs:element name="Must" type="tEmpty"/>
+			<xs:element name="May" type="tEmpty" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="kept" type="xs:string"/>
+		<xs:attribute name="dropped" type="xs:string"/>
+	</xs:complexType>
+
+	<xs:complexType name="tRestricted">
+		<xs:complexContent>
+			<xs:restriction base="tFull">
+				<xs:sequence>
+					<xs:element name="Must" type="tEmpty"/>
+				</xs:sequence>
+				<xs:attribute name="dropped" type="xs:string" use="prohibited"/>
+			</xs:restriction>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<!-- B6 / B7: values - patterns on two levels, a derived enumeration, a union and a restriction of it, a list and a
+	     restriction of it, ranges, digits, white space, name classes and class subtraction in patterns -->
+	<xs:simpleType name="tCode">
+		<xs:restriction base="xs:token">
+			<xs:pattern value="[A-Z]{2}[0-9]*"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="tCodeStrict">
+		<xs:restriction base="tCode">
+			<xs:pattern value="[A-M].*"/>
+			<xs:pattern value="Z.*"/>
+			<xs:maxLength value="6"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="tCodeOrNumber">
+		<xs:union memberTypes="tCode xs:integer"/>
+	</xs:simpleType>
+
+	<xs:simpleType name="tCodeOrNumberEnum">
+		<xs:restriction base="tCodeOrNumber">
+			<xs:enumeration value="AB1"/>
+			<xs:enumeration value="42"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="tCodes">
+		<xs:list itemType="tCode"/>
+	</xs:simpleType>
+
+	<xs:simpleType name="tFewCodes">
+		<xs:restriction base="tCodes">
+			<xs:maxLength value="3"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="tColors" final="list">
+		<xs:restriction base="xs:token">
+			<xs:enumeration value="red"/>
+			<xs:enumeration value="green"/>
+			<xs:enumeration value="blue"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="tWarm">
+		<xs:restriction base="tColors">
+			<xs:enumeration value="red"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:element name="Code">
+		<xs:complexType>
+			<xs:simpleContent>
+				<xs:extension base="tFewCodes">
+					<xs:attribute name="code" type="tCodeStrict"/>
+					<xs:attribute name="either" type="tCodeOrNumber"/>
+					<xs:attribute name="pick" type="tCodeOrNumberEnum"/>
+					<xs:attribute name="warm" type="tWarm"/>
+					<xs:attribute name="mode" type="tColors" default="green"/>
+					<xs:attribute name="since">
+						<xs:simpleType>
+							<xs:restriction base="xs:date">
+								<xs:minInclusive value="2001-01-01"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="amount">
+						<xs:simpleType>
+							<xs:restriction base="xs:decimal">
+								<xs:totalDigits value="5"/>
+								<xs:fractionDigits value="2"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="count">
+						<xs:simpleType>
+							<xs:restriction base="xs:unsignedInt">
+								<xs:maxExclusive value="10"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="label">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:whiteSpace value="collapse"/>
+								<xs:minLength value="1"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="handle">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:pattern value="[\i-[:]][\c-[:]]*"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="mixed">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:pattern value="\p{Lu}\d\s?\w*[a-z-[aeiou]]?\p{IsBasicLatin}?"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+				</xs:extension>
+			</xs:simpleContent>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- B3 / B8: a substitution group - an abstract head, members, a member of a member naming no type -->
+	<xs:complexType name="tShape">
+		<xs:attribute name="color" type="tColors"/>
+	</xs:complexType>
+
+	<xs:complexType name="tCircle">
+		<xs:complexContent>
+			<xs:extension base="tShape">
+				<xs:attribute name="radius" type="xs:double" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tSquare">
+		<xs:complexContent>
+			<xs:extension base="tShape">
+				<xs:attribute name="side" type="xs:double" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:element name="Shape" type="tShape" abstract="true"/>
+	<xs:element name="Circle" type="tCircle" substitutionGroup="Shape"/>
+	<xs:element name="Square" type="tSquare" substitutionGroup="Shape"/>
+	<xs:element name="RoundedSquare" substitutionGroup="Square"/>
+
+	<!-- a head blocking extension: a member whose type extends its type does not stand for it -->
+	<xs:complexType name="tTool">
+		<xs:sequence>
+			<xs:element name="Handle" type="tEmpty" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="tHammer">
+		<xs:complexContent>
+			<xs:extension base="tTool">
+				<xs:attribute name="weight" type="xs:decimal"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tMallet">
+		<xs:complexContent>
+			<xs:restriction base="tTool"/>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:element name="Tool" type="tTool" block="extension"/>
+	<xs:element name="Hammer" type="tHammer" substitutionGroup="Tool"/>
+	<xs:element name="Mallet" type="tMallet" substitutionGroup="Tool"/>
+
+	<xs:complexType name="tShapes">
+		<xs:sequence>
+			<xs:element ref="Shape" maxOccurs="unbounded"/>
+			<xs:element ref="Tool" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- B8: xsi:type - variants, a restriction step the element blocks, an abstract type that must be named, a
+	     simple union typed element -->
+	<xs:complexType name="tVehicle">
+		<xs:sequence>
+			<xs:element name="Plate" type="xs:token"/>
+		</xs:sequence>
+		<xs:attribute name="seats" type="xs:int"/>
+	</xs:complexType>
+
+	<xs:complexType name="tCar">
+		<xs:complexContent>
+			<xs:extension base="tVehicle">
+				<xs:sequence>
+					<xs:element name="Trunk" type="tEmpty" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tCompactCar">
+		<xs:complexContent>
+			<xs:restriction base="tCar">
+				<xs:sequence>
+					<xs:element name="Plate" type="xs:token"/>
+				</xs:sequence>
+				<xs:attribute name="seats">
+					<xs:simpleType>
+						<xs:restriction base="xs:int">
+							<xs:maxInclusive value="4"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+			</xs:restriction>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tTruck">
+		<xs:complexContent>
+			<xs:extension base="tVehicle">
+				<xs:sequence>
+					<xs:element name="Load" type="tMeasure"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tFigure" abstract="true">
+		<xs:attribute name="label" type="xs:string"/>
+	</xs:complexType>
+
+	<xs:complexType name="tRound">
+		<xs:complexContent>
+			<xs:extension base="tFigure">
+				<xs:attribute name="radius" type="xs:double"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tAngular">
+		<xs:complexContent>
+			<xs:extension base="tFigure">
+				<xs:attribute name="corners" type="xs:int"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tGarage">
+		<xs:sequence>
+			<xs:element name="Vehicle" type="tVehicle" block="restriction" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="Figure" type="tFigure" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="Value" type="tCodeOrNumber" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- B4 / B5: a tag declared several ways - by type, by fixed text, by identity constraints, by namespace -, and a
+	     nested homonym (Lid, declared two ways inside the two ways of Box) -->
+	<xs:complexType name="tItem">
+		<xs:sequence>
+			<xs:element name="Tag" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:attribute name="n" type="xs:token" use="required"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:token" use="required"/>
+		<xs:attribute name="qty" type="xs:int"/>
+	</xs:complexType>
+
+	<xs:complexType name="tExtended">
+		<xs:complexContent>
+			<xs:extension base="x:tExtBase">
+				<xs:sequence>
+					<xs:element name="Extra" type="tEmpty" minOccurs="0"/>
+				</xs:sequence>
+				<xs:anyAttribute namespace="##other" processContents="skip"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tHomonyms">
+		<xs:sequence>
+			<xs:element name="Shelf" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Item" type="tItem" minOccurs="0" maxOccurs="unbounded"/>
+						<xs:element name="Box" minOccurs="0">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="Lid" minOccurs="0">
+										<xs:complexType>
+											<xs:attribute name="color" type="tColors"/>
+										</xs:complexType>
+									</xs:element>
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Rack" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Item" type="xs:string" fixed="rack" minOccurs="0" maxOccurs="unbounded"/>
+						<xs:element name="Box" minOccurs="0">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="Lid" minOccurs="0">
+										<xs:complexType>
+											<xs:attribute name="size" type="xs:int" use="required"/>
+										</xs:complexType>
+									</xs:element>
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Crate" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Item" type="tItem" minOccurs="0" maxOccurs="unbounded">
+							<xs:unique name="uniqueTagInCrateItem">
+								<xs:selector xpath="t:Tag"/>
+								<xs:field xpath="@n"/>
+							</xs:unique>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Extended" type="tExtended" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- B3: element wildcards of each kind, an attribute wildcard of each kind, the orphan of parent-mapping.json -->
+	<xs:complexType name="tOpen">
+		<xs:sequence>
+			<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="Marker">
+				<xs:complexType>
+					<xs:anyAttribute processContents="skip"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:any namespace="##local urn:dialecte:torture-ext" processContents="strict" minOccurs="0"/>
+			<xs:any namespace="##targetNamespace" processContents="skip" minOccurs="0"/>
+		</xs:sequence>
+		<xs:anyAttribute namespace="##local urn:dialecte:torture-ext" processContents="strict"/>
+	</xs:complexType>
+
+	<!-- B3 / B4: text - mixed content, anyType, an empty element, default text, nillable, an unqualified local, a
+	     recursive element -->
+	<xs:complexType name="tText">
+		<xs:sequence>
+			<xs:element name="Para" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType mixed="true">
+					<xs:sequence>
+						<xs:element name="Em" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attributeGroup ref="agCommon"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Anything" minOccurs="0"/>
+			<xs:element name="Empty" minOccurs="0">
+				<xs:complexType/>
+			</xs:element>
+			<xs:element name="Greeting" type="xs:string" default="hello" minOccurs="0"/>
+			<xs:element name="Maybe" type="xs:int" nillable="true" minOccurs="0"/>
+			<xs:element name="bare" type="xs:string" form="unqualified" minOccurs="0"/>
+			<xs:element ref="Node" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:element name="Node">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="Node" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="name" type="xs:token" use="required"/>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- B5: identity constraints - a key with a deep prefixed selector, a unique over a union selector with an
+	     attribute and a value field, a keyref, a unique on another namespace's element -->
+	<xs:complexType name="tEntry">
+		<xs:simpleContent>
+			<xs:extension base="xs:token">
+				<xs:attribute name="id" type="xs:token" use="required"/>
+				<xs:attribute name="kind" type="xs:token" use="required"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="tKeys">
+		<xs:sequence>
+			<xs:element name="Entry" type="tEntry" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="Group" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Entry" type="tEntry" maxOccurs="unbounded"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Ref" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:attribute name="to" type="xs:token" use="required"/>
+					<xs:attribute name="target" type="xs:IDREF"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element ref="x:Flag" minOccurs="0" maxOccurs="2"/>
+		</xs:sequence>
+	</xs:complexType>
+
+</xs:schema>

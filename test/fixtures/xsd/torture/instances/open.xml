@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Wildcards: a mapped attribute, the orphan the sidecar attaches, elements and attributes each wildcard admits. -->
+<Torture xmlns="urn:dialecte:torture" xmlns:x="urn:dialecte:torture-ext" xmlns:o="urn:other"
+	version="1" x:stamp="2026-10-09T12:00:00Z" o:free="anything" xml:lang="fr">
+	<Open x:stamp="2026-01-01T00:00:00">
+		<x:Note>a note with <x:Em>emphasis</x:Em> in it</x:Note>
+		<o:Unknown deep="yes"><o:Child/></o:Unknown>
+		<Marker anything="goes" o:too="yes"/>
+		<x:Flag>true</x:Flag>
+		<Whatever skipped="true"/>
+	</Open>
+</Torture>

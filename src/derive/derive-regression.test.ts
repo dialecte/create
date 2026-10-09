@@ -23,15 +23,25 @@ import { emitTypesSource } from './emit-types.ts'
 // reference, applied with this package's oxfmt; a layout change of a future oxfmt shows here first.
 const CREATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const FIXTURES = join(CREATE_ROOT, 'test/fixtures/definition')
+// the root chosen where several elements could start a document, as the CLI's --root
+const COMMITTED_SCHEMAS: Record<string, { entry: string; root?: string }> = JSON.parse(
+	readFileSync(join(CREATE_ROOT, 'test/fixtures/committed-schemas.json'), 'utf-8'),
+)
 
-for (const fixture of readdirSync(FIXTURES).sort()) {
+// directories only: a stray file (a .DS_Store) is no fixture
+const FIXTURE_NAMES = readdirSync(FIXTURES, { withFileTypes: true })
+	.filter((entry) => entry.isDirectory())
+	.map((entry) => entry.name)
+	.sort()
+
+for (const fixture of FIXTURE_NAMES) {
 	describe(`derivation of the committed dialecte ${fixture}`, async () => {
 		const folder = join(FIXTURES, fixture)
 		// TYPES: the types an instance may name with xsi:type; a definition without it predates the rebuilt generator
 		const { DEFINITION, TYPES } = await import(
 			pathToFileURL(join(folder, 'definition.generated.ts')).href
 		)
-		const root = deriveRoot({ definition: DEFINITION })
+		const root = deriveRoot({ definition: DEFINITION, chosen: COMMITTED_SCHEMAS[fixture]?.root })
 		const formatted = format({
 			folder,
 			files: {

@@ -10,7 +10,16 @@
  * .tgz> installs that engine instead of the default range, to test against an unreleased core.
  */
 import { spawnSync } from 'node:child_process'
-import { mkdtemp, readdir, rm, stat, readFile, symlink, writeFile } from 'node:fs/promises'
+import {
+	copyFile,
+	mkdtemp,
+	readdir,
+	rm,
+	stat,
+	readFile,
+	symlink,
+	writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -23,6 +32,43 @@ const COMMENTED_FIXTURE = new URL('../test/fixtures/commented-namespace.xsd', im
 const TWO_ROOTS_FIXTURE = new URL('../test/fixtures/two-roots.xsd', import.meta.url).pathname
 const EXTENSION_FIXTURE = new URL('../test/fixtures/extension/entry.xsd', import.meta.url).pathname
 const EXPECTED = ['definition.generated.ts', 'constants.generated.ts', 'types.generated.ts']
+const FIXTURES = new URL('../test/fixtures/', import.meta.url).pathname
+const COMMITTED_SCHEMAS = JSON.parse(
+	await readFile(join(FIXTURES, 'committed-schemas.json'), 'utf8'),
+)
+
+/**
+ * Every committed schema regenerates, through the engine the CLI ships, the very files committed for it: the
+ * definition the engine writes, the constants and types derived from it, formatted with the fixture's own
+ * formatter configuration. The committed files are the reference every other test of the generator reads.
+ */
+async function assertCommittedFixturesRegenerate() {
+	for (const [name, { entry, root }] of Object.entries(COMMITTED_SCHEMAS)) {
+		const committed = join(FIXTURES, 'definition', name)
+		const outDir = await mkdtemp(join(tmpdir(), `dialecte-regen-${name}-`))
+		try {
+			await copyFile(join(committed, '.oxfmtrc.json'), join(outDir, '.oxfmtrc.json'))
+			await runGenerator({ entry: join(FIXTURES, 'xsd', name, entry), outDir, root, quiet: true })
+			for (const file of EXPECTED) {
+				const [regenerated, reference] = await Promise.all([
+					readFile(join(outDir, file), 'utf8'),
+					readFile(join(committed, file), 'utf8'),
+				])
+				if (regenerated !== reference) {
+					throw new Error(
+						`${name}/${file}: regenerating test/fixtures/xsd/${name} does not give the committed file - ` +
+							`run the CLI on it and review the difference (npm run definition:diff for the definition)`,
+					)
+				}
+			}
+		} finally {
+			await rm(outDir, { recursive: true, force: true })
+		}
+	}
+	console.log(
+		`Committed fixtures regenerate byte-identical: ${Object.keys(COMMITTED_SCHEMAS).join(', ')}.`,
+	)
+}
 
 /** Scaffold a package and check what a consumer relies on in the files it gets. */
 async function assertScaffold({ fixture, packageName, expectations, options = [] }) {
@@ -206,6 +252,8 @@ async function main() {
 		}
 
 		console.log('Smoke test passed: 3 files generated with expected elements.')
+
+		await assertCommittedFixturesRegenerate()
 
 		await assertScaffold({
 			fixture: FIXTURE,

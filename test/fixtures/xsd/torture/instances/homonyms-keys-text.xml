@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A tag declared four ways and a nested homonym, identity constraints, mixed content, nil, an unqualified local,
+     a recursive element. -->
+<Torture xmlns="urn:dialecte:torture" xmlns:x="urn:dialecte:torture-ext"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1">
+	<Homonyms>
+		<Shelf>
+			<Item name="bolt" qty="3"><Tag n="a"/><Tag n="a"/></Item>
+			<Box><Lid color="green"/></Box>
+		</Shelf>
+		<Rack>
+			<Item>rack</Item>
+			<Item/>
+			<Box><Lid size="4"/></Box>
+		</Rack>
+		<Crate>
+			<Item name="nut"><Tag n="a"/><Tag n="b"/></Item>
+		</Crate>
+		<Extended x:other="no">
+			<x:Item>ext</x:Item>
+			<Extra/>
+		</Extended>
+	</Homonyms>
+	<Text>
+		<Para xml:lang="en" note="n">Some <Em>mixed</Em> text</Para>
+		<Anything any="thing"><Deep><Deeper/></Deep>text</Anything>
+		<Empty/>
+		<Greeting/>
+		<Maybe xsi:nil="true"/>
+		<bare xmlns="">plain</bare>
+		<Node name="a"><Node name="b"><Node name="c"/></Node></Node>
+	</Text>
+	<Keys>
+		<Entry id="e1" kind="k">v1</Entry>
+		<Group>
+			<Entry id="e2" kind="k">v2</Entry>
+		</Group>
+		<Ref to="e2"/>
+		<x:Flag>true</x:Flag>
+	</Keys>
+</Torture>

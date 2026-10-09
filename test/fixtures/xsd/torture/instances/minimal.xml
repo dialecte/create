@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The smallest document: the root and its one required attribute. -->
+<Torture xmlns="urn:dialecte:torture" version="1"/>

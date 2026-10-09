@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A document the torture schema includes, with its own defaults: attributes qualified, restriction blocked. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="urn:dialecte:torture" xmlns:t="urn:dialecte:torture"
+	targetNamespace="urn:dialecte:torture" elementFormDefault="qualified" attributeFormDefault="qualified"
+	blockDefault="restriction">
+
+	<xs:simpleType name="tLevel">
+		<xs:restriction base="xs:int">
+			<xs:minExclusive value="0"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!-- the type blocks extension: an element of it admits its restriction only -->
+	<xs:complexType name="tGadget" block="extension">
+		<xs:attribute name="model" type="xs:token" form="unqualified"/>
+	</xs:complexType>
+
+	<xs:complexType name="tGadgetPlus">
+		<xs:complexContent>
+			<xs:extension base="tGadget">
+				<xs:attribute name="extra" type="xs:token" form="unqualified"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tGadgetLite">
+		<xs:complexContent>
+			<xs:restriction base="tGadget"/>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="tExtras">
+		<xs:sequence minOccurs="0" maxOccurs="2">
+			<xs:element name="Legacy" type="tLegacy" minOccurs="0"/>
+			<xs:element name="Level" type="tLevel" minOccurs="0"/>
+			<xs:element name="Loose" minOccurs="0">
+				<xs:complexType>
+					<xs:all minOccurs="0" maxOccurs="1">
+						<xs:element name="Bit" type="tEmpty" minOccurs="0"/>
+					</xs:all>
+					<!-- qualified by this document's attributeFormDefault, the other one unqualified by its form -->
+					<xs:attribute name="qualified" type="xs:token"/>
+					<xs:attribute name="plain" type="xs:token" form="unqualified"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:group ref="gPair" minOccurs="0"/>
+			<xs:element name="Rich" minOccurs="0">
+				<xs:complexType>
+					<xs:complexContent mixed="true">
+						<xs:extension base="tEmpty">
+							<xs:sequence>
+								<xs:element name="Bold" type="xs:string" minOccurs="0"/>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<!-- blockDefault: restriction blocked, so tCompactCar (a restriction on the way) is no variant here -->
+			<xs:element name="Ride" type="tVehicle" minOccurs="0"/>
+			<!-- an empty block overrides the blockDefault: the type alone blocks (extension) -->
+			<xs:element name="Gadget" type="tGadget" block="" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Values: patterns on two levels, a union and a restriction of it, lists, ranges, digits, white space, name
+     classes, a derived enumeration, an attribute default left out. -->
+<Torture xmlns="urn:dialecte:torture" version="1">
+	<Code code="AB12" either="77" pick="AB1" warm="red" since="2001-01-01" amount="123.45" count="9"
+		label="  a   label  " handle="élan.2" mixed="Q7 wordsb!">AB CD12 EF</Code>
+	<Code either="ZZ9" pick="42" mode="blue" code="ZZ">XY</Code>
+</Torture>

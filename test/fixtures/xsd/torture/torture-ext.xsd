@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The second namespace of the torture schema: a global attribute the sidecar maps, an orphan the sidecar attaches,
+     a base type whose wildcard is relative to this document, and a homonym of a torture tag in this namespace. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:x="urn:dialecte:torture-ext"
+	targetNamespace="urn:dialecte:torture-ext" elementFormDefault="qualified">
+
+	<xs:attribute name="stamp" type="xs:dateTime"/>
+
+	<xs:element name="Flag" type="xs:boolean" nillable="true"/>
+
+	<!-- referenced by no particle: parent-mapping.json attaches it where a wildcard admits it -->
+	<xs:element name="Note">
+		<xs:complexType mixed="true">
+			<xs:sequence>
+				<xs:element name="Em" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:complexType name="tExtBase">
+		<xs:sequence>
+			<!-- the tag Item of the torture namespace, declared again in this one -->
+			<xs:element name="Item" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+		<xs:anyAttribute namespace="##other" processContents="lax"/>
+	</xs:complexType>
+</xs:schema>
