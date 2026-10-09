@@ -213,7 +213,7 @@ async function main() {
 			expectations: [
 				{
 					file: 'package.json',
-					includes: '"@dialecte/core": "^0.5.',
+					includes: '"@dialecte/core": "^0.6.',
 					reason: 'the engine range must target the current release line',
 				},
 				{

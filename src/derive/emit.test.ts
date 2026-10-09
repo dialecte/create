@@ -7,10 +7,12 @@ import { emitTypesSource } from './emit-types.ts'
 import type { DefinitionData, ElementData } from './derive.types.ts'
 
 // A root holding an Address and a PhysConn, both holding a P declared differently under each: the
-// tag level is the union, each parent's edge carries the declaration.
+// tag level is the union, each parent names the declaration it holds.
 const pUnderAddress: ElementData['attributes'] = {
 	sequence: ['type'],
-	details: { type: { required: true, facets: { enumeration: ['IP', 'MAC'] } } },
+	details: {
+		type: { required: true, type: { builtin: 'token', facets: { enumeration: ['IP', 'MAC'] } } },
+	},
 }
 const pUnderPhysConn: ElementData['attributes'] = {
 	sequence: ['type'],
@@ -29,7 +31,7 @@ const definition: DefinitionData = {
 		},
 		children: {
 			sequence: ['PhysConn', 'Address', 'Empty'],
-			details: { Address: {}, PhysConn: {}, Empty: {} },
+			details: {},
 		},
 		contentModel: {
 			kind: 'sequence',
@@ -47,7 +49,7 @@ const definition: DefinitionData = {
 		attributes: { sequence: [], details: {} },
 		children: {
 			sequence: ['P'],
-			details: { P: { attributes: pUnderPhysConn, children: noChildren } },
+			details: { P: { declarations: { '': ['2'] } } },
 		},
 	},
 	Address: {
@@ -55,7 +57,7 @@ const definition: DefinitionData = {
 		attributes: { sequence: [], details: {} },
 		children: {
 			sequence: ['P'],
-			details: { P: { attributes: pUnderAddress, children: noChildren } },
+			details: { P: { declarations: { '': ['1'] } } },
 		},
 	},
 	// an element without attributes
@@ -64,11 +66,20 @@ const definition: DefinitionData = {
 		parents: ['Address', 'PhysConn'],
 		attributes: { sequence: ['type'], details: { type: {} } },
 		children: noChildren,
+		declarations: {
+			// under Address, P may name a type with xsi:type
+			'1': {
+				attributes: pUnderAddress,
+				children: noChildren,
+				variants: ['{urn:t}tP_IP', '{urn:t}tP_MAC'],
+			},
+			'2': { attributes: pUnderPhysConn, children: noChildren },
+		},
 	},
 }
 
 describe('emitConstantsSource', () => {
-	const source = emitConstantsSource({ definition, root: 'Root' })
+	const source = emitConstantsSource({ definition, root: 'Root', types: {} })
 
 	const expectedLines: Record<string, string> = {
 		'the root -> ROOT_ELEMENT': "export const ROOT_ELEMENT = 'Root' as const",
@@ -78,8 +89,8 @@ describe('emitConstantsSource', () => {
 			"import type { AvailableElement, AttributesOf, AttributesByParent, AttributesPInAddress, AttributesPInPhysConn } from './types.generated'",
 		'an element without attributes -> an empty skeleton typed by its element':
 			"\tEmpty: {} as AttributesOf<'Empty'>,",
-		'a homonym -> its own skeleton under each parent':
-			"\t\t\tP: { type: '' as string } as AttributesPInAddress,",
+		'a homonym -> its own skeleton under each parent, xsi:type where it may name a type':
+			"\t\t\tP: { type: '' as string, 'xsi:type': '' as string } as AttributesPInAddress,",
 		'an element declared once -> the by-tag object under its parent':
 			'\t\t\tAddress: ATTRIBUTES_BY_TAG.Address,',
 		'required attributes -> listed for their element, sorted': "\tRoot: ['id', 'version'],",
@@ -93,10 +104,10 @@ describe('emitTypesSource', () => {
 	const source = emitTypesSource({ definition })
 
 	const expectedBlocks: Record<string, string> = {
-		'an attribute declared once -> optional string at the tag level':
-			'export type AttributesP = {\n\ttype?: string\n}',
-		'an enumeration under a parent -> the union of its values, open to others':
-			"export type AttributesPInAddress = {\n\ttype: 'IP' | 'MAC' | (string & {})\n}",
+		'a tag declared several ways -> the values any declaration accepts, xsi:type any may name, open to others':
+			"export type AttributesP = {\n\ttype?: 'IP' | 'MAC' | 'Plug' | (string & {})\n\t'xsi:type'?: 'tP_IP' | 'tP_MAC' | (string & {})\n}",
+		'an enumeration under a parent -> the union of its values; the types it may name with xsi:type':
+			"export type AttributesPInAddress = {\n\ttype: 'IP' | 'MAC' | (string & {})\n\t'xsi:type'?: 'tP_IP' | 'tP_MAC' | (string & {})\n}",
 		'a fixed value under a parent -> its literal':
 			"export type AttributesPInPhysConn = {\n\ttype: 'Plug'\n}",
 		'a homonym in the parent map -> the type of its declaration there':
@@ -147,7 +158,7 @@ describe('emitTypesSource - values typed by their datatype', () => {
 			children: { sequence: [], details: {} },
 		},
 	}
-	const source = emitTypesSource({ definition: typed, typedValues: true })
+	const source = emitTypesSource({ definition: typed })
 
 	const expectedLines: Record<string, string> = {
 		'an enumeration in the datatype -> the union of its values, open to others':

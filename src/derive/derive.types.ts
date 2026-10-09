@@ -5,6 +5,7 @@
 export type DefinitionData = Readonly<Record<string, ElementData>>
 
 export type ElementData = {
+	readonly namespace?: NamespaceData
 	readonly parents: readonly string[]
 	readonly attributes: {
 		readonly sequence: readonly string[]
@@ -28,6 +29,7 @@ export type TypesData = Readonly<Record<string, DeclarationData>>
 
 /** The element as one of its declarations has it. */
 export type DeclarationData = {
+	readonly namespace?: NamespaceData
 	readonly attributes: ElementData['attributes']
 	readonly children: ElementData['children']
 	readonly contentModel?: ParticleData
@@ -37,8 +39,6 @@ export type DeclarationData = {
 export type AttributeData = {
 	readonly required?: true
 	readonly fixed?: string
-	/** The enumeration as the definitions committed before the rebuilt generator write it, beside the type. */
-	readonly facets?: { readonly enumeration?: readonly string[] }
 	readonly type?: DataTypeData
 }
 
@@ -51,17 +51,11 @@ export type DataTypeData = {
 }
 
 /**
- * A parent → child edge: per namespace the child is held in there, the numbers of the declarations its particles
- * hold - one decides it, several leave it to the particle matched -; or, the form the definitions committed before
- * the rebuilt generator use, the child as declared under that parent, inline.
+ * A parent → child edge of a child declared several ways: per namespace it is held in there, the numbers of the
+ * declarations its particles hold - one decides it, several leave it to the particle matched.
  */
 export type EdgeData = {
-	readonly declarations?: Readonly<Record<string, readonly string[]>>
-	readonly attributes?: ElementData['attributes']
-	readonly children?: ElementData['children']
-	readonly contentModel?: ParticleData
-	/** The child under this parent per `xsi:type` value, keyed by the type's QName. */
-	readonly variants?: Readonly<Record<string, { readonly contentModel?: ParticleData }>>
+	readonly declarations: Readonly<Record<string, readonly string[]>>
 }
 
 export type ParticleData =
@@ -79,11 +73,25 @@ export type ParticleData =
 	  }
 	| { readonly kind: 'any'; readonly minOccurs?: number; readonly maxOccurs?: number }
 
-/** A parent → child edge that carries the child as declared under that parent (a homonym). */
+/** A parent → child edge whose child is declared there with attributes of its own. */
 export type DeclaredEdge = {
 	readonly parent: string
 	readonly child: string
 	readonly attributes: ElementData['attributes']
+}
+
+export type NamespaceData = { readonly prefix: string; readonly uri: string }
+
+/** What a scaffolded package's worked example is written with: the root, its first child and what that child requires. */
+export type ExampleFacts = {
+	readonly root: { readonly name: string; readonly namespaceUri: string }
+	/** The first child the root allows; `null` when it allows none. */
+	readonly child: {
+		readonly name: string
+		readonly namespaceUri: string
+		/** Each attribute the child requires, with a value the schema accepts. */
+		readonly requiredAttributes: readonly { readonly name: string; readonly value: string }[]
+	} | null
 }
 
 /** Element → element names, each list sorted. */

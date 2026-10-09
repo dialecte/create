@@ -1,7 +1,7 @@
 /**
  * Download the pure-Python wheels the generator needs into ./vendor.
  *
- * These are installed offline inside Pyodide at runtime via micropip, so the
+ * These are extracted offline into Pyodide at runtime (no micropip), so the
  * published CLI never touches the network. Re-run when bumping dependency
  * versions. Requires network access.
  *

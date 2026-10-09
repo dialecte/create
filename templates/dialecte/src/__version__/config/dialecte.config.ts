@@ -1,5 +1,6 @@
 import {
 	DEFINITION,
+	TYPES,
 	ELEMENT_NAMES,
 	ATTRIBUTES,
 	CHILDREN,
@@ -42,6 +43,7 @@ export const __DIALECTE_NAME___DIALECTE_CONFIG = {
 	database: __DIALECTE_NAME___DATABASE_CONFIG,
 	io: __DIALECTE_NAME___IO_CONFIG,
 	definition: DEFINITION,
+	types: TYPES,
 	rootElementName: ROOT_ELEMENT,
 } as const satisfies AnyDialecteConfig
 

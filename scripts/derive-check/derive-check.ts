@@ -44,10 +44,15 @@ async function main(): Promise<void> {
 			process.stdout.write(`${name}: skipped (${folder} absent)\n`)
 			continue
 		}
-		// TYPES: the types an instance may name with xsi:type, written by the rebuilt generator only
+		// TYPES: the types an instance may name with xsi:type; a definition without it predates the rebuilt generator
 		const { DEFINITION, TYPES } = await import(
 			pathToFileURL(join(folder, 'definition.generated.ts')).href
 		)
+		if (TYPES === undefined) {
+			throw new Error(
+				`${name}: its definition exports no TYPES - regenerate it with @dialecte/create`,
+			)
+		}
 		const { ROOT_ELEMENT } = await import(
 			pathToFileURL(join(folder, 'constants.generated.ts')).href
 		)

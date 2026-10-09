@@ -7,11 +7,13 @@ import { __DIALECTE_NAME___DIALECTE_CONFIG } from '@/__version__/config'
  * definition and namespaces. The engine is `createXmlSchemaAssertions` from `@dialecte/core/test`.
  *
  * It asserts that every element's namespace matches its parent context, that every element is an
- * allowed child of its parent, and that every attribute is known to its element. Elements unknown to
+ * allowed child of its parent, and that every attribute is known to its element - as declared there, and
+ * as the type it names with xsi:type says. Elements unknown to
  * the schema are skipped, and so is any element in a namespace the package does not declare.
  */
 const { assertValidXml, assertValidXmlTestCases } = createXmlSchemaAssertions({
 	definition: __DIALECTE_NAME___DIALECTE_CONFIG.definition,
+	types: __DIALECTE_NAME___DIALECTE_CONFIG.types,
 	namespaces: __DIALECTE_NAME___DIALECTE_CONFIG.namespaces,
 	schemaName: '__DialecteName__',
 })

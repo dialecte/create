@@ -3,14 +3,14 @@ import { readFile } from 'node:fs/promises'
 import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { PACKAGE_ROOT } from './paths.js'
-import { runGenerator } from './pyodide-runner.js'
-import { scaffoldDialecte, dialecteIdFromPackageName } from './scaffold.js'
+import { PACKAGE_ROOT } from './paths.ts'
+import { runGenerator } from './pyodide-runner.ts'
+import { scaffoldDialecte, dialecteIdFromPackageName } from './scaffold.ts'
 
-export { runGenerator } from './pyodide-runner.js'
-export { scaffoldDialecte } from './scaffold.js'
+export { runGenerator } from './pyodide-runner.ts'
+export { scaffoldDialecte } from './scaffold.ts'
 
-const DEFAULT_CORE_VERSION = '^0.5.0'
+const DEFAULT_CORE_VERSION = '^0.6.0'
 const DEFAULT_VERSION = 'v1'
 
 interface ParsedArgs {

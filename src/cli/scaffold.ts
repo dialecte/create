@@ -2,9 +2,9 @@ import { existsSync } from 'node:fs'
 import { readdir, mkdir, readFile, writeFile, rm } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 
-import { writeExample } from './example.js'
-import { TEMPLATES_DIR } from './paths.js'
-import { runGenerator } from './pyodide-runner.js'
+import { writeExample } from './example.ts'
+import { TEMPLATES_DIR } from './paths.ts'
+import { runGenerator } from './pyodide-runner.ts'
 
 export interface ScaffoldOptions {
 	/** Absolute path to the entry .xsd file used to generate definitions. */

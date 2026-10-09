@@ -1,124 +1,166 @@
-"""Datatypes: what an attribute or a text value IS, beyond the facets that restrict it.
-
-Every simple type bottoms out in an XSD built-in (decimal, boolean, dateTime, ID, ...), possibly
-as a list of one or a union of several. A validator, a form or a UI needs that to interpret the
-facets and the value at all.
-"""
-
-import textwrap
+"""Datatypes: what a simple value is - a built-in, a list of one, a union of several - with the facets each
+restriction adds, kept where they apply (D1); values as written (GD2); a built-in's own facets never written."""
+from typing import Any
 
 import pytest
-import xmlschema
 
-from generate.collector import collect
-from generate.emitters.definition import emit_definition
-from generate.ir import DataType
-
-TYPED = textwrap.dedent("""\
-    <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-      <xs:simpleType name="tPercent">
-        <xs:restriction base="xs:integer">
-          <xs:minInclusive value="0"/><xs:maxInclusive value="100"/>
-        </xs:restriction>
-      </xs:simpleType>
-      <xs:simpleType name="tNames"><xs:list itemType="xs:NCName"/></xs:simpleType>
-      <xs:simpleType name="tThreeNames">
-        <xs:restriction base="tNames"><xs:length value="3"/></xs:restriction>
-      </xs:simpleType>
-      <xs:simpleType name="tSizeWord">
-        <xs:restriction base="xs:token"><xs:enumeration value="small"/><xs:enumeration value="large"/></xs:restriction>
-      </xs:simpleType>
-      <xs:simpleType name="tSize"><xs:union memberTypes="tSizeWord xs:positiveInteger"/></xs:simpleType>
-
-      <xs:element name="Root">
-        <xs:complexType>
-          <xs:sequence>
-            <xs:element name="Count" type="xs:nonNegativeInteger"/>
-            <xs:element name="Plain" type="xs:string"/>
-            <xs:element name="Labels" type="tNames"/>
-          </xs:sequence>
-          <xs:attribute name="name" type="xs:string" use="required"/>
-          <xs:attribute name="ratio" type="xs:decimal"/>
-          <xs:attribute name="enabled" type="xs:boolean"/>
-          <xs:attribute name="when" type="xs:dateTime"/>
-          <xs:attribute name="key" type="xs:ID"/>
-          <xs:attribute name="percent" type="tPercent"/>
-          <xs:attribute name="names" type="tThreeNames"/>
-          <xs:attribute name="size" type="tSize"/>
-          <xs:attribute name="untyped"/>
-        </xs:complexType>
-      </xs:element>
-    </xs:schema>
-""")
+from tests.conftest import TARGET, pick, schema
 
 
-@pytest.fixture()
-def elements(tmp_path):
-    (tmp_path / 'typed.xsd').write_text(TYPED)
-    return collect(xmlschema.XMLSchema(str(tmp_path / 'typed.xsd')))
-
-
-def _type(elements, attribute: str) -> DataType | None:
-    return elements['Root'].attributes[attribute].type
-
-
-class TestAtomic:
-    @pytest.mark.parametrize(
-        ('attribute', 'builtin'),
-        [('ratio', 'decimal'), ('enabled', 'boolean'), ('when', 'dateTime'), ('key', 'ID')],
+def typed(simple_type: str, *, more: str = '') -> str:
+    """Root carrying an attribute `a` of the anonymous simple type `simple_type` (the body of an xs:simpleType)."""
+    return schema(
+        f'<xs:element name="Root"><xs:complexType><xs:attribute name="a"><xs:simpleType>{simple_type}</xs:simpleType>'
+        f'</xs:attribute></xs:complexType></xs:element>{more}'
     )
-    def test_a_builtin_is_named(self, elements, attribute, builtin):
-        assert _type(elements, attribute) == DataType(kind='atomic', builtin=builtin)
-
-    def test_a_restriction_names_the_most_specific_builtin_it_derives_from(self, elements):
-        assert _type(elements, 'percent').builtin == 'integer'
-
-    def test_a_plain_string_has_no_type_to_tell(self, elements):
-        assert _type(elements, 'name') is None
-        assert _type(elements, 'untyped') is None
 
 
-class TestListAndUnion:
-    def test_a_list_names_its_item_type(self, elements):
-        names = _type(elements, 'names')
-        assert names.kind == 'list'
-        assert names.item == DataType(kind='atomic', builtin='NCName')
+CASES: dict[str, tuple[str, Any]] = {
+    'a restriction of a built-in -> the built-in with the facets the restriction adds': (
+        typed('<xs:restriction base="xs:token"><xs:maxLength value="10"/></xs:restriction>'),
+        {'builtin': 'token', 'facets': {'maxLength': 10}},
+    ),
+    'a built-in derived from another -> that built-in, none of its own facets': (
+        typed('<xs:restriction base="xs:byte"/>'),
+        {'builtin': 'byte'},
+    ),
+    'patterns on two levels -> one list per level: each level must match, one pattern of a level is enough': (
+        typed('<xs:restriction base="tA"><xs:pattern value="a.*"/></xs:restriction>',
+              more='<xs:simpleType name="tA"><xs:restriction base="xs:token"><xs:pattern value="[a-z]+"/><xs:pattern value="[0-9]+"/></xs:restriction></xs:simpleType>'),
+        {'builtin': 'token', 'facets': {'pattern': [['[a-z]+', '[0-9]+'], ['a[^\\n\\r]*']]}},
+    ),
+    'a pattern with XSD escapes -> written as a JS source with XSD\'s meaning': (
+        typed('<xs:restriction base="xs:token"><xs:pattern value="\\d+\\.\\s"/></xs:restriction>'),
+        {'builtin': 'token', 'facets': {'pattern': [['\\p{Nd}+\\.[\\t\\n\\r ]']]}},
+    ),
+    'an enumeration restricting another -> only the derived one, it replaces the base': (
+        typed('<xs:restriction base="tColors"><xs:enumeration value="red"/></xs:restriction>',
+              more='<xs:simpleType name="tColors"><xs:restriction base="xs:token"><xs:enumeration value="red"/><xs:enumeration value="blue"/></xs:restriction></xs:simpleType>'),
+        {'builtin': 'token', 'facets': {'enumeration': ['red']}},
+    ),
+    'lengths on two levels -> the most derived one of each': (
+        typed('<xs:restriction base="tA"><xs:minLength value="2"/></xs:restriction>',
+              more='<xs:simpleType name="tA"><xs:restriction base="xs:string"><xs:minLength value="1"/><xs:maxLength value="9"/></xs:restriction></xs:simpleType>'),
+        {'builtin': 'string', 'facets': {'minLength': 2, 'maxLength': 9}},
+    ),
+    'ranges and digits -> the range values as written, the digits as numbers': (
+        typed('<xs:restriction base="xs:decimal"><xs:minInclusive value="-1.50"/><xs:maxExclusive value="99999999999999999999"/>'
+              '<xs:totalDigits value="22"/><xs:fractionDigits value="2"/></xs:restriction>'),
+        {'builtin': 'decimal', 'facets': {'minInclusive': '-1.50', 'maxExclusive': '99999999999999999999', 'totalDigits': 22, 'fractionDigits': 2}},
+    ),
+    'a range of dates -> the date as written': (
+        typed('<xs:restriction base="xs:date"><xs:minInclusive value="2001-01-01"/></xs:restriction>'),
+        {'builtin': 'date', 'facets': {'minInclusive': '2001-01-01'}},
+    ),
+    'a list -> the item type, the list\'s own length a number of items': (
+        typed('<xs:restriction base="tList"><xs:maxLength value="3"/></xs:restriction>',
+              more='<xs:simpleType name="tList"><xs:list><xs:simpleType><xs:restriction base="xs:token"><xs:maxLength value="5"/></xs:restriction></xs:simpleType></xs:list></xs:simpleType>'),
+        {'list': {'builtin': 'token', 'facets': {'maxLength': 5}}, 'facets': {'maxLength': 3}},
+    ),
+    'a list of plain strings -> the string item kept': (
+        typed('<xs:list itemType="xs:string"/>'),
+        {'list': {'builtin': 'string'}},
+    ),
+    'a union -> each member with its own facets, none of them at the union': (
+        typed('<xs:union memberTypes="xs:int tColor"/>',
+              more='<xs:simpleType name="tColor"><xs:restriction base="xs:token"><xs:enumeration value="red"/></xs:restriction></xs:simpleType>'),
+        {'union': [{'builtin': 'int'}, {'builtin': 'token', 'facets': {'enumeration': ['red']}}]},
+    ),
+    'a restriction of a union -> its own facets on the union, values as written': (
+        typed('<xs:restriction base="tU"><xs:enumeration value="01"/><xs:enumeration value="red"/></xs:restriction>',
+              more='<xs:simpleType name="tU"><xs:union memberTypes="xs:int xs:token"/></xs:simpleType>'),
+        {'union': [{'builtin': 'int'}, {'builtin': 'token'}], 'facets': {'enumeration': ['01', 'red']}},
+    ),
+    'a string whose white space a restriction collapses -> said, it is not the built-in\'s': (
+        typed('<xs:restriction base="xs:string"><xs:whiteSpace value="collapse"/></xs:restriction>'),
+        {'builtin': 'string', 'facets': {'whiteSpace': 'collapse'}},
+    ),
+    'a token restricted with the white space it already collapses -> not said': (
+        typed('<xs:restriction base="xs:token"><xs:whiteSpace value="collapse"/><xs:length value="2"/></xs:restriction>'),
+        {'builtin': 'token', 'facets': {'length': 2}},
+    ),
+    'a list of a union -> the union inside the list': (
+        typed('<xs:list><xs:simpleType><xs:union memberTypes="xs:int xs:boolean"/></xs:simpleType></xs:list>'),
+        {'list': {'union': [{'builtin': 'int'}, {'builtin': 'boolean'}]}},
+    ),
+    'a union of a list and a nested union -> each member as it is, in order': (
+        typed('<xs:union memberTypes="tInts tEither"/>',
+              more='<xs:simpleType name="tInts"><xs:list itemType="xs:int"/></xs:simpleType>'
+                   '<xs:simpleType name="tEither"><xs:union memberTypes="xs:date xs:token"/></xs:simpleType>'),
+        {'union': [{'list': {'builtin': 'int'}}, {'union': [{'builtin': 'date'}, {'builtin': 'token'}]}]},
+    ),
+    'a union naming members and holding others -> the named ones first, as the union orders them': (
+        typed('<xs:union memberTypes="xs:decimal"><xs:simpleType><xs:restriction base="xs:token"/></xs:simpleType></xs:union>'),
+        {'union': [{'builtin': 'decimal'}, {'builtin': 'token'}]},
+    ),
+    'an enumeration of qualified names in the xml namespace -> its prefix always bound': (
+        typed('<xs:restriction base="xs:QName"><xs:enumeration value="xml:lang"/></xs:restriction>'),
+        {'builtin': 'QName', 'facets': {'enumeration': ['{http://www.w3.org/XML/1998/namespace}lang']}},
+    ),
+    'a restriction of an inline base -> both levels\' facets, from each its own restriction': (
+        typed('<xs:restriction><xs:simpleType><xs:restriction base="xs:token"><xs:maxLength value="9"/><xs:pattern value="a.*"/></xs:restriction>'
+              '</xs:simpleType><xs:minLength value="2"/><xs:pattern value=".*z"/></xs:restriction>'),
+        {'builtin': 'token', 'facets': {'pattern': [['a[^\\n\\r]*'], ['[^\\n\\r]*z']], 'minLength': 2, 'maxLength': 9}},
+    ),
+    'a restriction with an annotation and a fixed facet -> the facets only, fixed or not': (
+        typed('<xs:restriction base="xs:token"><xs:annotation><xs:documentation>no facet</xs:documentation></xs:annotation>'
+              '<xs:maxLength value="4" fixed="true"/></xs:restriction>'),
+        {'builtin': 'token', 'facets': {'maxLength': 4}},
+    ),
+    'an enumeration of a collapsing type written with spaces -> the values compared, collapsed': (
+        typed('<xs:restriction base="xs:token"><xs:enumeration value="  two   words "/></xs:restriction>'),
+        {'builtin': 'token', 'facets': {'enumeration': ['two words']}},
+    ),
+    'an enumeration of qualified names -> each by namespace and local name, unprefixed in the default namespace': (
+        typed('<xs:restriction base="xs:QName"><xs:enumeration value="e:there"/><xs:enumeration value="here"/></xs:restriction>')
+        .replace('<xs:schema ', '<xs:schema xmlns:e="urn:e" '),
+        {'builtin': 'QName', 'facets': {'enumeration': ['{urn:e}there', f'{{{TARGET}}}here']}},
+    ),
+}
 
-    def test_the_facets_of_the_list_itself_stay_with_the_list(self, elements):
-        assert _type(elements, 'names').facets.length == 3
 
-    def test_a_union_names_its_members_each_with_its_own_facets(self, elements):
-        size = _type(elements, 'size')
-        assert size.kind == 'union'
-        assert [member.builtin for member in size.members] == ['token', 'positiveInteger']
-        assert size.members[0].facets.enumeration == ['small', 'large']
-        assert size.members[1].facets is None
+@pytest.mark.parametrize(('entry', 'expected'), CASES.values(), ids=CASES.keys())
+def test_datatypes(definition_of, entry: str, expected: Any) -> None:
+    assert pick(definition_of(entry), 'Root.attributes.details.a')['type'] == expected
 
 
-class TestTextContent:
-    def test_the_text_of_an_element_is_typed_the_same_way(self, elements):
-        assert elements['Count'].text_content.type == DataType(kind='atomic', builtin='nonNegativeInteger')
-        assert elements['Labels'].text_content.type.kind == 'list'
-
-    def test_a_plain_string_text_has_no_type_to_tell(self, elements):
-        assert elements['Plain'].text_content.type is None
+def test_a_plain_string_says_nothing(definition_of) -> None:
+    assert 'type' not in pick(definition_of(typed('<xs:restriction base="xs:string"/>')), 'Root.attributes.details.a')
 
 
-class TestEmitted:
-    def test_types_are_written_sparsely(self, elements, tmp_path):
-        out = tmp_path / 'definition.generated.ts'
-        emit_definition(elements, out)
-        content = out.read_text()
+def test_an_attribute_carries_no_facets_of_its_own_any_more(definition_of) -> None:
+    detail = pick(definition_of(typed('<xs:restriction base="xs:token"><xs:maxLength value="10"/></xs:restriction>')), 'Root.attributes.details.a')
+    assert 'facets' not in detail
 
-        # a top-level atomic type names its built-in; a built-in's white space is not repeated
-        assert "ratio: { type: { builtin: 'decimal' } }" in content
-        # a list keeps the facets of the list itself, apart from those of its items
-        assert "type: { list: { builtin: 'NCName' }, facets: { length: 3 } }" in content
-        # a union member keeps its own facets, which the flat view merges with the others'; a
-        # built-in's own facets (token collapses white space) are what its name says, not repeated
-        assert (
-            "type: { union: [{ builtin: 'token', facets: { enumeration: ['small', 'large'] } }, { builtin: 'positiveInteger' }] }"
-            in content
-        )
-        # a plain string has no type to tell, and nothing to say about white space
-        assert "name: { required: true }" in content
+
+def test_simple_content_text_is_typed_the_same_way(definition_of) -> None:
+    entry = schema(
+        '<xs:element name="Root"><xs:complexType><xs:simpleContent><xs:restriction base="tText"><xs:maxLength value="4"/></xs:restriction>'
+        '</xs:simpleContent></xs:complexType></xs:element>'
+        '<xs:complexType name="tText"><xs:simpleContent><xs:extension base="xs:token"/></xs:simpleContent></xs:complexType>'
+    )
+    assert pick(definition_of(entry), 'Root.textContent.type') == {'builtin': 'token', 'facets': {'maxLength': 4}}
+
+
+def test_a_restriction_of_untyped_simple_content_adding_no_facet_says_nothing(definition_of) -> None:
+    entry = schema(
+        '<xs:element name="Root"><xs:complexType><xs:simpleContent><xs:restriction base="tAny"/>'
+        '</xs:simpleContent></xs:complexType></xs:element>'
+        '<xs:complexType name="tAny"><xs:simpleContent><xs:extension base="xs:anySimpleType"/></xs:simpleContent></xs:complexType>'
+    )
+    assert pick(definition_of(entry), 'Root.textContent') == {}
+
+
+def test_a_redefined_simple_type_adds_its_facets_to_the_one_it_redefines(definition_of) -> None:
+    entry = schema(
+        '<xs:redefine schemaLocation="base.xsd"><xs:simpleType name="tCode"><xs:restriction base="tCode"><xs:maxLength value="3"/>'
+        '</xs:restriction></xs:simpleType></xs:redefine>'
+        '<xs:element name="Root"><xs:complexType><xs:attribute name="a" type="tCode"/></xs:complexType></xs:element>'
+    )
+    base = (
+        f'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="{TARGET}">'
+        '<xs:simpleType name="tCode"><xs:restriction base="xs:token"><xs:minLength value="1"/></xs:restriction></xs:simpleType></xs:schema>'
+    )
+    assert pick(definition_of(entry, imports={'base.xsd': base}), 'Root.attributes.details.a.type') == {
+        'builtin': 'token', 'facets': {'minLength': 1, 'maxLength': 3},
+    }

@@ -10,10 +10,7 @@ function element(params: { parents?: string[]; children?: string[] } = {}): Elem
 	return {
 		parents,
 		attributes: { sequence: [], details: {} },
-		children: {
-			sequence: children,
-			details: Object.fromEntries(children.map((child) => [child, {}])),
-		},
+		children: { sequence: children, details: {} },
 	}
 }
 

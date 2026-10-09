@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking - the generator is rebuilt.** It reads any XSD 1.0 schema and writes the definition `@dialecte/core` 0.6 reads. A tag declared several ways lists each declaration, and its parents name the one they hold. An attribute's or a text's datatype carries its facets: enumerations, patterns (written for JavaScript), lengths and ranges. Identity constraints sit on the declaration that declares them. `TYPES` holds the types an element may take with `xsi:type`. Regenerate your dialecte: the definition, constants and types all change shape.
+- A scaffolded package targets `@dialecte/core` `^0.6.0` and wires `TYPES` into its config and its XML assertions.
+- Generated attribute types offer an optional `xsi:type` where the element may name a type, with those types as hints. The definition declares no such attribute: XSD gives it to every element. For a tag declared several ways, the by-tag type hints the values any declaration accepts.
+
 ## [0.0.7] - 2026-09-29
 
 ### Fixed

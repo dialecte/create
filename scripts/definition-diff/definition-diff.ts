@@ -38,7 +38,8 @@ async function main(): Promise<void> {
 	process.stdout.write(
 		asJson ? `${JSON.stringify(differences, null, '\t')}\n` : formatReport({ differences }),
 	)
-	process.exit(differences.length === 0 ? 0 : 1)
+	// an exit code, not process.exit: a large report piped elsewhere is written out first
+	process.exitCode = differences.length === 0 ? 0 : 1
 }
 
 /** A generated definition as the data a consumer imports, and its types (none before the rebuilt generator). */

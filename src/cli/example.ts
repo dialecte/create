@@ -1,7 +1,7 @@
 import { readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import type { ExampleFacts } from './pyodide-runner.js'
+import type { ExampleFacts } from './pyodide-runner.ts'
 
 // Lines between these markers exist only when the root allows a child; both lines are dropped.
 const IF_CHILD = '__ifExampleChild__'

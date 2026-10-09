@@ -1,20 +1,6 @@
-import type {
-	DeclarationData,
-	DeclaredEdge,
-	DefinitionData,
-	EdgeData,
-	ElementData,
-} from './derive.types.ts'
+import { typedAttributes } from './typed-attributes.ts'
 
-/**
- * An edge carries its own declaration of the child when it holds attributes and children, both -
- * the rule core's `resolveDefinition` follows: a declaration on an edge is written in full.
- */
-export function isDeclaredEdge(
-	edge: EdgeData | undefined,
-): edge is EdgeData & Required<Pick<EdgeData, 'attributes' | 'children'>> {
-	return edge?.attributes !== undefined && edge.children !== undefined
-}
+import type { DeclarationData, DeclaredEdge, DefinitionData, ElementData } from './derive.types.ts'
 
 /** Every edge whose child carries other attributes there than at its tag level: each gets a type of its own. */
 export function findDeclaredEdges(params: { definition: DefinitionData }): DeclaredEdge[] {
@@ -30,9 +16,9 @@ export function findDeclaredEdges(params: { definition: DefinitionData }): Decla
 }
 
 /**
- * The attributes of `child` under `parent` when they are not its tag level's: those of the declaration the edge
- * carries inline (always - the definitions committed before the rebuilt generator), or of the one it references
- * when they differ (a tag declared two ways by namespace alone keeps one type).
+ * The attributes of `child` under `parent` when they are not its tag level's: those the declaration the edge
+ * references offers (`typedAttributes`: its `xsi:type` included), when they differ (a tag declared two ways by
+ * namespace alone keeps one type).
  */
 export function attributesDeclaredUnder(params: {
 	definition: DefinitionData
@@ -40,14 +26,12 @@ export function attributesDeclaredUnder(params: {
 	child: string
 }): ElementData['attributes'] | undefined {
 	const { definition, parent, child } = params
-	const edge = definition[parent]?.children.details[child]
-	if (isDeclaredEdge(edge)) return edge.attributes
 	const declared = declaredUnder({ definition, parent, child })
-	if (declared === undefined) return undefined
+	const tagLevel = definition[child]
+	if (declared === undefined || tagLevel === undefined) return undefined
+	const offered = typedAttributes(declared)
 	// what the attribute type is made of: the attributes and what each is, not which identify the element
-	return sameData(typed(declared.attributes), typed(definition[child]?.attributes))
-		? undefined
-		: declared.attributes
+	return sameData(typed(offered), typed(typedAttributes(tagLevel))) ? undefined : offered
 }
 
 function typed(attributes: ElementData['attributes'] | undefined): unknown {
@@ -71,8 +55,7 @@ function canonical(value: unknown): string {
 
 /**
  * The declaration of `child` under `parent`, when the edge decides one: the only one it references - one
- * namespace, one id -, or the one it carries inline (the definitions committed before the rebuilt generator).
- * Otherwise none: the namespace or the particle matched decides, the tag level stands for all of them.
+ * namespace, one id. Otherwise none: the namespace or the particle matched decides, the tag level stands for all of them.
  */
 export function declaredUnder(params: {
 	definition: DefinitionData
@@ -81,9 +64,6 @@ export function declaredUnder(params: {
 }): DeclarationData | undefined {
 	const { definition, parent, child } = params
 	const edge = definition[parent]?.children.details[child]
-	if (isDeclaredEdge(edge)) {
-		return { attributes: edge.attributes, children: edge.children, contentModel: edge.contentModel }
-	}
 	const [ids, ...otherNamespaces] = Object.values(edge?.declarations ?? {})
 	const [only, ...others] = ids ?? []
 	if (only === undefined || others.length > 0 || otherNamespaces.length > 0) return undefined

@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 
-import { PACKAGE_ROOT } from './paths.js'
+import { PACKAGE_ROOT } from './paths.ts'
 
 const OXFMT_BIN = join('node_modules', '.bin', 'oxfmt')
 const OXFMT_CONFIGS = ['.oxfmtrc.json', '.oxfmtrc.jsonc']

@@ -1,22 +1,16 @@
-import { readdir, mkdir } from 'node:fs/promises'
-import { dirname, basename, resolve } from 'node:path'
+import { readdir } from 'node:fs/promises'
+import { parse, relative, resolve, sep } from 'node:path'
 
-import { formatGeneratedFiles } from './format-output.js'
-import { PYTHON_ENGINE_DIR, VENDOR_DIR } from './paths.js'
+import { engineError } from './engine-error.ts'
+import { PYTHON_ENGINE_DIR, VENDOR_DIR } from './paths.ts'
+import { writeGenerated } from './write-generated.ts'
 
 import { loadPyodide, type PyodideInterface } from 'pyodide'
 
-/** What a scaffold writes its worked example with, as the generator read it from the schema. */
-export interface ExampleFacts {
-	root: { name: string; namespaceUri: string }
-	/** The first child the root allows; `null` when it allows none. */
-	child: {
-		name: string
-		namespaceUri: string
-		/** Each attribute the child requires, with a value the schema accepts. */
-		requiredAttributes: { name: string; value: string }[]
-	} | null
-}
+import type { ExampleFacts } from '../derive/derive.types.ts'
+import type { GeneratedDefinition } from './write-generated.types.ts'
+
+export type { ExampleFacts } from '../derive/derive.types.ts'
 
 export interface GenerateOptions {
 	/** Absolute path to the entry .xsd file. */
@@ -28,8 +22,6 @@ export interface GenerateOptions {
 	/** The element that starts a document, when more than one could. */
 	root?: string
 }
-
-const GENERATED_FILES = ['definition.generated.ts', 'constants.generated.ts', 'types.generated.ts']
 
 let pyodidePromise: Promise<PyodideInterface> | undefined
 
@@ -56,7 +48,8 @@ async function getPyodide(quiet: boolean): Promise<PyodideInterface> {
 	return pyodidePromise
 }
 
-async function mountReadOnly(
+/** Mount a host folder (NODEFS) at `mountPoint`; the engine only reads from it. */
+async function mountHost(
 	py: PyodideInterface,
 	mountPoint: string,
 	hostRoot: string,
@@ -83,7 +76,7 @@ async function mountOnce(
 	hostRoot: string,
 ): Promise<void> {
 	if (permanentMounts.has(mountPoint)) return
-	await mountReadOnly(py, mountPoint, hostRoot)
+	await mountHost(py, mountPoint, hostRoot)
 	permanentMounts.add(mountPoint)
 }
 
@@ -109,18 +102,17 @@ async function listWheels(): Promise<string[]> {
 }
 
 /**
- * Run the Python XSD->TypeScript generator inside Pyodide (WebAssembly).
- * No host Python installation is required.
+ * Run the Python schema reader inside Pyodide (WebAssembly) - no host Python installation is required -, then
+ * write the definition it returns with the constants and types derived from it, and return the facts the scaffold's
+ * worked example names.
  */
 export async function runGenerator(options: GenerateOptions): Promise<ExampleFacts> {
 	const { entry, outDir, quiet = false, root } = options
 
 	const entryAbs = resolve(entry)
-	const outAbs = resolve(outDir)
-	const entryDir = dirname(entryAbs)
-	const entryName = basename(entryAbs)
-
-	await mkdir(outAbs, { recursive: true })
+	// the root of the entry's file system: a schema may import or include from above its own folder
+	const hostRoot = parse(entryAbs).root
+	const entryInFs = `/in/${relative(hostRoot, entryAbs).split(sep).join('/')}`
 
 	const py = await getPyodide(quiet)
 
@@ -140,20 +132,15 @@ export async function runGenerator(options: GenerateOptions): Promise<ExampleFac
 	}
 	const wheelPaths = JSON.stringify(wheels.map((w) => `/vendor/${w}`))
 
-	// Invoke the engine CLI entry point with in-FS paths.
-	const engineArgs = ['--entry', `/in/${entryName}`, '--out-dir', '/out']
-	if (root !== undefined) engineArgs.push('--root', root)
-	const argv = JSON.stringify(engineArgs)
+	// The engine reads the schema from the in-FS path of its entry; it writes nothing.
+	const entryPath = JSON.stringify(entryInFs)
 	const workMounts: string[] = []
-	let facts: unknown
+	let generated: unknown
 	try {
-		// Mount the entry XSD directory (handles relative imports/includes) and the output dir.
-		await mountReadOnly(py, '/in', entryDir)
+		await mountHost(py, '/in', hostRoot)
 		workMounts.push('/in')
-		await mountReadOnly(py, '/out', outAbs)
-		workMounts.push('/out')
 
-		facts = await py.runPythonAsync(`
+		generated = await py.runPythonAsync(`
 import sys, os, zipfile
 
 site_dir = '/site-packages'
@@ -168,16 +155,21 @@ if site_dir not in sys.path:
 if '/engine' not in sys.path:
     sys.path.insert(0, '/engine')
 
-from generate.__main__ import main
-import json
-json.dumps(main(${argv}))
+from generate.__main__ import generate
+import json, pathlib
+json.dumps(generate(pathlib.Path(${entryPath})))
 `)
+	} catch (error) {
+		throw engineError(error, (text) => text.replaceAll('/in/', hostRoot.split(sep).join('/')))
 	} finally {
 		// Unmount work dirs so subsequent runs can remount cleanly - a failed run included.
 		releaseWorkMounts(py, workMounts)
 	}
 
-	formatGeneratedFiles({ outDir: outAbs, files: GENERATED_FILES })
-	// the engine hands back, as JSON, what the scaffold names in its worked example
-	return JSON.parse(String(facts)) as ExampleFacts
+	// the engine hands back, as JSON, the definition, its types and their source: the rest derives from them
+	return writeGenerated({
+		outDir,
+		generated: JSON.parse(String(generated)) as GeneratedDefinition,
+		root,
+	})
 }

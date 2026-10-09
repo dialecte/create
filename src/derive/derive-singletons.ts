@@ -13,9 +13,9 @@ import type { DeclarationData, DefinitionData, ParticleData, TypesData } from '.
 export function deriveSingletons(params: {
 	definition: DefinitionData
 	root: string
-	types?: TypesData
+	types: TypesData
 }): string[] {
-	const { definition, root, types = {} } = params
+	const { definition, root, types } = params
 	if (canNestInItself({ definition, tag: root })) return []
 
 	const singletons = new Set<string>([root])
@@ -63,8 +63,6 @@ export function deriveSingletons(params: {
 				const declared = declaredUnder({ definition, parent: grandparent, child: parent })
 				models.add(modelOf(declared ?? element))
 			}
-			const variants = definition[grandparent]?.children.details[parent]?.variants ?? {}
-			for (const variant of Object.values(variants)) models.add(variant.contentModel)
 		}
 		return models
 	}
@@ -89,15 +87,9 @@ export function deriveSingletons(params: {
 /** The content model of a content holding no element: it holds every child no time. */
 const NO_ELEMENT: ParticleData = { kind: 'sequence', minOccurs: 1, maxOccurs: 1, particles: [] }
 
-/**
- * The content model a content holds by, undefined when unknown. Without one, a content holds no element of its
- * own - its children, if any, are its variants' -, but for a definition written before the rebuilt generator, whose
- * tag merged its variants' children and wrote no model: unknown.
- */
-function modelOf(content: DeclarationData): ParticleData | undefined {
-	if (content.contentModel !== undefined) return content.contentModel
-	const listsChildren = content.children.sequence.length > 0 || content.children.any === true
-	return listsChildren && content.variants === undefined ? undefined : NO_ELEMENT
+/** The content model a content holds by: without one, it holds no element of its own (its children are its variants'). */
+function modelOf(content: DeclarationData): ParticleData {
+	return content.contentModel ?? NO_ELEMENT
 }
 
 /**

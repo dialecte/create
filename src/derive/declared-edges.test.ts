@@ -19,13 +19,7 @@ const definition: DefinitionData = {
 		children: {
 			// Text is not an element of the definition (a foreign element a wildcard admits)
 			sequence: ['Text', 'Address', 'Header', 'Note'],
-			details: {
-				Text: {},
-				Header: {},
-				Address: { attributes: noAttributes, children: noAttributes },
-				// attributes alone are not a declaration: core reads an edge declaration only in full
-				Note: { attributes: noAttributes },
-			},
+			details: {},
 		},
 	},
 	Address: { parents: ['Root'], attributes: noAttributes, children: noAttributes },
@@ -65,11 +59,8 @@ describe('declared-edges', () => {
 		assert.deepEqual(elementChildren({ definition, parent: 'Root' }), ['Address', 'Header', 'Note'])
 	})
 
-	it('findDeclaredEdges: only an edge carrying attributes and children declares the child', () => {
-		assert.deepEqual(
-			findDeclaredEdges({ definition }).map(({ parent, child }) => `${parent}>${child}`),
-			['Root>Address'],
-		)
+	it('findDeclaredEdges: a child declared one way -> no edge of its own', () => {
+		assert.deepEqual(findDeclaredEdges({ definition }), [])
 	})
 
 	it('declaredUnder: a reference to one declaration of the child -> that declaration', () => {

@@ -2,10 +2,12 @@
 
 Scaffold and generate [Dialecte](https://github.com/dialecte) SDKs from an XSD schema.
 
-The XSD-to-TypeScript generator is written in Python but runs inside Node via
+The XSD reader is written in Python but runs inside Node via
 [Pyodide](https://pyodide.org/) (WebAssembly), so **end users do not need Python
 installed**. Pure-Python dependencies are vendored as wheels and installed
-offline at runtime.
+offline at runtime. It writes the definition - every element declaration of the schema, its values
+with their facets, identity constraints and the types an element may take with `xsi:type` (`TYPES`);
+the constants and types are derived from it in TypeScript.
 
 ## Quick start
 
@@ -38,7 +40,7 @@ element definitions from the schema in one step.
 | `--out <dir>`          | `./<dialecte id>`             | target directory                                    |
 | `--version <vN>`       | `v1`                          | version folder name                                 |
 | `--namespace <uri>`    | the root element's namespace  | default XML namespace URI                           |
-| `--core-version <ver>` | `^0.5.0`                      | `@dialecte/core` version range                      |
+| `--core-version <ver>` | `^0.6.0`                      | `@dialecte/core` version range                      |
 | `--root <element>`     | the one root candidate        | which element starts a document, when several could |
 
 The generated package includes:
@@ -78,8 +80,9 @@ your own `.xsd` file. Optional sidecar files next to the entry XSD are honored:
 
 ## Development
 
-The generator engine is a Python package under `python/`. Develop and test it
-with native Python (fast loop), then ship it to users via WebAssembly.
+The schema reader is a Python package under `python/generate`. Develop and test it
+with native Python (fast loop), then ship it to users via WebAssembly; `src/derive` derives the
+constants and types from the definition it writes.
 
 ```sh
 # Engine (Python) tests - python/.venv when present, python3 otherwise

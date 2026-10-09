@@ -27,7 +27,7 @@ const FIXTURES = join(CREATE_ROOT, 'test/fixtures/definition')
 for (const fixture of readdirSync(FIXTURES).sort()) {
 	describe(`derivation of the committed dialecte ${fixture}`, async () => {
 		const folder = join(FIXTURES, fixture)
-		// TYPES: the types an instance may name with xsi:type, written by the rebuilt generator only
+		// TYPES: the types an instance may name with xsi:type; a definition without it predates the rebuilt generator
 		const { DEFINITION, TYPES } = await import(
 			pathToFileURL(join(folder, 'definition.generated.ts')).href
 		)

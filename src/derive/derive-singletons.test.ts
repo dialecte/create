@@ -11,10 +11,8 @@ function element(params: { parents?: string[]; contentModel?: ParticleData } = {
 	return {
 		parents,
 		attributes: { sequence: [], details: {} },
-		children: {
-			sequence: children,
-			details: Object.fromEntries(children.map((child) => [child, {}])),
-		},
+		// details only for a child declared several ways
+		children: { sequence: children, details: {} },
 		...(contentModel ? { contentModel } : {}),
 	}
 }
@@ -153,24 +151,26 @@ const cases: Record<string, SingletonCase> = {
 	'a child once in an xsi:type variant of a slot, which the slot model does not name -> a singleton':
 		{
 			definition: {
-				Root: {
-					...element({ contentModel: sequence(once('Address')) }),
-					children: {
-						sequence: ['Address'],
-						details: {
-							Address: {
-								variants: {
-									'{urn:t}tUsAddress': { contentModel: sequence(once('Street'), once('Zip')) },
-									'{urn:t}tUkAddress': { contentModel: sequence(once('Street'), once('Postcode')) },
-								},
-							},
-						},
-					},
+				Root: element({ contentModel: sequence(once('Address')) }),
+				Address: {
+					...element({ parents: ['Root'], contentModel: sequence(once('Street')) }),
+					variants: ['{urn:t}tUkAddress', '{urn:t}tUsAddress'],
 				},
-				Address: element({ parents: ['Root'], contentModel: sequence(once('Street')) }),
 				Street: element({ parents: ['Address'] }),
 				Zip: element({ parents: ['Address'] }),
 				Postcode: element({ parents: ['Address'] }),
+			},
+			types: {
+				'{urn:t}tUsAddress': {
+					attributes: { sequence: [], details: {} },
+					children: { sequence: ['Street', 'Zip'], details: {} },
+					contentModel: sequence(once('Street'), once('Zip')),
+				},
+				'{urn:t}tUkAddress': {
+					attributes: { sequence: [], details: {} },
+					children: { sequence: ['Street', 'Postcode'], details: {} },
+					contentModel: sequence(once('Street'), once('Postcode')),
+				},
 			},
 			root: 'Root',
 			expected: ['Address', 'Postcode', 'Root', 'Street', 'Zip'],
@@ -190,70 +190,6 @@ const cases: Record<string, SingletonCase> = {
 		root: 'Root',
 		expected: ['Root'],
 	},
-	'a child once in each declaration of a parent declared differently under two grandparents -> a singleton':
-		{
-			definition: {
-				Root: element({
-					contentModel: {
-						kind: 'sequence',
-						minOccurs: 1,
-						maxOccurs: 1,
-						particles: [once('Left'), once('Right')],
-					},
-				}),
-				Left: {
-					...element({ parents: ['Root'] }),
-					children: {
-						sequence: ['Part'],
-						details: {
-							Part: {
-								attributes: { sequence: [], details: {} },
-								children: { sequence: ['Leaf'], details: { Leaf: {} } },
-								contentModel: {
-									kind: 'sequence',
-									minOccurs: 1,
-									maxOccurs: 1,
-									particles: [once('Leaf')],
-								},
-							},
-						},
-					},
-					contentModel: { kind: 'sequence', minOccurs: 1, maxOccurs: 1, particles: [once('Part')] },
-				},
-				Right: {
-					...element({ parents: ['Root'] }),
-					children: {
-						sequence: ['Part'],
-						details: {
-							Part: {
-								attributes: { sequence: [], details: {} },
-								children: { sequence: ['Leaf'], details: { Leaf: {} } },
-								contentModel: {
-									kind: 'sequence',
-									minOccurs: 1,
-									maxOccurs: 1,
-									particles: [once('Leaf')],
-								},
-							},
-						},
-					},
-					contentModel: { kind: 'sequence', minOccurs: 1, maxOccurs: 1, particles: [once('Part')] },
-				},
-				// the tag level: what any declaration allows, both declarations offered side by side
-				Part: element({
-					parents: ['Left', 'Right'],
-					contentModel: {
-						kind: 'choice',
-						minOccurs: 1,
-						maxOccurs: 1,
-						particles: [once('Leaf'), once('Leaf')],
-					},
-				}),
-				Leaf: element({ parents: ['Part'] }),
-			},
-			root: 'Root',
-			expected: ['Leaf', 'Left', 'Part', 'Right', 'Root'],
-		},
 	'a child once in each way its parent is declared, referenced from the grandparents -> a singleton':
 		{
 			definition: {
@@ -326,17 +262,7 @@ const cases: Record<string, SingletonCase> = {
 				Root: element({ contentModel: sequence(once('Left')) }),
 				Left: {
 					...element({ parents: ['Root'], contentModel: sequence(once('Part')) }),
-					children: {
-						sequence: ['Part'],
-						details: {
-							Part: {
-								declarations: { 'urn:t': ['1'] },
-								variants: {
-									'{urn:t}tTwice': { contentModel: sequence(once('Leaf'), once('Leaf')) },
-								},
-							},
-						},
-					},
+					children: byReference('Part', '1'),
 				},
 				Part: {
 					...element({ parents: ['Left'] }),
@@ -345,6 +271,7 @@ const cases: Record<string, SingletonCase> = {
 							attributes: { sequence: [], details: {} },
 							children: { sequence: ['Leaf'], details: {} },
 							contentModel: sequence(once('Leaf')),
+							variants: ['{urn:t}tTwice'],
 						},
 						'2': {
 							attributes: { sequence: [], details: {} },
@@ -354,6 +281,13 @@ const cases: Record<string, SingletonCase> = {
 					},
 				},
 				Leaf: element({ parents: ['Part'] }),
+			},
+			types: {
+				'{urn:t}tTwice': {
+					attributes: { sequence: [], details: {} },
+					children: { sequence: ['Leaf'], details: {} },
+					contentModel: sequence(once('Leaf'), once('Leaf')),
+				},
 			},
 			root: 'Root',
 			expected: ['Left', 'Part', 'Root'],
@@ -389,72 +323,33 @@ const cases: Record<string, SingletonCase> = {
 		root: 'Root',
 		expected: ['Left', 'Part', 'Right', 'Root'],
 	},
-	'a child once in one declaration of its parent and twice in the other -> not a singleton': {
-		definition: {
-			Root: element({ contentModel: sequence(once('Left'), once('Right')) }),
-			Left: {
-				...element({ parents: ['Root'], contentModel: sequence(once('Part')) }),
-				children: {
-					sequence: ['Part'],
-					details: {
-						Part: {
-							attributes: { sequence: [], details: {} },
-							children: { sequence: ['Leaf'], details: {} },
-							contentModel: sequence(once('Leaf')),
-						},
-					},
-				},
-			},
-			Right: {
-				...element({ parents: ['Root'], contentModel: sequence(once('Part')) }),
-				children: {
-					sequence: ['Part'],
-					details: {
-						Part: {
-							attributes: { sequence: [], details: {} },
-							children: { sequence: ['Leaf'], details: {} },
-							contentModel: sequence(once('Leaf'), once('Leaf')),
-						},
-					},
-				},
-			},
-			Part: element({ parents: ['Left', 'Right'], contentModel: sequence(once('Leaf')) }),
-			Leaf: element({ parents: ['Part'] }),
-		},
-		root: 'Root',
-		expected: ['Left', 'Part', 'Right', 'Root'],
-	},
-	'a child once in one declaration of its parent, the other open to any element -> not a singleton':
+	'a child once in one way its parent is declared, the other open to any element -> not a singleton':
 		{
 			definition: {
 				Root: element({ contentModel: sequence(once('Left'), once('Right')) }),
 				Left: {
 					...element({ parents: ['Root'], contentModel: sequence(once('Part')) }),
-					children: {
-						sequence: ['Part'],
-						details: {
-							Part: {
-								attributes: { sequence: [], details: {} },
-								children: { sequence: ['Leaf'], details: {} },
-								contentModel: sequence(once('Leaf')),
-							},
-						},
-					},
+					children: byReference('Part', '1'),
 				},
 				Right: {
 					...element({ parents: ['Root'], contentModel: sequence(once('Part')) }),
-					children: {
-						sequence: ['Part'],
-						details: {
-							Part: {
-								attributes: { sequence: [], details: {} },
-								children: { sequence: [], details: {} },
-								contentModel: sequence({ kind: 'any', minOccurs: 0 }),
-							},
+					children: byReference('Part', '2'),
+				},
+				Part: {
+					...element({ parents: ['Left', 'Right'] }),
+					declarations: {
+						'1': {
+							attributes: { sequence: [], details: {} },
+							children: { sequence: ['Leaf'], details: {} },
+							contentModel: sequence(once('Leaf')),
+						},
+						'2': {
+							attributes: { sequence: [], details: {} },
+							children: { sequence: [], any: true, details: {} },
+							contentModel: sequence({ kind: 'any', minOccurs: 0 }),
 						},
 					},
 				},
-				Part: element({ parents: ['Left', 'Right'], contentModel: sequence(once('Leaf')) }),
 				Leaf: element({ parents: ['Part'] }),
 			},
 			root: 'Root',
@@ -496,7 +391,7 @@ const cases: Record<string, SingletonCase> = {
 			// holding no element itself, no content model; its children list the type's
 			Part: {
 				...element({ parents: ['Root'] }),
-				children: { sequence: ['Leaf'], details: { Leaf: {} } },
+				children: { sequence: ['Leaf'], details: {} },
 				variants: ['{urn:t}tOnce'],
 			},
 			Leaf: element({ parents: ['Part'] }),
@@ -529,19 +424,6 @@ const cases: Record<string, SingletonCase> = {
 		root: 'Root',
 		expected: ['Leaf', 'Part', 'Root'],
 	},
-	'children listed without a content model nor variants (a definition before the rebuild) -> any number of times':
-		{
-			definition: {
-				Root: element({ contentModel: sequence(once('Part')) }),
-				Part: {
-					...element({ parents: ['Root'] }),
-					children: { sequence: ['Leaf'], details: { Leaf: {} } },
-				},
-				Leaf: element({ parents: ['Part'] }),
-			},
-			root: 'Root',
-			expected: ['Part', 'Root'],
-		},
 	'a child prohibited in an unbounded group -> occurs never, a singleton': {
 		definition: {
 			Root: element({
@@ -562,7 +444,7 @@ describe('deriveSingletons', () => {
 	for (const [name, testCase] of Object.entries(cases)) {
 		it(name, () => {
 			const { definition, root, expected, types } = testCase
-			assert.deepEqual(deriveSingletons({ definition, root, types }), expected)
+			assert.deepEqual(deriveSingletons({ definition, root, types: types ?? {} }), expected)
 		})
 	}
 })
