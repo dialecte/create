@@ -1,0 +1,427 @@
+{
+	"$comment": "Every construct of XSD 1.0 and how the generator treats it. handled: what reads it, through the schema library - the instance oracle proves the fact it writes. excluded: why, and what it changes in an instance (nothing, or what another handled fact already says). xsd-1.1: refused by the XSD 1.0 schema library at load, with every attribute of an element listed there. A construct in none of the three fails the proof (python/proof/constructs.py). Rows are added in review, never by a run.",
+	"handled": {
+		"schema": "model/read_schema.py - the schema loaded through the library, every global of its maps walked",
+		"schema@targetNamespace": "model/read_schema.py - the namespace of every global, written on each element and particle",
+		"schema@elementFormDefault": "model/read_schema.py - the namespace of a local element (qualified or none)",
+		"schema@attributeFormDefault": "model/read_schema.py - the namespace of a local attribute, its key prefixed when it has one",
+		"schema@blockDefault": "model/read_schema.py - the derivations an element blocks when it says none: xsi:type variants and substitution members",
+		"include": "model/read_schema.py - a document of the same namespace, read with the entry (local only)",
+		"include@schemaLocation": "model/read_schema.py - the local document read",
+		"import": "model/read_schema.py - a document of another namespace, read with the entry (local only)",
+		"import@namespace": "model/read_schema.py - the namespace the imported document declares",
+		"import@schemaLocation": "model/read_schema.py - the local document read",
+		"redefine": "model/datatypes.py, model/wildcards.py - a redefined type continues into the one it redefines, a redefined attribute group's self-reference is the group it redefines",
+		"redefine@schemaLocation": "model/read_schema.py - the local document read",
+		"annotation": "model/read_schema.py - holds the documentation of an element declaration",
+		"documentation": "model/read_schema.py - an element declaration's documentation, written whole (markup included)",
+		"element": "model/read_schema.py - one declaration per element the content reaches, every global",
+		"element@name": "model/read_schema.py - the tag",
+		"element@ref": "model/read_schema.py - the global declaration a particle holds",
+		"element@type": "model/read_schema.py, model/datatypes.py - attributes, content model, text type of the declaration; its identity tells declarations apart",
+		"element@minOccurs": "model/read_schema.py - the particle's occurrence",
+		"element@maxOccurs": "model/read_schema.py - the particle's occurrence",
+		"element@default": "model/read_schema.py - textContent.default; tells declarations apart",
+		"element@fixed": "model/read_schema.py - textContent.fixed; tells declarations apart",
+		"element@nillable": "model/read_schema.py - nillable; tells declarations apart",
+		"element@abstract": "model/read_schema.py - an abstract element is never an element of the dialecte, never in a content model",
+		"element@substitutionGroup": "model/read_schema.py - the members a particle naming the head holds, as a choice",
+		"element@block": "model/read_schema.py - xsi:type variants and substitution members leave out the blocked derivations; block=substitution leaves every member out",
+		"element@form": "model/read_schema.py - the namespace of a local element (qualified or none)",
+		"attribute": "model/read_schema.py - one attribute declaration per element declaration",
+		"attribute@name": "model/read_schema.py - the attribute key",
+		"attribute@ref": "model/read_schema.py - the global attribute declaration used",
+		"attribute@type": "model/datatypes.py - the attribute's datatype",
+		"attribute@use": "model/read_schema.py - required; prohibited removes the attribute",
+		"attribute@default": "model/read_schema.py - the attribute's default",
+		"attribute@fixed": "model/read_schema.py - the attribute's fixed value",
+		"attribute@form": "model/read_schema.py - the attribute's namespace, its key prefixed when it has one",
+		"attributeGroup": "model/read_schema.py - its attributes inlined where it is referenced",
+		"attributeGroup@name": "model/read_schema.py - resolved by the library",
+		"attributeGroup@ref": "model/read_schema.py, model/wildcards.py - its attributes and wildcard inlined",
+		"anyAttribute": "model/wildcards.py - attributes.any, computed per document along extensions and attribute groups",
+		"anyAttribute@namespace": "model/wildcards.py - namespace / notNamespace, relative to the declaring document",
+		"anyAttribute@processContents": "model/wildcards.py - processContents",
+		"complexType": "model/read_schema.py - the content an element of that type holds; its identity tells declarations apart",
+		"complexType@name": "model/read_schema.py - the type's QName (TYPES key, variants)",
+		"complexType@mixed": "model/read_schema.py - untyped text content",
+		"complexType@abstract": "model/read_schema.py - abstractType; never an xsi:type variant",
+		"complexType@block": "model/read_schema.py - the derivations a declaration of that type blocks: xsi:type variants and substitution members",
+		"complexContent": "model/read_schema.py - the derived content model",
+		"complexContent@mixed": "model/read_schema.py - untyped text content",
+		"simpleContent": "model/datatypes.py - the text type of the element",
+		"extension": "model/read_schema.py, model/datatypes.py, model/wildcards.py - base content then the extension's; text type of the base; wildcards united",
+		"extension@base": "model/read_schema.py - the type extended; a derivation step for xsi:type and substitution",
+		"restriction": "model/datatypes.py, model/read_schema.py - a datatype level with its facets; a restricted content model",
+		"restriction@base": "model/datatypes.py, model/read_schema.py - the type restricted; a derivation step",
+		"simpleType": "model/datatypes.py - a datatype",
+		"simpleType@name": "model/datatypes.py - the type's QName (TYPES key, variants)",
+		"list": "model/datatypes.py - { list: item }",
+		"list@itemType": "model/datatypes.py - the item datatype",
+		"union": "model/datatypes.py - { union: members } in memberTypes then inline order",
+		"union@memberTypes": "model/datatypes.py - the named members, first",
+		"length": "model/datatypes.py - facets.length (item count on a list)",
+		"length@value": "model/datatypes.py - its value",
+		"minLength": "model/datatypes.py - facets.minLength",
+		"minLength@value": "model/datatypes.py - its value",
+		"maxLength": "model/datatypes.py - facets.maxLength",
+		"maxLength@value": "model/datatypes.py - its value",
+		"pattern": "model/datatypes.py, definition/patterns.py - facets.pattern, one level per restriction, written as JS",
+		"pattern@value": "definition/patterns.py - the XSD regular expression converted",
+		"enumeration": "model/datatypes.py - facets.enumeration of the most derived level declaring one",
+		"enumeration@value": "model/datatypes.py - lexical, white space normalized as the type does, QName as {uri}local",
+		"whiteSpace": "model/datatypes.py - facets.whiteSpace when it is not the built-in's",
+		"whiteSpace@value": "model/datatypes.py - its value",
+		"minInclusive": "model/datatypes.py - facets.minInclusive, lexical",
+		"minInclusive@value": "model/datatypes.py - its value",
+		"maxInclusive": "model/datatypes.py - facets.maxInclusive, lexical",
+		"maxInclusive@value": "model/datatypes.py - its value",
+		"minExclusive": "model/datatypes.py - facets.minExclusive, lexical",
+		"minExclusive@value": "model/datatypes.py - its value",
+		"maxExclusive": "model/datatypes.py - facets.maxExclusive, lexical",
+		"maxExclusive@value": "model/datatypes.py - its value",
+		"totalDigits": "model/datatypes.py - facets.totalDigits",
+		"totalDigits@value": "model/datatypes.py - its value",
+		"fractionDigits": "model/datatypes.py - facets.fractionDigits",
+		"fractionDigits@value": "model/datatypes.py - its value",
+		"group": "model/read_schema.py - its particle inlined where it is referenced",
+		"group@name": "model/read_schema.py - resolved by the library",
+		"group@ref": "model/read_schema.py - its particle, with the referencing occurrence",
+		"group@minOccurs": "model/read_schema.py - the occurrence of the referenced particle",
+		"group@maxOccurs": "model/read_schema.py - the occurrence of the referenced particle",
+		"sequence": "model/read_schema.py - a sequence particle",
+		"sequence@minOccurs": "model/read_schema.py - its occurrence",
+		"sequence@maxOccurs": "model/read_schema.py - its occurrence",
+		"choice": "model/read_schema.py - a choice particle",
+		"choice@minOccurs": "model/read_schema.py - its occurrence",
+		"choice@maxOccurs": "model/read_schema.py - its occurrence",
+		"all": "model/read_schema.py - an all particle",
+		"all@minOccurs": "model/read_schema.py - its occurrence",
+		"all@maxOccurs": "model/read_schema.py - its occurrence",
+		"any": "model/read_schema.py, model/wildcards.py - a wildcard particle",
+		"any@namespace": "model/wildcards.py - namespace / notNamespace, relative to the declaring document",
+		"any@processContents": "model/wildcards.py - processContents",
+		"any@minOccurs": "model/read_schema.py - its occurrence",
+		"any@maxOccurs": "model/read_schema.py - its occurrence",
+		"unique": "model/identity_paths.py - a constraint on the declaration",
+		"unique@name": "model/identity_paths.py - its QName; tells declarations apart",
+		"key": "model/identity_paths.py - a constraint on the declaration",
+		"key@name": "model/identity_paths.py - its QName; tells declarations apart",
+		"keyref": "model/identity_paths.py - a constraint on the declaration",
+		"keyref@name": "model/identity_paths.py - its QName; tells declarations apart",
+		"keyref@refer": "model/identity_paths.py - refer as { name, namespace }",
+		"selector": "model/identity_paths.py - the selector paths",
+		"selector@xpath": "model/identity_paths.py - parsed over the XSD 1.0 grammar, prefixes in scope",
+		"field": "model/identity_paths.py - one field, a union of paths",
+		"field@xpath": "model/identity_paths.py - parsed over the XSD 1.0 grammar, prefixes in scope"
+	},
+	"excluded": {
+		"schema@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"schema@version": { "reason": "the schema's own version label", "effect": "none" },
+		"schema@xml:lang": { "reason": "the language of the schema's text", "effect": "none" },
+		"schema@finalDefault": {
+			"reason": "schema legality: derivations other schema components may not make; the library refuses a schema breaking it",
+			"effect": "none on an instance of a valid schema"
+		},
+		"schema@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"include@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"import@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"redefine@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"annotation@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"appinfo": { "reason": "information for applications, not validation", "effect": "none" },
+		"appinfo@source": {
+			"reason": "information for applications, not validation",
+			"effect": "none"
+		},
+		"appinfo@{foreign}": {
+			"reason": "an attribute of another namespace on application information",
+			"effect": "none"
+		},
+		"documentation@{foreign}": {
+			"reason": "an attribute of another namespace on documentation",
+			"effect": "none"
+		},
+		"documentation@source": { "reason": "where the documentation comes from", "effect": "none" },
+		"documentation@xml:lang": { "reason": "the language of the documentation", "effect": "none" },
+		"notation": {
+			"reason": "a notation declaration; a NOTATION value is valid when the enumeration its type must carry (facets.enumeration, written) names it",
+			"effect": "none beyond that enumeration"
+		},
+		"notation@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"notation@name": {
+			"reason": "the notation's name, compared through the NOTATION type's enumeration",
+			"effect": "none beyond that enumeration"
+		},
+		"notation@public": { "reason": "an external identifier of the notation", "effect": "none" },
+		"notation@system": { "reason": "an external identifier of the notation", "effect": "none" },
+		"element@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"element@final": {
+			"reason": "schema legality: which members may join the substitution group; the library refuses a member breaking it",
+			"effect": "none on an instance of a valid schema"
+		},
+		"attribute@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"attributeGroup@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"anyAttribute@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"complexType@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"complexType@final": {
+			"reason": "schema legality: which types may derive from it; the library refuses a derivation breaking it",
+			"effect": "none on an instance of a valid schema"
+		},
+		"complexContent@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"simpleContent@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"extension@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"restriction@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"simpleType@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"simpleType@final": {
+			"reason": "schema legality: which types may derive from it, as a restriction, list or union; the library refuses a derivation breaking it",
+			"effect": "none on an instance of a valid schema"
+		},
+		"list@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"union@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"length@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"length@fixed": {
+			"reason": "schema legality: a derived type may not change the facet; the library refuses one that does",
+			"effect": "none on an instance of a valid schema"
+		},
+		"minLength@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"minLength@fixed": {
+			"reason": "schema legality: a derived type may not change the facet",
+			"effect": "none on an instance of a valid schema"
+		},
+		"maxLength@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"maxLength@fixed": {
+			"reason": "schema legality: a derived type may not change the facet",
+			"effect": "none on an instance of a valid schema"
+		},
+		"pattern@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"enumeration@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"whiteSpace@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"whiteSpace@fixed": {
+			"reason": "schema legality: a derived type may not change the facet",
+			"effect": "none on an instance of a valid schema"
+		},
+		"minInclusive@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"minInclusive@fixed": {
+			"reason": "schema legality: a derived type may not change the facet",
+			"effect": "none on an instance of a valid schema"
+		},
+		"maxInclusive@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"maxInclusive@fixed": {
+			"reason": "schema legality: a derived type may not change the facet",
+			"effect": "none on an instance of a valid schema"
+		},
+		"minExclusive@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"minExclusive@fixed": {
+			"reason": "schema legality: a derived type may not change the facet",
+			"effect": "none on an instance of a valid schema"
+		},
+		"maxExclusive@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"maxExclusive@fixed": {
+			"reason": "schema legality: a derived type may not change the facet",
+			"effect": "none on an instance of a valid schema"
+		},
+		"totalDigits@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"totalDigits@fixed": {
+			"reason": "schema legality: a derived type may not change the facet",
+			"effect": "none on an instance of a valid schema"
+		},
+		"fractionDigits@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"fractionDigits@fixed": {
+			"reason": "schema legality: a derived type may not change the facet",
+			"effect": "none on an instance of a valid schema"
+		},
+		"group@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"sequence@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"choice@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"all@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"any@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"unique@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"key@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"keyref@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"selector@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"field@id": { "reason": "an identifier of the schema component", "effect": "none" },
+		"include@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"import@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"redefine@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"annotation@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"notation@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"element@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"attribute@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"attributeGroup@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"anyAttribute@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"complexType@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"complexContent@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"simpleContent@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"extension@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"restriction@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"simpleType@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"list@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"union@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"length@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"minLength@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"maxLength@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"pattern@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"enumeration@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"whiteSpace@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"minInclusive@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"maxInclusive@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"minExclusive@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"maxExclusive@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"totalDigits@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"fractionDigits@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"group@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"sequence@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"choice@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"all@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"any@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"unique@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"key@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"keyref@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"selector@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		},
+		"field@{foreign}": {
+			"reason": "an attribute of another namespace on a schema component (non-schema information)",
+			"effect": "none"
+		}
+	},
+	"xsd-1.1": [
+		"alternative",
+		"assert",
+		"assertion",
+		"defaultOpenContent",
+		"explicitTimezone",
+		"openContent",
+		"override",
+		"schema@defaultAttributes",
+		"schema@xpathDefaultNamespace",
+		"complexType@defaultAttributesApply",
+		"element@targetNamespace",
+		"attribute@targetNamespace",
+		"attribute@inheritable",
+		"any@notNamespace",
+		"any@notQName",
+		"anyAttribute@notNamespace",
+		"anyAttribute@notQName",
+		"unique@ref",
+		"key@ref",
+		"keyref@ref",
+		"selector@xpathDefaultNamespace",
+		"field@xpathDefaultNamespace"
+	]
+}
