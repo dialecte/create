@@ -1,0 +1,27 @@
+{
+	"f25be3df38c3432d": {
+		"line": 69,
+		"mutation": "_complement: next_low <= MAX_CODE_POINT -> next_low < MAX_CODE_POINT",
+		"equivalent": "Differs only when a complemented range ends at U+10FFFE: no XSD 1.0 block, \\s, \\i or \\c ends there (the last block ends at U+10FFFF, leaving no tail either way); categories are never complemented into ranges."
+	},
+	"019ce729e48dad36": {
+		"line": 176,
+		"mutation": "_Parser.quantifier: end < 0 -> end <= 0",
+		"equivalent": "find() searches from the position of \"{\", which follows an atom: a \"}\" found is at index 2 at least, so \"< 0\", \"<= 0\" and \"< 1\" all mean \"not found\"."
+	},
+	"12e8d9a2ce43d2e2": {
+		"line": 176,
+		"mutation": "_Parser.quantifier: 0 -> 1",
+		"equivalent": "find() searches from the position of \"{\", which follows an atom: a \"}\" found is at index 2 at least, so \"< 0\", \"<= 0\" and \"< 1\" all mean \"not found\"."
+	},
+	"53e2a9b553c6edc9": {
+		"line": 229,
+		"mutation": "_Parser.property: end < 0 -> end <= 0",
+		"equivalent": "find() searches after \"\\p{\": a \"}\" found is at index 3 at least, so \"< 0\", \"<= 0\" and \"< 1\" all mean \"not found\"."
+	},
+	"a01d95c08e718f73": {
+		"line": 229,
+		"mutation": "_Parser.property: 0 -> 1",
+		"equivalent": "find() searches after \"\\p{\": a \"}\" found is at index 3 at least, so \"< 0\", \"<= 0\" and \"< 1\" all mean \"not found\"."
+	}
+}

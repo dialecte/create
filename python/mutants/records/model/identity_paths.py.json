@@ -1,0 +1,12 @@
+{
+	"b0273eaa5c6123cf": {
+		"line": 76,
+		"mutation": "_path: 1 -> 2",
+		"equivalent": "The lookahead tells an axis name (\"child\", \"attribute\") from a step of that name; it differs only where the path ends at the axis name or right after \"::\", which both refuse with the same error and message."
+	},
+	"f55b50ef14620331": {
+		"line": 103,
+		"mutation": "_name_test: 1 -> 2",
+		"equivalent": "The token was matched just above as a QName or \"prefix:*\": it holds one colon at most, so splitting at the first or at the first two gives the same parts."
+	}
+}

@@ -1,0 +1,7 @@
+{
+	"b7e9e8aa340a5f1b": {
+		"line": 154,
+		"mutation": "_way_order: min((declaration.key for declaration in way)) -> max((declaration.key for declaration in way))",
+		"equivalent": "Two ways reach this last tie-break only when every earlier component is equal; ways sharing type, namespace, parents and all the rest are one way, so tying ways each hold one declaration (distinct anonymous types): min and max of one key are the same."
+	}
+}

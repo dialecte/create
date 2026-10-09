@@ -1,0 +1,7 @@
+{
+	"861e575d4a0142f7": {
+		"line": 190,
+		"mutation": "_Reader._validly_derived: any((self._validly_derived(derived, member, blocked=blocked) for member in _union_membe... -> all((self._validly_derived(derived, member, blocked=blocked) for member in _union_membe...",
+		"equivalent": "Candidates come from the index of what derives from the declared type or from its union members, and a blocked step returns false before this line: on them any() and all() agree (all() over an atomic member, which has no members, is vacuously true where any() over the member the candidate derives from is true)."
+	}
+}

@@ -1,0 +1,7 @@
+{
+	"7ca00bef1e8f00c2": {
+		"line": 54,
+		"mutation": "_datatype: current is not None and current.local_name == 'anySimpleType' -> current is not None or current.local_name == 'anySimpleType'",
+		"equivalent": "Reached only by a simple type that is no atomic restriction, list nor union: the schema library has no other kind than anySimpleType, so the refusal below is unreachable and \"or\" answers as \"and\" does."
+	}
+}
