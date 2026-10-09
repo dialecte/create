@@ -16,6 +16,14 @@ def typed(simple_type: str, *, more: str = '') -> str:
 
 
 CASES: dict[str, tuple[str, Any]] = {
+    'a restriction of a list with an enumeration -> the values as written, no name resolved': (
+        typed('<xs:restriction><xs:simpleType><xs:list itemType="xs:token"/></xs:simpleType><xs:enumeration value="a b"/></xs:restriction>'),
+        {'list': {'builtin': 'token'}, 'facets': {'enumeration': ['a b']}},
+    ),
+    'an enumeration of a type replacing white space -> its tabs written as spaces': (
+        typed('<xs:restriction base="xs:normalizedString"><xs:enumeration value="a&#9;b"/></xs:restriction>'),
+        {'builtin': 'normalizedString', 'facets': {'enumeration': ['a b']}},
+    ),
     'a restriction of a built-in -> the built-in with the facets the restriction adds': (
         typed('<xs:restriction base="xs:token"><xs:maxLength value="10"/></xs:restriction>'),
         {'builtin': 'token', 'facets': {'maxLength': 10}},

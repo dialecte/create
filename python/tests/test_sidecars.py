@@ -149,3 +149,22 @@ def test_a_strict_wildcard_does_not_admit_an_element_declared_only_locally(defin
 def test_a_parent_named_twice_is_refused(definition_of) -> None:
     with pytest.raises(SidecarMistake, match='Bay'):
         definition_of(ENTRY, imports={'parent-mapping.json': json.dumps({'Resources': ['Bay', 'Bay']})})
+
+
+def test_a_parent_list_holding_anything_but_names_is_refused(definition_of) -> None:
+    with pytest.raises(SidecarMistake, match='Resources must map to a list of parent names'):
+        definition_of(ENTRY, imports={'parent-mapping.json': json.dumps({'Resources': ['Bay', 3]})})
+
+
+def test_an_element_declared_globally_and_locally_is_admitted_where_a_strict_wildcard_needs_a_global_one(definition_of) -> None:
+    entry = schema(
+        '<xs:element name="Root"><xs:complexType><xs:sequence>'
+        '<xs:element ref="Bay" maxOccurs="unbounded"/>'
+        '<xs:element name="Other"><xs:complexType><xs:sequence><xs:element name="Resources"/></xs:sequence></xs:complexType></xs:element>'
+        '</xs:sequence></xs:complexType></xs:element>'
+        '<xs:element name="Bay"><xs:complexType><xs:sequence>'
+        '<xs:any namespace="##any" processContents="strict" minOccurs="0" maxOccurs="unbounded"/></xs:sequence></xs:complexType></xs:element>'
+        '<xs:element name="Resources"/>'
+    )
+    data = definition_of(entry, imports={'parent-mapping.json': json.dumps({'Resources': ['Bay']})})
+    assert pick(data, 'Resources.parents') == ['Bay', 'Other']

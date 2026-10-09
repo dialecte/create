@@ -101,3 +101,15 @@ def test_a_declaration_already_declaring_a_mapped_attribute_keeps_its_own_only(t
     )
     keys = [[attribute.key for attribute in declaration.attributes] for declaration in declarations if declaration.name == 'P']
     assert sorted(keys) == [['e:version'], ['e:version']]
+
+
+def test_a_mapping_holding_anything_but_namespaces_is_refused(definition_of) -> None:
+    mapping = {'Root': {'e:version': EXT, 'e:release': 2}}
+    with pytest.raises(SidecarMistake, match='Root must map to an object of attribute keys and namespaces'):
+        definition_of(ENTRY, imports={'ext.xsd': EXT_XSD, 'attribute-mapping.json': json.dumps(mapping)})
+
+
+def test_a_key_that_is_no_qualified_name_names_no_global_attribute(definition_of) -> None:
+    mapping = {'Root': {'e:x:version': EXT}}
+    with pytest.raises(SidecarMistake, match="no global attribute e:x:version"):
+        definition_of(ENTRY, imports={'ext.xsd': EXT_XSD, 'attribute-mapping.json': json.dumps(mapping)})

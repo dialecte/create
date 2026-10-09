@@ -251,3 +251,50 @@ def test_ways_differing_only_by_their_anonymous_content_are_numbered_by_it_not_b
     first = definition_of(wrapped(('L', 'R')))
     second = definition_of(wrapped(('R', 'L')))
     assert pick(first, 'P.declarations.1.attributes.sequence') == pick(second, 'P.declarations.1.attributes.sequence') == ['x']
+
+
+WAY_ORDER: dict[str, tuple[str, str, Any]] = {
+    'a way with no default text -> before one with a default': (
+        root_holding('<xs:element name="P" type="xs:string" default="a"/><xs:element name="X"/><xs:element name="P" type="xs:string"/>'),
+        'P.declarations.1.textContent',
+        {},
+    ),
+    'a way holding a global declaration -> first, whatever its type is named': (
+        root_holding(
+            '<xs:element name="A"><xs:complexType><xs:sequence><xs:element ref="G"/></xs:sequence></xs:complexType></xs:element>'
+            '<xs:element name="B"><xs:complexType><xs:sequence><xs:element name="G" type="tZ"/></xs:sequence></xs:complexType></xs:element>'
+            '<xs:element name="C"><xs:complexType><xs:sequence><xs:element name="G" type="tA"/></xs:sequence></xs:complexType></xs:element>',
+            more='<xs:element name="G" type="tZ"/><xs:complexType name="tZ"><xs:attribute name="z"/></xs:complexType>'
+            '<xs:complexType name="tA"><xs:attribute name="a"/></xs:complexType>',
+        ),
+        'G.declarations.1.attributes.sequence',
+        ['z'],
+    ),
+    'a way of a named type -> before one of an anonymous type': (
+        root_holding(
+            '<xs:element name="A"><xs:complexType><xs:sequence><xs:element name="P"><xs:complexType><xs:attribute name="a"/></xs:complexType></xs:element></xs:sequence></xs:complexType></xs:element>'
+            '<xs:element name="B"><xs:complexType><xs:sequence><xs:element name="P" type="tZ"/></xs:sequence></xs:complexType></xs:element>',
+            more='<xs:complexType name="tZ"><xs:attribute name="z"/></xs:complexType>',
+        ),
+        'P.declarations.1.attributes.sequence',
+        ['z'],
+    ),
+    # Q is held by the tag P under both ways (P is declared two ways, under A and under B): only the text tells them apart
+    'ways told apart by their text datatype only -> in the order of the datatypes written with sorted keys': (
+        root_holding(
+            '<xs:element name="A"><xs:complexType><xs:sequence><xs:element name="P"><xs:complexType><xs:sequence>'
+            '<xs:element name="Q"><xs:simpleType><xs:restriction base="xs:string"><xs:pattern value="a*"/><xs:maxLength value="3"/></xs:restriction></xs:simpleType></xs:element>'
+            '</xs:sequence></xs:complexType></xs:element></xs:sequence></xs:complexType></xs:element>'
+            '<xs:element name="B"><xs:complexType><xs:sequence><xs:element name="P"><xs:complexType><xs:sequence>'
+            '<xs:element name="Q"><xs:simpleType><xs:restriction base="xs:string"><xs:minLength value="1"/></xs:restriction></xs:simpleType></xs:element>'
+            '</xs:sequence></xs:complexType></xs:element></xs:sequence></xs:complexType></xs:element>'
+        ),
+        'Q.declarations.1.textContent.type.facets',
+        {'pattern': [['a*']], 'maxLength': 3},
+    ),
+}
+
+
+@pytest.mark.parametrize(('entry', 'path', 'expected'), WAY_ORDER.values(), ids=WAY_ORDER.keys())
+def test_the_ways_of_a_tag_are_numbered_in_a_canonical_order(definition_of, entry: str, path: str, expected: Any) -> None:
+    assert pick(definition_of(entry), path) == expected

@@ -293,3 +293,15 @@ def test_the_xml_prefix_is_bound_in_every_path_without_a_declaration(definition_
         '<xs:unique name="u"><xs:selector xpath="t:A"/><xs:field xpath="@xml:lang"/></xs:unique></xs:element>'
     )
     assert pick(definition_of(entry), 'A.attributes.identityFields') == ['xml:lang']
+
+
+def test_a_wildcard_selector_identifies_a_child_only_where_it_requires_every_field(definition_of) -> None:
+    entry = schema(
+        '<xs:element name="Root"><xs:complexType><xs:sequence>'
+        '<xs:element name="A" maxOccurs="unbounded"><xs:complexType>'
+        '<xs:attribute name="n" use="required"/><xs:attribute name="m"/></xs:complexType></xs:element>'
+        '</xs:sequence></xs:complexType>'
+        '<xs:unique name="c"><xs:selector xpath="*"/><xs:field xpath="@n"/><xs:field xpath="@m"/></xs:unique>'
+        '</xs:element>'
+    )
+    assert 'identityFields' not in pick(definition_of(entry), 'A.attributes')

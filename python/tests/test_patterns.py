@@ -46,6 +46,16 @@ RULES: dict[str, tuple[str, str]] = {
     'a word item in a negated class, quantified -> a lookahead, one group': (r'[^\w]+', r'(?:(?![^\p{P}\p{Z}\p{C}])[^])+'),
     'a heavy subtraction -> as long as what it names, nothing expanded': (r'[\p{L}-[a]]', r'(?:(?![a])[\p{L}])'),
     'ranges that touch -> one range': ('[a-cd-f]', '[a-f]'),
+    'a quantity with equal bounds -> as written': ('a{2,2}', 'a{2,2}'),
+    'a range of one character -> that character': ('[a-a]', '[a]'),
+    'a space -> as it is': ('a b', 'a b'),
+    'a complemented block not starting at zero -> the ranges before and after it': (
+        r'\P{IsLatin-1Supplement}', r'[\u{0}-\u{7F}\u{100}-\u{10FFFF}]'
+    ),
+    'blanks inside a class -> tab, line feed, carriage return, space': (r'[\s]', r'[\u{9}-\u{A}\u{D} ]'),
+    'non-blanks inside a class -> every character around them': (r'[\S]', r'[\u{0}-\u{8}\u{B}-\u{C}\u{E}-\u{1F}!-\u{10FFFF}]'),
+    'categories inside a class -> in code point order': (r'[\p{Nd}\p{Lu}\p{Ll}]', r'[\p{Ll}\p{Lu}\p{Nd}]'),
+    'complemented categories inside a class -> in code point order': (r'[\P{Nd}\P{Lu}\P{Ll}]', r'[\P{Ll}\P{Lu}\P{Nd}]'),
 }
 
 
@@ -78,6 +88,7 @@ def test_name_classes_are_the_xml_4th_edition_ones_inside_and_outside_classes() 
         pytest.param(r'\x', 'escape', id='an escape XSD does not have -> refused'),
         pytest.param('a{', 'unclosed', id='an unclosed quantity -> refused'),
         pytest.param('a{\u00b2}', 'quantity', id='a quantity in other digits than ASCII ones -> refused'),
+        pytest.param('[a-c-e[x]]', 'neither a range', id='a dash after a range, before a class that is no subtraction -> refused'),
         pytest.param('a{\u0663}', 'quantity', id='a quantity in Arabic-Indic digits -> refused'),
     ],
 )
@@ -338,4 +349,10 @@ def test_the_block_table_is_unicode_3_1_s() -> None:
 def test_a_pattern_nested_deeper_than_the_stack_is_refused_by_name() -> None:
     nested = '(' * 400 + 'a' + ')' * 400
     with pytest.raises(SchemaNotRepresentable, match='nested too deeply'):
+        pattern_to_js(nested)
+
+
+def test_a_pattern_too_deep_is_named_by_its_first_80_characters() -> None:
+    nested = '(' * 400 + 'a' + ')' * 400
+    with pytest.raises(SchemaNotRepresentable, match=re.escape("'" + '(' * 80 + "'...")):
         pattern_to_js(nested)

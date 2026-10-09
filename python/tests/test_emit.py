@@ -113,3 +113,28 @@ def test_a_generated_definition_with_content_models_reads_back_as_built(definiti
     script = f"const m = await import({json.dumps(emitted.as_uri())}); process.stdout.write(JSON.stringify(m.DEFINITION))"
     run = subprocess.run(['node', '--input-type=module', '-e', script], capture_output=True, text=True, check=True)
     assert json.loads(run.stdout) == data
+
+
+def test_an_array_of_objects_is_written_one_entry_per_line_indented_by_its_depth() -> None:
+    source = definition_source({'Root': {'list': [{'a': 'x', 'b': {'c': 1}}], 'mixed': [1, {'k': 'v'}]}}, {})
+    assert source.split('\n')[2:16] == [
+        'export const DEFINITION = {',
+        '\tRoot: {',
+        '\t\tlist: [',
+        '\t\t\t{',
+        "\t\t\t\ta: 'x',",
+        '\t\t\t\tb: { c: 1 },',
+        '\t\t\t},',
+        '\t\t],',
+        '\t\tmixed: [',
+        '\t\t\t1,',
+        "\t\t\t{ k: 'v' },",
+        '\t\t],',
+        '\t},',
+        '} as const',
+    ]
+
+
+def test_an_object_holding_a_list_with_an_object_in_it_is_expanded() -> None:
+    source = definition_source({'Solo': {'mixed': [1, {'k': 'v'}]}}, {})
+    assert '\tSolo: {\n\t\tmixed: [\n' in source
