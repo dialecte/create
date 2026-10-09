@@ -4,6 +4,7 @@ A type's attribute wildcard is computed here from what each document writes, not
 library: it merges the `##other` of a base type with the one of a type extending it as if both were
 written in the same document, which loses what the base's admits.
 """
+from generate.model.names import sorted_names
 from xml.etree.ElementTree import Element
 
 from xmlschema.validators import XsdAttributeGroup, XsdComplexType, XsdComponent
@@ -25,10 +26,10 @@ def wildcard_of(written: Element, *, target_namespace: str) -> Wildcard:
         return Wildcard(namespace=None, not_namespace=(), process_contents=process_contents)
     if tokens == ['##other']:
         # every namespace but the declaring document's own, and not the absence of one
-        excluded = tuple(sorted({target_namespace, ''}))
+        excluded = sorted_names({target_namespace, ''})
         return Wildcard(namespace=None, not_namespace=excluded, process_contents=process_contents)
     special = {'##targetNamespace': target_namespace, '##local': ''}
-    listed = tuple(sorted({special.get(token, token) for token in tokens}))
+    listed = sorted_names(special.get(token, token) for token in tokens)
     return Wildcard(namespace=listed, not_namespace=None, process_contents=process_contents)
 
 
@@ -39,8 +40,8 @@ def union(wildcards: list[Wildcard], *, process_contents: str) -> Wildcard:
     exclusions = [set(wildcard.not_namespace) for wildcard in wildcards if wildcard.not_namespace is not None]
     if exclusions:
         excluded = set.intersection(*exclusions) - listed
-        return Wildcard(namespace=None, not_namespace=tuple(sorted(excluded)), process_contents=process_contents)
-    return Wildcard(namespace=tuple(sorted(listed)), not_namespace=None, process_contents=process_contents)
+        return Wildcard(namespace=None, not_namespace=sorted_names(excluded), process_contents=process_contents)
+    return Wildcard(namespace=sorted_names(listed), not_namespace=None, process_contents=process_contents)
 
 
 def intersection(wildcards: list[Wildcard], *, process_contents: str) -> Wildcard:
@@ -56,8 +57,8 @@ def intersection(wildcards: list[Wildcard], *, process_contents: str) -> Wildcar
     lists = [set(wildcard.namespace) for wildcard in wildcards if wildcard.namespace is not None]
     if lists:
         kept = set.intersection(*lists) - excluded
-        return Wildcard(namespace=tuple(sorted(kept)), not_namespace=None, process_contents=process_contents)
-    return Wildcard(namespace=None, not_namespace=tuple(sorted(excluded)), process_contents=process_contents)
+        return Wildcard(namespace=sorted_names(kept), not_namespace=None, process_contents=process_contents)
+    return Wildcard(namespace=None, not_namespace=sorted_names(excluded), process_contents=process_contents)
 
 
 def admits(wildcard: Wildcard, namespace: str) -> bool:

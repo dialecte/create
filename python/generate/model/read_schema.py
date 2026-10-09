@@ -42,9 +42,13 @@ from generate.model.datatypes import datatype_of
 from generate.model.identity_paths import parse_field, parse_selector
 from generate.model.particles import emptiable, held_leaves
 from generate.model.wildcards import attribute_wildcard_of, wildcard_of
+from generate.model.names import sorted_names
 
 ANY_TYPE = '{http://www.w3.org/2001/XMLSchema}anyType'
 ANY_SIMPLE_TYPE = '{http://www.w3.org/2001/XMLSchema}anySimpleType'
+# built-in types the schema library makes inside a schema it loads (one importing the XML namespace) rather than
+# leaving them to its meta-schema: built-ins all the same, never a schema's own type
+_MADE_BY_THE_LIBRARY = frozenset({ANY_SIMPLE_TYPE, '{http://www.w3.org/2001/XMLSchema}anyAtomicType'})
 
 
 def read_schema(entry: Path, *, global_attributes: list[tuple[str, str]] | None = None) -> Schema:
@@ -114,6 +118,9 @@ class _Reader:
     variant_types: dict[int, XsdType] = field(default_factory=dict)
     _admitted: dict[tuple[int, frozenset[str]], list[XsdType]] = field(default_factory=dict)
     _derived_from: dict[int | str, list[XsdType]] | None = None
+    # the global elements naming each head (Clark name) in their substitutionGroup, read from the documents: the
+    # schema library forgets the affiliation of a member whose head blocks substitution
+    _members_of: dict[str, list[XsdElement]] | None = None
     # the elements of anyType through whose variants a declaration is reached: its parents when it has no other
     through_any_type: dict[int, set[str]] = field(default_factory=dict)
 
@@ -191,8 +198,8 @@ class _Reader:
         are indexed once; what blocks a step is checked after."""
         if self._derived_from is None:
             self._derived_from = {}
-            for _, candidate in sorted(self.schema.maps.types.items()):
-                if candidate.schema.meta_schema is None:
+            for candidate in self.schema.maps.types.values():
+                if _built_in(candidate):
                     continue
                 base = self._base_of(candidate)
                 while base is not None:
@@ -202,7 +209,7 @@ class _Reader:
         pending = list(_union_members(declared))
         while pending:
             member = pending.pop()
-            if member.name is not None and member.schema.meta_schema is not None:
+            if member.name is not None and not _built_in(member):
                 candidates.append(member)
             candidates.extend(self._derived_from.get(_base_key(member), []))
             pending.extend(_union_members(member))
@@ -234,7 +241,7 @@ class _Reader:
                 type_key=self.type_keys.setdefault(id(element.type), len(self.type_keys)),
                 element=element,
                 content_model=self.content_models[identity],
-                parent_names=tuple(sorted(self.parents[identity] or self.through_any_type.get(identity, ()))),
+                parent_names=sorted_names(self.parents[identity] or self.through_any_type.get(identity, ())),
                 variants=tuple(variant.name for variant in self.variants[identity]),
             )
             for identity, element in self.found.items()
@@ -311,20 +318,52 @@ class _Reader:
         return model, declarations
 
     def _with_substitutes(self, head: XsdElement) -> list[XsdElement]:
-        """`head` (unless abstract), then every element that substitutes for it, directly or not,
-        sorted by name, then namespace."""
-        members: dict[int, XsdElement] = {}
-        pending = list(self.schema.maps.substitution_groups.get(head.name, ()))
+        """`head` (unless abstract), then every element that substitutes for it, directly or not, sorted by name,
+        then namespace (Substitution Group OK (Transitive)). Only the head's element-level blocking counts: no member
+        when it blocks substitution, and a member blocking substitution itself still has its own members stand for
+        the head. A member's type must derive from the head's by no method the head blocks (its `block`, the
+        schema's blockDefault included), the head's type blocks, or a type between them blocks - every step checked
+        (libxml2 misses an extension step below a restriction step)."""
+        if 'substitution' in (head.block or '').split():
+            return [] if head.abstract else [head]
+        blocked = _derivations(head.block) | _derivations(getattr(head.type, 'block', ''))
+        # an element names one head and the library refuses a circular group: the members form a tree, each met once
+        members: list[XsdElement] = []
+        pending = list(self._members_named(head))
         while pending:
             member = pending.pop()
-            if id(member) in members:
-                continue
-            members[id(member)] = member
-            pending.extend(self.schema.maps.substitution_groups.get(member.name, ()))
+            members.append(member)
+            pending.extend(self._members_named(member))
         substitutes = sorted(
-            (member for member in members.values() if not member.abstract), key=lambda member: (member.local_name, _namespace_of(member.name))
+            (
+                member
+                for member in members
+                if not member.abstract
+                and self._validly_derived(member.type, head.type, blocked=blocked | self._blocked_between(member.type, head.type))
+            ),
+            key=lambda member: (member.local_name, _namespace_of(member.name)),
         )
         return substitutes if head.abstract else [head, *substitutes]
+
+    def _blocked_between(self, derived: XsdType, base: XsdType) -> frozenset[str]:
+        """What the types strictly between `derived` and `base` on its derivation chain block: a member's type may not
+        derive through them by those methods (Substitution Group OK (Transitive), clause 2.3)."""
+        blocked: set[str] = set()
+        step = self._base_of(derived)
+        while step is not None and _base_key(step) != _base_key(base):
+            blocked |= _derivations(getattr(step, 'block', ''))
+            step = self._base_of(step)
+        return frozenset(blocked)
+
+    def _members_named(self, head: XsdElement) -> list[XsdElement]:
+        """The global elements whose substitutionGroup names `head`, as their documents write it."""
+        if self._members_of is None:
+            self._members_of = {}
+            for element in self.schema.maps.elements.values():
+                affiliation = element.elem.get('substitutionGroup') if element.schema.meta_schema is not None else None
+                if affiliation is not None:
+                    self._members_of.setdefault(element.schema.resolve_qname(affiliation), []).append(element)
+        return self._members_of.get(head.name, [])
 
 
 def _base_key(xsd_type: XsdType) -> int | str:
@@ -337,6 +376,12 @@ def _union_members(xsd_type: XsdType) -> tuple[XsdType, ...]:
     """The member types of a union. A restriction of one has none of its own: an instance may not name a member
     and leave the restriction's facets behind (libxml2 and the schema library refuse)."""
     return tuple(getattr(xsd_type, 'member_types', None) or ())
+
+
+def _built_in(xsd_type: XsdType) -> bool:
+    """A type of the meta-schema, or one the library makes inside the schema it loads: left to core, which knows
+    the built-ins' hierarchy."""
+    return xsd_type.schema.meta_schema is None or xsd_type.name in _MADE_BY_THE_LIBRARY
 
 
 def _derivations(block: str | None) -> frozenset[str]:
@@ -371,7 +416,7 @@ def _declaration(
         is_global=element.is_global(),
         type_name=element.type.name,
         type_key=type_key,
-        block=tuple(sorted((element.block or '').split())),
+        block=sorted_names((element.block or '').split()),
         nillable=element.nillable,
         documentation=_documentation(element),
         attributes=attributes,
@@ -381,7 +426,7 @@ def _declaration(
         parent_names=parent_names,
         constraints=tuple(_constraint(identity) for identity in element.identities),
         variants=variants,
-        abstract_type=bool(getattr(element.type, 'abstract', False)),
+        abstract_type=element.type.abstract,
     )
 
 

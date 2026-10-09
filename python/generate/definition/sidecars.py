@@ -47,7 +47,7 @@ def mapped_attribute_names(mapping: Any) -> list[tuple[str, str]]:
     for tag, attributes in mapping.items():
         if not isinstance(attributes, dict) or not all(isinstance(uri, str) for uri in attributes.values()):
             raise SidecarMistake(f'{ATTRIBUTE_MAPPING}: {tag} must map to an object of attribute keys and namespaces')
-        names.extend((uri, key.split(':', 1)[-1]) for key, uri in attributes.items())
+        names.extend((uri, _local_name(key)) for key, uri in attributes.items())
     return names
 
 
@@ -68,7 +68,7 @@ def attach_mapped_attributes(
         if tag not in tags:
             raise SidecarMistake(f'{ATTRIBUTE_MAPPING}: the schema declares no element {tag}')
         for key, uri in attributes.items():
-            attribute = global_attributes.get((uri, key.split(':', 1)[-1]))
+            attribute = global_attributes.get((uri, _local_name(key)))
             if attribute is None:
                 raise SidecarMistake(f'{ATTRIBUTE_MAPPING}: the schema declares no global attribute {key} in {uri!r}')
             if attribute.key != key:
@@ -163,3 +163,8 @@ def _admits(parent: ElementDeclaration, *, uri: str, is_global: bool) -> bool:
         for leaf in held_leaves(parent.content_model)
         if isinstance(leaf, WildcardParticle)
     )
+
+
+def _local_name(key: str) -> str:
+    """The local name of an attribute key as the mapping writes it (`prefix:local`, or `local`)."""
+    return key.split(':', 1)[-1]

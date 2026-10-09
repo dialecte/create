@@ -190,9 +190,9 @@ class ElementDeclaration:
     # the identity constraints it declares, in schema order
     constraints: tuple[IdentityConstraint, ...]
     # the Clark names of the types an instance may name instead of the declared one with xsi:type, sorted
-    variants: tuple[str, ...] = ()
+    variants: tuple[str, ...]
     # the declared type is abstract: an instance must name one of the variants
-    abstract_type: bool = False
+    abstract_type: bool
 
 
 @dataclass(frozen=True)

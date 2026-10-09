@@ -40,6 +40,7 @@ from generate.definition.sidecars import (
 from generate.definition.identity_fields import identity_fields
 from generate.definition.patterns import pattern_to_js
 from generate.model.particles import held_leaves
+from generate.model.names import sorted_names
 from generate.model.read_schema import ANY_TYPE, read_schema
 from generate.model.wildcards import union, weakest_process_contents
 
@@ -84,11 +85,12 @@ def build_definition(
         for declaration in way
     }
     identities = identity_fields(declarations, parent_mapping=parent_mapping or {}, types=types)
+    # in name order, as read_schema gives them
     variants = {variant.name: variant for variant in types}
     context = _Context(numbers=numbers, identities=identities, variants=variants)
     definition = {tag: _element(tag, by_tag[tag], ways=ways[tag], context=context) for tag in sorted(by_tag)}
     written_types = {
-        name: _held([variant], holder=_namespace_of(name), context=context) for name, variant in sorted(variants.items())
+        name: _held([variant], holder=_namespace_of(name), context=context) for name, variant in variants.items()
     }
     return Generated(definition=definition, types=written_types)
 
@@ -141,7 +143,7 @@ def _way_order(way: list[ElementDeclaration]) -> tuple[Any, ...]:
         first.namespace.uri,
         first.type_name is None,
         first.type_name or '',
-        tuple(sorted({parent for declaration in way for parent in declaration.parent_names})),
+        sorted_names(parent for declaration in way for parent in declaration.parent_names),
         first.nillable,
         optional(text.default if text is not None else None),
         optional(text.fixed if text is not None else None),
@@ -161,7 +163,7 @@ def _element(
     # the namespace of the tag: its global declaration's, else the first one met
     canonical = next((declaration for declaration in declarations if declaration.is_global), declarations[0])
     element: dict[str, Any] = {'tag': tag, **_heading(declarations, canonical=canonical, global_known=len(ways) == 1)}
-    element['parents'] = sorted({parent for declaration in declarations for parent in declaration.parent_names})
+    element['parents'] = list(sorted_names(parent for declaration in declarations for parent in declaration.parent_names))
     # the union in the declarations' canonical order: the order the schema was read in changes nothing
     element.update(_content([declaration for way in ways for declaration in way], holder=canonical.namespace.uri, context=context))
     if len(ways) > 1:
@@ -205,7 +207,7 @@ def _content(declarations: list[ElementDeclaration], *, holder: str, context: _C
         )
     )
     content.update(_held(declarations, holder=holder, context=context, also=variant_types))
-    identifying = sorted({key for declaration in declarations for key in context.identities.get(declaration.key, ())})
+    identifying = list(sorted_names(key for declaration in declarations for key in context.identities.get(declaration.key, ())))
     if identifying:
         content['attributes']['identityFields'] = identifying
     # the constraints of a declaration, never of a union: they hold only where it is the one that applies
@@ -308,7 +310,7 @@ def _child_details(leaves: list[ElementParticle | WildcardParticle], *, numbers:
         if isinstance(leaf, ElementParticle) and leaf.declaration in numbers:
             named.setdefault(leaf.name, {}).setdefault(leaf.namespace, set()).add(numbers[leaf.declaration])
     return {
-        name: {'declarations': {uri: sorted(by_namespace[uri], key=int) for uri in sorted(by_namespace)}}
+        name: {'declarations': {uri: sorted(by_namespace[uri], key=int) for uri in sorted_names(by_namespace)}}
         for name, by_namespace in named.items()
     }
 
@@ -360,7 +362,7 @@ def _written_wildcard(wildcard: Wildcard) -> dict[str, Any]:
 
 
 def _attributes(declarations: list[ElementDeclaration]) -> dict[str, Any]:
-    keys = sorted({attribute.key for declaration in declarations for attribute in declaration.attributes})
+    keys = list(sorted_names(attribute.key for declaration in declarations for attribute in declaration.attributes))
     details: dict[str, Any] = {}
     for key in keys:
         found = [

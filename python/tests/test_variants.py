@@ -121,6 +121,26 @@ def test_an_element_of_any_type_lists_its_variants_but_no_child_of_theirs(defini
     assert pick(data, 'Extra.parents') == ['P']
 
 
+XML_NAMESPACE_SCHEMA = (
+    '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.w3.org/XML/1998/namespace">'
+    '<xs:attribute name="lang" type="xs:language"/></xs:schema>'
+)
+
+
+def test_an_element_of_any_type_lists_no_built_in_type_in_a_schema_importing_the_xml_namespace(definition_of) -> None:
+    # importing the XML namespace makes the schema library put its own anySimpleType and anyAtomicType (an XSD 1.1
+    # type libxml2 does not even resolve) among the schema's types; built-in types are left to core, which knows
+    # their hierarchy
+    entry = schema(
+        '<xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>'
+        '<xs:element name="Root"><xs:complexType><xs:sequence><xs:element name="Any"/></xs:sequence>'
+        '<xs:attribute ref="xml:lang"/></xs:complexType></xs:element>'
+        '<xs:complexType name="tBase"/>'
+    )
+    data = definition_of(entry, imports={'xml.xsd': XML_NAMESPACE_SCHEMA})
+    assert pick(data, 'Any.variants') == [f'{{{TARGET}}}tBase']
+
+
 def test_a_child_only_an_element_of_any_type_reaches_through_a_variant_keeps_it_as_parent(definition_of) -> None:
     more = '<xs:complexType name="tHolder"><xs:sequence><xs:element name="Only" type="xs:string"/></xs:sequence></xs:complexType>'
     data = definition_of(holding('<xs:element name="Any"/>', more=more))

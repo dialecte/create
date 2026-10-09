@@ -3,10 +3,15 @@
 Occurrences follow one convention: `minOccurs` is written only when it is not 0, `maxOccurs` only when it
 is bounded (absent = unbounded).
 """
+from pathlib import Path
 from typing import Any
 
 import pytest
+import xmlschema
+from lxml import etree
 
+from generate.model.declarations import ElementParticle
+from generate.model.particles import emptiable
 from tests.conftest import TARGET, pick, schema
 
 EXT = 'urn:dialecte:ext'
@@ -418,3 +423,92 @@ def test_a_wildcard_no_document_may_hold_admits_no_other_child(definition_of) ->
         )
     )
     assert pick(data, 'Root.children') == {'sequence': ['A'], 'details': {}}
+
+
+# A member stands for its head only when its type derives from the head's type by no step the head blocks - its
+# `block`, the schema's blockDefault, or its type's `block` -, every step checked: as libxml2 reads a document but
+# where listed, where the schema library, a second implementation, sides with the specification.
+SUBSTITUTION_TYPES = (
+    '<xs:complexType name="tBase"{type_block}/>'
+    '<xs:complexType name="tExt"{ext_type_block}><xs:complexContent><xs:extension base="tBase"/></xs:complexContent></xs:complexType>'
+    '<xs:complexType name="tExtExt"><xs:complexContent><xs:extension base="tExt"/></xs:complexContent></xs:complexType>'
+    '<xs:complexType name="tRes"><xs:complexContent><xs:restriction base="tBase"/></xs:complexContent></xs:complexType>'
+    '<xs:complexType name="tExtRes"><xs:complexContent><xs:restriction base="tExt"/></xs:complexContent></xs:complexType>'
+    '<xs:element name="Head" type="tBase"{head_block}/>'
+    '<xs:element name="Ext" type="tExt" substitutionGroup="Head"{member_block}/>'
+    '<xs:element name="Res" type="tRes" substitutionGroup="Head"/>'
+    '<xs:element name="ExtRes" type="tExtRes" substitutionGroup="Ext"/>'
+    '<xs:element name="ExtExt" type="tExtExt" substitutionGroup="Ext"/>'
+    '<xs:element name="Same" substitutionGroup="Head"/>'
+    '<xs:element name="Root"><xs:complexType><xs:sequence><xs:element ref="Head" maxOccurs="unbounded"/>'
+    '</xs:sequence></xs:complexType></xs:element>'
+)
+SUBSTITUTION_BLOCKS = {
+    'nothing blocked -> every member': {},
+    'the head blocks substitution -> the head alone': {'head_block': ' block="substitution"'},
+    'the head blocks extension -> no member whose type extends on the way': {'head_block': ' block="extension"'},
+    'the head blocks restriction -> no member whose type restricts on the way': {'head_block': ' block="restriction"'},
+    'the head blocks everything -> the head alone': {'head_block': ' block="#all"'},
+    'the schema blocks extension by default -> as the head blocking it': {'default': ' blockDefault="extension"'},
+    "the head's type blocks extension -> as the head blocking it": {'type_block': ' block="extension"'},
+    "the head's type blocks restriction -> as the head blocking it": {'type_block': ' block="restriction"'},
+    "a member blocking substitution -> still its head's member, its own members still the head's": {
+        'member_block': ' block="substitution"'
+    },
+    "an intermediate type blocks extension -> no member whose type extends it, its own member's type kept": {
+        'ext_type_block': ' block="extension"'
+    },
+}
+# Where an oracle errs, the members it judges the other way - each checked against the specification and the other
+# oracle; a row that stops being an error fails, so the lists only shrink.
+# libxml2 does not count an extension step below a restriction step (the member typed tExtRes, a restriction of an
+# extension of tBase) against what blocks extension.
+SUBSTITUTION_LIBXML2_FAULTS: dict[str, list[str]] = {
+    'the head blocks extension -> no member whose type extends on the way': ['ExtRes'],
+    'the schema blocks extension by default -> as the head blocking it': ['ExtRes'],
+    "the head's type blocks extension -> as the head blocking it": ['ExtRes'],
+    "an intermediate type blocks extension -> no member whose type extends it, its own member's type kept": ['ExtRes'],
+}
+# The schema library drops the members of a member blocking substitution (only the head's block counts), and ignores
+# the block of the types between a member's type and the head's (Substitution Group OK (Transitive), clause 2.3).
+SUBSTITUTION_LIBRARY_FAULTS: dict[str, list[str]] = {
+    "a member blocking substitution -> still its head's member, its own members still the head's": ['ExtExt', 'ExtRes'],
+    "an intermediate type blocks extension -> no member whose type extends it, its own member's type kept": [
+        'ExtExt',
+        'ExtRes',
+    ],
+}
+
+
+@pytest.mark.parametrize('blocks', SUBSTITUTION_BLOCKS.values(), ids=SUBSTITUTION_BLOCKS.keys())
+def test_a_member_stands_for_its_head_where_the_specification_lets_it(
+    request: pytest.FixtureRequest, definition_of, tmp_path: Path, blocks: dict[str, str]
+) -> None:
+    slots = {'type_block': '', 'head_block': '', 'member_block': '', 'ext_type_block': '', **blocks}
+    default = slots.pop('default', '')
+    entry = schema(SUBSTITUTION_TYPES.format(**slots), attributes=default)
+    held = {particle['name'] for particle in held_elements(pick(definition_of(entry), 'Root.contentModel'))}
+    (tmp_path / 'oracle.xsd').write_text(entry, encoding='utf-8')
+    validator = etree.XMLSchema(etree.parse(str(tmp_path / 'oracle.xsd')))
+    library = xmlschema.XMLSchema10(entry)
+    candidates = ['Ext', 'ExtExt', 'ExtRes', 'Head', 'Res', 'Same']
+    by_libxml2 = {name for name in candidates if validator.validate(etree.fromstring(_holding(name)))}
+    by_library = {name for name in candidates if library.is_valid(_holding(name))}
+    row = request.node.callspec.id
+    # an oracle's listed errors are exactly where it and the definition part
+    assert by_libxml2 ^ held == set(SUBSTITUTION_LIBXML2_FAULTS.get(row, []))
+    assert by_library ^ held == set(SUBSTITUTION_LIBRARY_FAULTS.get(row, []))
+
+
+def _holding(name: str) -> str:
+    return f'<Root xmlns="{TARGET}"><{name}/></Root>'
+
+
+def held_elements(particle: dict[str, Any]) -> list[dict[str, Any]]:
+    if particle['kind'] == 'element':
+        return [particle]
+    return [leaf for child in particle.get('particles', []) for leaf in held_elements(child)]
+
+
+def test_a_required_element_is_never_satisfied_by_nothing() -> None:
+    assert not emptiable(ElementParticle(name='A', namespace=TARGET, min_occurs=1, max_occurs=1, declaration=0))

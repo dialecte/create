@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass
 from functools import cache
 
+from generate.model.names import sorted_names
 from generate.definition.xml_name_classes import NAME_CHAR, NAME_START
 from generate.definition.xsd_blocks import BLOCKS
 from generate.errors import SchemaNotRepresentable
@@ -354,8 +355,8 @@ def _written_class(char_class: _CharClass) -> str:
     `(?!atom)` before a negated one, `(?!subtracted)` before it all."""
     items = char_class.items
     body = ''.join(_inside_range(low, high) for low, high in items.ranges)
-    body += ''.join('\\p{' + name + '}' for name in sorted(items.categories))
-    body += ''.join('\\P{' + name + '}' for name in sorted(items.complemented_categories))
+    body += ''.join('\\p{' + name + '}' for name in sorted_names(items.categories))
+    body += ''.join('\\P{' + name + '}' for name in sorted_names(items.complemented_categories))
     if char_class.negated:
         source = ''.join(f'(?!{atom})' for atom in items.atoms) + '[^' + body + ']'
     elif items.atoms:

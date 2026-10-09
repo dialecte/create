@@ -95,7 +95,7 @@ def _selected(declaring: ElementDeclaration, path: SelectorPath, *, children: _C
         context = _self_and_descendants(context, children=children)
     for step in path.steps:
         context = {key for parent in context for name, namespace, key in children.of(parent) if _matches(step, name, namespace)}
-    return [children.by_key[key] for key in sorted(context)]
+    return [children.by_key[key] for key in context]
 
 
 def _self_and_descendants(context: set[int], *, children: _Children) -> set[int]:
