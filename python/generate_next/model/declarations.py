@@ -189,6 +189,23 @@ class ElementDeclaration:
     parent_names: tuple[str, ...]
     # the identity constraints it declares, in schema order
     constraints: tuple[IdentityConstraint, ...]
+    # the Clark names of the types an instance may name instead of the declared one with xsi:type, sorted
+    variants: tuple[str, ...] = ()
+    # the declared type is abstract: an instance must name one of the variants
+    abstract_type: bool = False
+
+
+@dataclass(frozen=True)
+class TypeDefinition:
+    """A named type an element may take with xsi:type: what it lets the element hold."""
+
+    # its Clark name
+    name: str
+    attributes: tuple[AttributeDeclaration, ...]
+    any_attribute: Wildcard | None
+    content_model: GroupParticle | None
+    # its text (without the element's default or fixed value, which stay the element's)
+    text: TextDeclaration | None
 
 
 @dataclass(frozen=True)
@@ -198,3 +215,5 @@ class Schema:
     elements: tuple[ElementDeclaration, ...]
     # the global attribute declarations asked for (what `attribute-mapping.json` names), by namespace and local name
     global_attributes: dict[tuple[str, str], AttributeDeclaration]
+    # the types some declaration admits as variants, by name
+    types: tuple[TypeDefinition, ...] = ()

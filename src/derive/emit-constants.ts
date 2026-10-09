@@ -10,11 +10,15 @@ import {
 	tsStringArray,
 } from './ts-syntax.ts'
 
-import type { DefinitionData } from './derive.types.ts'
+import type { DefinitionData, TypesData } from './derive.types.ts'
 
 /** `constants.generated.ts`: the lookup tables a dialecte config is built from, derived from the definition. */
-export function emitConstantsSource(params: { definition: DefinitionData; root: string }): string {
-	const { definition, root } = params
+export function emitConstantsSource(params: {
+	definition: DefinitionData
+	root: string
+	types?: TypesData
+}): string {
+	const { definition, root, types } = params
 	const names = Object.keys(definition).sort()
 	const typeNames = deriveTypeNames(names)
 	const graph = deriveGraph({ definition })
@@ -42,7 +46,7 @@ export function emitConstantsSource(params: { definition: DefinitionData; root: 
 		'',
 		`export const ROOT_ELEMENT = '${root}' as const`,
 		'',
-		`export const SINGLETON_ELEMENTS = ${tsStringArray(deriveSingletons({ definition, root }))} as const`,
+		`export const SINGLETON_ELEMENTS = ${tsStringArray(deriveSingletons({ definition, root, types }))} as const`,
 		'',
 		`const ATTRIBUTES_BY_TAG = ${attributesByTag({ definition, names })} as const`,
 		'',

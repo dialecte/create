@@ -1,6 +1,6 @@
 import { declaredUnder } from './declared-edges.ts'
 
-import type { DefinitionData, ParticleData } from './derive.types.ts'
+import type { DeclarationData, DefinitionData, ParticleData, TypesData } from './derive.types.ts'
 
 /**
  * The elements a document holds at most once: the root, and every element that occurs at most once
@@ -10,8 +10,12 @@ import type { DefinitionData, ParticleData } from './derive.types.ts'
  * which cannot see a repeating group. A child none of them names (admitted by a wildcard) may occur
  * any number of times. A root that can nest in itself makes nothing a singleton.
  */
-export function deriveSingletons(params: { definition: DefinitionData; root: string }): string[] {
-	const { definition, root } = params
+export function deriveSingletons(params: {
+	definition: DefinitionData
+	root: string
+	types?: TypesData
+}): string[] {
+	const { definition, root, types = {} } = params
 	if (canNestInItself({ definition, tag: root })) return []
 
 	const singletons = new Set<string>([root])
@@ -19,7 +23,7 @@ export function deriveSingletons(params: { definition: DefinitionData; root: str
 
 	/**
 	 * The most times `child` occurs under `parent`, whichever content model applies there. A model
-	 * that does not name the child holds it 0 times - unless it has a wildcard, or there is no model,
+	 * that does not name the child holds it 0 times - unless it has a wildcard, or it is unknown,
 	 * which may admit it any number of times; a child no model names at all is unbounded.
 	 */
 	function maxOccursUnder(parent: string, child: string): number {
@@ -46,12 +50,18 @@ export function deriveSingletons(params: { definition: DefinitionData; root: str
 		const models = new Set<ParticleData | undefined>()
 		// a tag declared several ways: each of its declarations; otherwise as declared under each parent
 		if (element.declarations !== undefined) {
-			for (const declared of Object.values(element.declarations)) models.add(declared.contentModel)
-		} else if (element.parents.length === 0) models.add(element.contentModel)
+			for (const declared of Object.values(element.declarations)) models.add(modelOf(declared))
+		} else if (element.parents.length === 0) models.add(modelOf(element))
+		// each type an instance may name instead, with xsi:type
+		const variants = [
+			...(element.variants ?? []),
+			...Object.values(element.declarations ?? {}).flatMap((declared) => declared.variants ?? []),
+		]
+		for (const variant of variants) models.add(types[variant] ? modelOf(types[variant]) : undefined)
 		for (const grandparent of element.parents) {
 			if (element.declarations === undefined) {
 				const declared = declaredUnder({ definition, parent: grandparent, child: parent })
-				models.add(declared?.contentModel ?? element.contentModel)
+				models.add(modelOf(declared ?? element))
 			}
 			const variants = definition[grandparent]?.children.details[parent]?.variants ?? {}
 			for (const variant of Object.values(variants)) models.add(variant.contentModel)
@@ -74,6 +84,20 @@ export function deriveSingletons(params: { definition: DefinitionData; root: str
 		}
 	}
 	return [...singletons].sort()
+}
+
+/** The content model of a content holding no element: it holds every child no time. */
+const NO_ELEMENT: ParticleData = { kind: 'sequence', minOccurs: 1, maxOccurs: 1, particles: [] }
+
+/**
+ * The content model a content holds by, undefined when unknown. Without one, a content holds no element of its
+ * own - its children, if any, are its variants' -, but for a definition written before the rebuilt generator, whose
+ * tag merged its variants' children and wrote no model: unknown.
+ */
+function modelOf(content: DeclarationData): ParticleData | undefined {
+	if (content.contentModel !== undefined) return content.contentModel
+	const listsChildren = content.children.sequence.length > 0 || content.children.any === true
+	return listsChildren && content.variants === undefined ? undefined : NO_ELEMENT
 }
 
 /**

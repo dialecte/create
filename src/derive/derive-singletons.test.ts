@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 
 import { deriveSingletons } from './derive-singletons.ts'
 
-import type { DefinitionData, ElementData, ParticleData } from './derive.types.ts'
+import type { DefinitionData, ElementData, ParticleData, TypesData } from './derive.types.ts'
 
 function element(params: { parents?: string[]; contentModel?: ParticleData } = {}): ElementData {
 	const { parents = [], contentModel } = params
@@ -42,7 +42,12 @@ function byReference(child: string, id: string): ElementData['children'] {
 	return { sequence: [child], details: { [child]: { declarations: { 'urn:t': [id] } } } }
 }
 
-type SingletonCase = { definition: DefinitionData; root: string; expected: string[] }
+type SingletonCase = {
+	types?: TypesData
+	definition: DefinitionData
+	root: string
+	expected: string[]
+}
 
 const cases: Record<string, SingletonCase> = {
 	'a child at most once under a root -> both are singletons': {
@@ -466,6 +471,77 @@ const cases: Record<string, SingletonCase> = {
 		root: 'Root',
 		expected: [],
 	},
+	'a child once in the declared type and twice in a type the parent may take -> not a singleton': {
+		definition: {
+			Root: element({ contentModel: sequence(once('Part')) }),
+			Part: {
+				...element({ parents: ['Root'], contentModel: sequence(once('Leaf')) }),
+				variants: ['{urn:t}tTwice'],
+			},
+			Leaf: element({ parents: ['Part'] }),
+		},
+		types: {
+			'{urn:t}tTwice': {
+				attributes: { sequence: [], details: {} },
+				children: { sequence: ['Leaf'], details: {} },
+				contentModel: sequence(once('Leaf'), once('Leaf')),
+			},
+		},
+		root: 'Root',
+		expected: ['Part', 'Root'],
+	},
+	'a child only a type the parent may take holds, once -> a singleton': {
+		definition: {
+			Root: element({ contentModel: sequence(once('Part')) }),
+			// holding no element itself, no content model; its children list the type's
+			Part: {
+				...element({ parents: ['Root'] }),
+				children: { sequence: ['Leaf'], details: { Leaf: {} } },
+				variants: ['{urn:t}tOnce'],
+			},
+			Leaf: element({ parents: ['Part'] }),
+		},
+		types: {
+			'{urn:t}tOnce': {
+				attributes: { sequence: [], details: {} },
+				children: { sequence: ['Leaf'], details: {} },
+				contentModel: sequence(once('Leaf')),
+			},
+		},
+		root: 'Root',
+		expected: ['Leaf', 'Part', 'Root'],
+	},
+	'a type the parent may take holding no element -> it holds the child no time, a singleton': {
+		definition: {
+			Root: element({ contentModel: sequence(once('Part')) }),
+			Part: {
+				...element({ parents: ['Root'], contentModel: sequence(once('Leaf')) }),
+				variants: ['{urn:t}tEmpty'],
+			},
+			Leaf: element({ parents: ['Part'] }),
+		},
+		types: {
+			'{urn:t}tEmpty': {
+				attributes: { sequence: ['a'], details: { a: {} } },
+				children: { sequence: [], details: {} },
+			},
+		},
+		root: 'Root',
+		expected: ['Leaf', 'Part', 'Root'],
+	},
+	'children listed without a content model nor variants (a definition before the rebuild) -> any number of times':
+		{
+			definition: {
+				Root: element({ contentModel: sequence(once('Part')) }),
+				Part: {
+					...element({ parents: ['Root'] }),
+					children: { sequence: ['Leaf'], details: { Leaf: {} } },
+				},
+				Leaf: element({ parents: ['Part'] }),
+			},
+			root: 'Root',
+			expected: ['Part', 'Root'],
+		},
 	'a child prohibited in an unbounded group -> occurs never, a singleton': {
 		definition: {
 			Root: element({
@@ -485,8 +561,8 @@ const cases: Record<string, SingletonCase> = {
 describe('deriveSingletons', () => {
 	for (const [name, testCase] of Object.entries(cases)) {
 		it(name, () => {
-			const { definition, root, expected } = testCase
-			assert.deepEqual(deriveSingletons({ definition, root }), expected)
+			const { definition, root, expected, types } = testCase
+			assert.deepEqual(deriveSingletons({ definition, root, types }), expected)
 		})
 	}
 })

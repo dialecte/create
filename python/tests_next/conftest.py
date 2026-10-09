@@ -19,15 +19,25 @@ def schema(body: str, *, target: str = TARGET, prefix: str = 't', attributes: st
 
 
 @pytest.fixture
-def definition_of(tmp_path: Path):
-    """`definition_of(entry_body, imports={'other.xsd': text})` -> the definition data of the generated dialecte."""
+def generated_of(tmp_path: Path):
+    """`generated_of(entry_body, imports={'other.xsd': text})` -> the definition and the types of the dialecte."""
 
-    def build(entry: str, *, imports: dict[str, str] | None = None) -> dict[str, Any]:
+    def build(entry: str, *, imports: dict[str, str] | None = None):
         for file_name, text in (imports or {}).items():
             (tmp_path / file_name).write_text(text, encoding='utf-8')
         entry_path = tmp_path / 'entry.xsd'
         entry_path.write_text(entry, encoding='utf-8')
         return generate_definition(entry_path)
+
+    return build
+
+
+@pytest.fixture
+def definition_of(generated_of):
+    """`definition_of(entry_body, imports={'other.xsd': text})` -> the definition data of the generated dialecte."""
+
+    def build(entry: str, *, imports: dict[str, str] | None = None) -> dict[str, Any]:
+        return generated_of(entry, imports=imports).definition
 
     return build
 

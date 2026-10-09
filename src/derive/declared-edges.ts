@@ -81,7 +81,9 @@ export function declaredUnder(params: {
 }): DeclarationData | undefined {
 	const { definition, parent, child } = params
 	const edge = definition[parent]?.children.details[child]
-	if (isDeclaredEdge(edge)) return edge
+	if (isDeclaredEdge(edge)) {
+		return { attributes: edge.attributes, children: edge.children, contentModel: edge.contentModel }
+	}
 	const [ids, ...otherNamespaces] = Object.values(edge?.declarations ?? {})
 	const [only, ...others] = ids ?? []
 	if (only === undefined || others.length > 0 || otherNamespaces.length > 0) return undefined

@@ -6,6 +6,7 @@ several ways - declarations validation tells apart - also keeps each way, number
 holding it names the one it holds.
 """
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ from generate_next.model.declarations import (
     NameTest,
     Particle,
     SelectorPath,
+    TypeDefinition,
     TextDeclaration,
     Wildcard,
     WildcardParticle,
@@ -38,24 +40,37 @@ from generate_next.definition.sidecars import (
 from generate_next.definition.identity_fields import identity_fields
 from generate_next.definition.patterns import pattern_to_js
 from generate_next.model.particles import held_leaves
-from generate_next.model.read_schema import read_schema
+from generate_next.model.read_schema import ANY_TYPE, read_schema
 from generate_next.model.wildcards import union, weakest_process_contents
 
 
-def generate_definition(entry: Path) -> dict[str, Any]:
+@dataclass(frozen=True)
+class Generated:
+    """What the generator writes: the definition (tag -> element), and the types elements may take with xsi:type
+    (Clark name -> what the type lets an element hold)."""
+
+    definition: dict[str, Any]
+    types: dict[str, Any]
+
+
+def generate_definition(entry: Path) -> Generated:
     """The definition data of the schema whose entry document is `entry`, with what the sidecar files
-    beside it add."""
+    beside it add, and its types."""
     attribute_mapping = read_attribute_mapping(entry)
     schema = read_schema(entry, global_attributes=mapped_attribute_names(attribute_mapping))
     declarations = attach_mapped_attributes(schema.elements, attribute_mapping, global_attributes=schema.global_attributes)
     parent_mapping = mapped_parents(read_parent_mapping(entry))
-    definition = build_definition(declarations, parent_mapping=parent_mapping)
-    return attach_mapped_children(definition, parent_mapping, declarations=declarations)
+    generated = build_definition(declarations, parent_mapping=parent_mapping, types=schema.types)
+    definition = attach_mapped_children(generated.definition, parent_mapping, declarations=declarations)
+    return Generated(definition=definition, types=generated.types)
 
 
 def build_definition(
-    declarations: tuple[ElementDeclaration, ...], *, parent_mapping: dict[str, list[str]] | None = None
-) -> dict[str, Any]:
+    declarations: tuple[ElementDeclaration, ...],
+    *,
+    parent_mapping: dict[str, list[str]] | None = None,
+    types: tuple[TypeDefinition, ...] = (),
+) -> Generated:
     by_tag: dict[str, list[ElementDeclaration]] = {}
     for declaration in declarations:
         by_tag.setdefault(declaration.name, []).append(declaration)
@@ -68,10 +83,28 @@ def build_definition(
         for number, way in enumerate(tag_ways, start=1)
         for declaration in way
     }
-    identities = identity_fields(declarations, parent_mapping=parent_mapping or {})
-    return {
-        tag: _element(tag, by_tag[tag], ways=ways[tag], numbers=numbers, identities=identities) for tag in sorted(by_tag)
+    identities = identity_fields(declarations, parent_mapping=parent_mapping or {}, types=types)
+    variants = {variant.name: variant for variant in types}
+    context = _Context(numbers=numbers, identities=identities, variants=variants)
+    definition = {tag: _element(tag, by_tag[tag], ways=ways[tag], context=context) for tag in sorted(by_tag)}
+    written_types = {
+        name: _held([variant], holder=_namespace_of(name), context=context) for name, variant in sorted(variants.items())
     }
+    return Generated(definition=definition, types=written_types)
+
+
+@dataclass(frozen=True)
+class _Context:
+    # the number of each declaration of a tag declared several ways, by key
+    numbers: dict[int, str]
+    # the keys of the attributes identifying each declaration, by key
+    identities: dict[int, set[str]]
+    # the types elements may take with xsi:type, by Clark name
+    variants: dict[str, TypeDefinition]
+
+
+def _namespace_of(clark_name: str) -> str:
+    return clark_name[1 : clark_name.index('}')] if clark_name.startswith('{') else ''
 
 
 def _ways(declarations: list[ElementDeclaration]) -> list[list[ElementDeclaration]]:
@@ -122,34 +155,28 @@ def _way_order(way: list[ElementDeclaration]) -> tuple[Any, ...]:
 
 
 def _element(
-    tag: str,
-    declarations: list[ElementDeclaration],
-    *,
-    ways: list[list[ElementDeclaration]],
-    numbers: dict[int, str],
-    identities: dict[int, set[str]],
+    tag: str, declarations: list[ElementDeclaration], *, ways: list[list[ElementDeclaration]], context: _Context
 ) -> dict[str, Any]:
     """A tag: the union of its declarations; and, when it is declared several ways, each way as it is."""
     # the namespace of the tag: its global declaration's, else the first one met
     canonical = next((declaration for declaration in declarations if declaration.is_global), declarations[0])
     element: dict[str, Any] = {'tag': tag, **_heading(declarations, canonical=canonical, global_known=len(ways) == 1)}
     element['parents'] = sorted({parent for declaration in declarations for parent in declaration.parent_names})
-    element.update(_content(declarations, holder=canonical.namespace.uri, numbers=numbers, identities=identities))
+    # the union in the declarations' canonical order: the order the schema was read in changes nothing
+    element.update(_content([declaration for way in ways for declaration in way], holder=canonical.namespace.uri, context=context))
     if len(ways) > 1:
         element['declarations'] = {
-            str(number): _declaration(way, numbers=numbers, identities=identities) for number, way in enumerate(ways, start=1)
+            str(number): _declaration(way, context=context) for number, way in enumerate(ways, start=1)
         }
     return element
 
 
-def _declaration(
-    way: list[ElementDeclaration], *, numbers: dict[int, str], identities: dict[int, set[str]]
-) -> dict[str, Any]:
+def _declaration(way: list[ElementDeclaration], *, context: _Context) -> dict[str, Any]:
     """One way a tag is declared: the element as those declarations have it."""
     canonical = next((declaration for declaration in way if declaration.is_global), way[0])
     return {
         **_heading(way, canonical=canonical, global_known=True),
-        **_content(way, holder=canonical.namespace.uri, numbers=numbers, identities=identities),
+        **_content(way, holder=canonical.namespace.uri, context=context),
     }
 
 
@@ -164,41 +191,66 @@ def _heading(declarations: list[ElementDeclaration], *, canonical: ElementDeclar
     return heading
 
 
-def _content(
-    declarations: list[ElementDeclaration], *, holder: str, numbers: dict[int, str], identities: dict[int, set[str]]
-) -> dict[str, Any]:
+def _content(declarations: list[ElementDeclaration], *, holder: str, context: _Context) -> dict[str, Any]:
     """What the declarations let an element hold, as one: what a record may hold under some parent."""
     content: dict[str, Any] = {}
     # nil where one declaration allows it
     if any(declaration.nillable for declaration in declarations):
         content['nillable'] = True
-    content['attributes'] = _attributes(declarations)
-    identifying = sorted({key for declaration in declarations for key in identities.get(declaration.key, ())})
+    # an element of anyType holds any element already: its variants' children are not listed again
+    variant_types = tuple(
+        context.variants[name]
+        for name in dict.fromkeys(
+            name for declaration in declarations if declaration.type_name != ANY_TYPE for name in declaration.variants
+        )
+    )
+    content.update(_held(declarations, holder=holder, context=context, also=variant_types))
+    identifying = sorted({key for declaration in declarations for key in context.identities.get(declaration.key, ())})
     if identifying:
         content['attributes']['identityFields'] = identifying
-    leaves = [leaf for declaration in declarations for leaf in held_leaves(declaration.content_model)]
-    # each child once, in content order; a particle no document may hold names no child
-    child_names = list(dict.fromkeys(leaf.name for leaf in leaves if isinstance(leaf, ElementParticle)))
-    children: dict[str, Any] = {'sequence': child_names}
-    if any(isinstance(leaf, WildcardParticle) for leaf in leaves):
-        children['any'] = True
-    children['details'] = _child_details(leaves, numbers=numbers)
-    content['children'] = children
-    # one content model when every declaration has the same shape, written relative to the holder's namespace so
-    # declarations in two namespaces compare as particles; a particle names the declaration it holds only where
-    # they all hold the same one
-    content_models = [_particle(declaration.content_model, holder=holder, numbers=numbers) for declaration in declarations]
-    first = content_models[0]
-    if first is not None and all(_shape(model) == _shape(first) for model in content_models):
-        content['contentModel'] = _shared(content_models)
-    texts = [declaration.text for declaration in declarations if declaration.text is not None]
-    if texts:
-        content['textContent'] = _text_content(texts)
     # the constraints of a declaration, never of a union: they hold only where it is the one that applies
     constraints = declarations[0].constraints
     if constraints and all(declaration.constraints == constraints for declaration in declarations):
         content['constraints'] = [_written_constraint(constraint) for constraint in constraints]
+    # the types an instance may name instead, said where every declaration admits the same
+    variants = declarations[0].variants
+    if variants and all(declaration.variants == variants for declaration in declarations):
+        content['variants'] = list(variants)
+    if all(declaration.abstract_type for declaration in declarations):
+        content['abstractType'] = True
     return content
+
+
+def _held(
+    parts: list[ElementDeclaration] | list[TypeDefinition],
+    *,
+    holder: str,
+    context: _Context,
+    also: tuple[TypeDefinition, ...] = (),
+) -> dict[str, Any]:
+    """The attributes, children, content model and text the parts - declarations or types - give an element; `also`
+    the variant types whose children it may hold too (listed, their content model theirs)."""
+    held: dict[str, Any] = {'attributes': _attributes(parts)}
+    leaves = [leaf for part in parts for leaf in held_leaves(part.content_model)]
+    every_leaf = leaves + [leaf for variant in also for leaf in held_leaves(variant.content_model)]
+    # each child once, in content order (the variants' after); a particle no document may hold names no child
+    child_names = list(dict.fromkeys(leaf.name for leaf in every_leaf if isinstance(leaf, ElementParticle)))
+    children: dict[str, Any] = {'sequence': child_names}
+    if any(isinstance(leaf, WildcardParticle) for leaf in every_leaf):
+        children['any'] = True
+    children['details'] = _child_details(every_leaf, numbers=context.numbers)
+    held['children'] = children
+    # one content model when every part has the same shape, written relative to the holder's namespace so parts in
+    # two namespaces compare as particles; a particle names the declaration it holds only where they all hold the
+    # same one
+    content_models = [_particle(part.content_model, holder=holder, numbers=context.numbers) for part in parts]
+    first = content_models[0]
+    if first is not None and all(_shape(model) == _shape(first) for model in content_models):
+        held['contentModel'] = _shared(content_models)
+    texts = [part.text for part in parts if part.text is not None]
+    if texts:
+        held['textContent'] = _text_content(texts)
+    return held
 
 
 def _written_constraint(constraint: IdentityConstraint) -> dict[str, Any]:

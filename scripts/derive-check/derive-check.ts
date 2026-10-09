@@ -44,14 +44,21 @@ async function main(): Promise<void> {
 			process.stdout.write(`${name}: skipped (${folder} absent)\n`)
 			continue
 		}
-		const { DEFINITION } = await import(pathToFileURL(join(folder, 'definition.generated.ts')).href)
+		// TYPES: the types an instance may name with xsi:type, written by the rebuilt generator only
+		const { DEFINITION, TYPES } = await import(
+			pathToFileURL(join(folder, 'definition.generated.ts')).href
+		)
 		const { ROOT_ELEMENT } = await import(
 			pathToFileURL(join(folder, 'constants.generated.ts')).href
 		)
 		const root = rootOf({ definition: DEFINITION, committed: ROOT_ELEMENT })
 		process.stdout.write(`${name} root: ${root.note}\n`)
 		const derived = {
-			'constants.generated.ts': emitConstantsSource({ definition: DEFINITION, root: root.tag }),
+			'constants.generated.ts': emitConstantsSource({
+				definition: DEFINITION,
+				root: root.tag,
+				types: TYPES,
+			}),
 			'types.generated.ts': emitTypesSource({ definition: DEFINITION }),
 		}
 		const formatted = format({

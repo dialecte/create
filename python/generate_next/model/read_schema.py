@@ -21,6 +21,7 @@ from xmlschema.validators import (
     XsdSimpleType,
     XsdUnique,
 )
+from xmlschema.validators.xsdbase import XsdType
 
 from generate_next.errors import SchemaNotReadable, SchemaNotRepresentable
 from generate_next.model.declarations import (
@@ -33,12 +34,18 @@ from generate_next.model.declarations import (
     Particle,
     Schema,
     TextDeclaration,
+    TypeDefinition,
+    Wildcard,
     WildcardParticle,
 )
 from generate_next.model.datatypes import datatype_of
 from generate_next.model.identity_paths import parse_field, parse_selector
 from generate_next.model.particles import emptiable, held_leaves
 from generate_next.model.wildcards import attribute_wildcard_of, wildcard_of
+
+ANY_TYPE = '{http://www.w3.org/2001/XMLSchema}anyType'
+ANY_SIMPLE_TYPE = '{http://www.w3.org/2001/XMLSchema}anySimpleType'
+
 
 def read_schema(entry: Path, *, global_attributes: list[tuple[str, str]] | None = None) -> Schema:
     """Every element declaration the schema whose entry document is `entry` makes, and the declarations of the
@@ -60,9 +67,35 @@ def _load(entry: Path) -> xmlschema.XMLSchema:
         warnings.simplefilter('error', XMLSchemaImportWarning)
         warnings.simplefilter('error', XMLSchemaIncludeWarning)
         try:
-            return xmlschema.XMLSchema(str(entry), allow='local')
+            schema = xmlschema.XMLSchema(str(entry), allow='local')
         except (XMLSchemaImportWarning, XMLSchemaIncludeWarning) as failure:
             raise SchemaNotReadable(f'{entry}: {failure}') from failure
+    _give_members_their_head_type(schema)
+    return schema
+
+
+def _give_members_their_head_type(schema: xmlschema.XMLSchema) -> None:
+    """A global element that names no type and declares none has its substitution group head's type. The schema
+    library gives it anyType when the head blocks substitution; libxml2, like the specification, the head's."""
+    resolved: set[int] = set()
+
+    def resolve(element: XsdElement) -> None:
+        if id(element) in resolved:
+            return
+        resolved.add(id(element))
+        head_name = element.elem.get('substitutionGroup')
+        if head_name is None:
+            return
+        head = schema.maps.elements[element.schema.resolve_qname(head_name)]
+        resolve(head)
+        # in a valid schema a member has anyType, where its head has another type, only when it names none
+        if element.type.name == ANY_TYPE:
+            element.type = head.type
+
+    # the meta-schema's elements are shared by every schema read: left as they are
+    for element in list(schema.maps.elements.values()):
+        if element.schema.meta_schema is not None:
+            resolve(element)
 
 
 @dataclass
@@ -75,6 +108,14 @@ class _Reader:
     # a number per declaration, given when first met - read or named by a particle
     keys: dict[int, int] = field(default_factory=dict)
     type_keys: dict[int, int] = field(default_factory=dict)
+    # per declaration, the types it admits with xsi:type; each type once, with its particle tree and declarations
+    variants: dict[int, list[XsdType]] = field(default_factory=dict)
+    type_contents: dict[int, tuple[GroupParticle | None, list[XsdElement]]] = field(default_factory=dict)
+    variant_types: dict[int, XsdType] = field(default_factory=dict)
+    _admitted: dict[tuple[int, frozenset[str]], list[XsdType]] = field(default_factory=dict)
+    _derived_from: dict[int | str, list[XsdType]] | None = None
+    # the elements of anyType through whose variants a declaration is reached: its parents when it has no other
+    through_any_type: dict[int, set[str]] = field(default_factory=dict)
 
     def key_of(self, element: XsdElement) -> int:
         return self.keys.setdefault(id(element), len(self.keys))
@@ -92,9 +133,92 @@ class _Reader:
                 continue
             self.found[identity] = element
             self.parents.setdefault(identity, set())
-            content_model, declarations = (None, []) if element.abstract else self._content_of(element)
+            content_model, declarations = (None, []) if element.abstract else self._content_of(element.type, owner=element.name)
             self.content_models[identity] = content_model
-            pending.extend((child, element.local_name) for child in reversed(declarations))
+            held = [(child, element.local_name) for child in declarations]
+            # what the element may hold with xsi:type naming another type is walked too; an element of anyType holds
+            # any element already, so its variants give it no child of their own - only a parent to a declaration
+            # nothing else holds
+            variants = [] if element.abstract else self._variants_of(element)
+            of_any_type = element.type.name == ANY_TYPE
+            for variant in variants:
+                if id(variant) not in self.type_contents:
+                    self.type_contents[id(variant)] = self._content_of(variant, owner=variant.name)
+                    self.variant_types[id(variant)] = variant
+                for child in self.type_contents[id(variant)][1]:
+                    if of_any_type:
+                        self.through_any_type.setdefault(id(child), set()).add(element.local_name)
+                    held.append((child, None if of_any_type else element.local_name))
+            self.variants[identity] = variants
+            pending.extend(reversed(held))
+
+    def _variants_of(self, element: XsdElement) -> list[XsdType]:
+        """The named types of the schema an instance of `element` may name with xsi:type instead of its declared
+        type: validly derived from it by no step the element or the type blocks (the schema's blockDefault
+        included), not abstract - as libxml2 reads xsi:type. Built-in types are left out (a reader knows their
+        hierarchy)."""
+        declared = element.type
+        blocked = _derivations(element.block) | _derivations(getattr(declared, 'block', ''))
+        cache_key = (id(declared), blocked)
+        if cache_key not in self._admitted:
+            admitted = [
+                candidate
+                for candidate in self._candidates(declared)
+                if not candidate.abstract and self._validly_derived(candidate, declared, blocked=blocked)
+            ]
+            self._admitted[cache_key] = sorted(admitted, key=lambda variant: variant.name)
+        return self._admitted[cache_key]
+
+    def _validly_derived(self, derived: XsdType, base: XsdType, *, blocked: frozenset[str]) -> bool:
+        """XSD's type derivation rule: `derived` is `base`, or each step up to it is a derivation not blocked - a
+        simple type's always a restriction -, a simple type derived from a member counting as derived from the
+        union."""
+        if _base_key(derived) == _base_key(base):
+            return True
+        if _method_of(derived) in blocked:
+            return False
+        step = self._base_of(derived)
+        if step is not None and self._validly_derived(step, base, blocked=blocked):
+            return True
+        return isinstance(derived, XsdSimpleType) and any(
+            self._validly_derived(derived, member, blocked=blocked) for member in _union_members(base)
+        )
+
+    def _candidates(self, declared: XsdType) -> list[XsdType]:
+        """The named types that may derive from `declared`: those with it among their bases - a list or a union
+        derives from anySimpleType, never from its item or members (libxml2 refuses a list of A for an A, the
+        schema library takes it) -, and, for a union, its members, theirs, and what derives from them. The bases
+        are indexed once; what blocks a step is checked after."""
+        if self._derived_from is None:
+            self._derived_from = {}
+            for _, candidate in sorted(self.schema.maps.types.items()):
+                if candidate.schema.meta_schema is None:
+                    continue
+                base = self._base_of(candidate)
+                while base is not None:
+                    self._derived_from.setdefault(_base_key(base), []).append(candidate)
+                    base = self._base_of(base)
+        candidates = list(self._derived_from.get(_base_key(declared), []))
+        pending = list(_union_members(declared))
+        while pending:
+            member = pending.pop()
+            if member.name is not None and member.schema.meta_schema is not None:
+                candidates.append(member)
+            candidates.extend(self._derived_from.get(_base_key(member), []))
+            pending.extend(_union_members(member))
+        return list(dict.fromkeys(candidates))
+
+    def _base_of(self, xsd_type: XsdType) -> XsdType | None:
+        """The type `xsd_type` derives from; none for anyType. The schema library gives a list, a union and a
+        primitive built-in no base - each derives from anySimpleType -, nor a complex type deriving from nothing
+        it names - which restricts anyType."""
+        if xsd_type.base_type is not None and xsd_type.base_type is not xsd_type:
+            return xsd_type.base_type
+        if _base_key(xsd_type) == ANY_TYPE:
+            return None
+        if isinstance(xsd_type, XsdSimpleType) and _base_key(xsd_type) != ANY_SIMPLE_TYPE:
+            return self.schema.maps.types[ANY_SIMPLE_TYPE]
+        return self.schema.maps.types[ANY_TYPE]
 
     def schema_model(self, *, global_attributes: list[tuple[str, str]]) -> Schema:
         elements = [element for element in self.found.values() if not element.abstract]
@@ -110,7 +234,8 @@ class _Reader:
                 type_key=self.type_keys.setdefault(id(element.type), len(self.type_keys)),
                 element=element,
                 content_model=self.content_models[identity],
-                parent_names=tuple(sorted(self.parents[identity])),
+                parent_names=tuple(sorted(self.parents[identity] or self.through_any_type.get(identity, ()))),
+                variants=tuple(variant.name for variant in self.variants[identity]),
             )
             for identity, element in self.found.items()
             if not element.abstract
@@ -118,13 +243,17 @@ class _Reader:
         # after the elements' attributes, whose prefixes are chosen first; in the order asked
         declared = {(_namespace_of(name), attribute.local_name): attribute for name, attribute in self.schema.maps.attributes.items()}
         attributes = {name: _attribute(prefixes, declared[name]) for name in global_attributes if name in declared}
-        return Schema(elements=declarations, global_attributes=attributes)
+        types = tuple(
+            _type_definition(prefixes=prefixes, xsd_type=variant, content_model=self.type_contents[identity][0])
+            for identity, variant in sorted(self.variant_types.items(), key=lambda item: item[1].name)
+        )
+        return Schema(elements=declarations, global_attributes=attributes, types=types)
 
-    def _content_of(self, element: XsdElement) -> tuple[GroupParticle | None, list[XsdElement]]:
-        """The particle tree of the element content of `element`, and the declarations it names in
-        content order: a reference resolved to its global, a substitution head standing for the choice
-        among the elements that may replace it."""
-        content = element.type.content if isinstance(element.type, XsdComplexType) else None
+    def _content_of(self, xsd_type: XsdType, *, owner: str) -> tuple[GroupParticle | None, list[XsdElement]]:
+        """The particle tree of the element content a type gives, and the declarations it names in content
+        order: a reference resolved to its global, a substitution head standing for the choice among the
+        elements that may replace it."""
+        content = xsd_type.content if isinstance(xsd_type, XsdComplexType) else None
         if not isinstance(content, XsdGroup):
             return None, []
         declarations: list[XsdElement] = []
@@ -147,7 +276,7 @@ class _Reader:
                 elif isinstance(item, XsdElement):
                     particles.append(element_particle(item, held=held))
                 else:
-                    raise SchemaNotRepresentable(f'{element.name}: a content particle of an unknown kind: {item!r}')
+                    raise SchemaNotRepresentable(f'{owner}: a content particle of an unknown kind: {item!r}')
             return GroupParticle(
                 kind=group.model, min_occurs=group.min_occurs, max_occurs=group.max_occurs, particles=tuple(particles)
             )
@@ -198,6 +327,29 @@ class _Reader:
         return substitutes if head.abstract else [head, *substitutes]
 
 
+def _base_key(xsd_type: XsdType) -> int | str:
+    """How a type is found among bases: a built-in by its name (the schema library keeps several of each, an
+    untyped element its own anyType), any other by identity."""
+    return xsd_type.name if (xsd_type.name or '').startswith('{http://www.w3.org/2001/XMLSchema}') else id(xsd_type)
+
+
+def _union_members(xsd_type: XsdType) -> tuple[XsdType, ...]:
+    """The member types of a union. A restriction of one has none of its own: an instance may not name a member
+    and leave the restriction's facets behind (libxml2 and the schema library refuse)."""
+    return tuple(getattr(xsd_type, 'member_types', None) or ())
+
+
+def _derivations(block: str | None) -> frozenset[str]:
+    """The derivation methods a block value names (the schema library writes #all out)."""
+    return frozenset((block or '').split()) & {'extension', 'restriction'}
+
+
+def _method_of(xsd_type: XsdType) -> str:
+    """How a type derives from its base: a complex type as it says (restriction when it says nothing - of anyType),
+    a simple type always by restriction (a list and a union included)."""
+    return (getattr(xsd_type, 'derivation', None) or 'restriction') if isinstance(xsd_type, XsdComplexType) else 'restriction'
+
+
 def _declaration(
     *,
     prefixes: '_AttributePrefixes',
@@ -206,27 +358,12 @@ def _declaration(
     element: XsdElement,
     content_model: GroupParticle | None,
     parent_names: tuple[str, ...],
+    variants: tuple[str, ...],
 ) -> ElementDeclaration:
     # an unqualified local element is in no namespace, whatever the schema targets
     uri = _namespace_of(element.name)
     namespace = Namespace(prefix=_element_prefix(element, uri), uri=uri)
-    # read from the type: what the schema library keeps on a substitution member declared without a type
-    # of its own is anyType's, not its head's type's
-    complex_type = element.type if isinstance(element.type, XsdComplexType) else None
-    attributes = tuple(
-        sorted(
-            (
-                _attribute(prefixes, attribute)
-                for name, attribute in (complex_type.attributes.items() if complex_type is not None else ())
-                if name is not None and attribute.use != 'prohibited'
-            ),
-            key=lambda attribute: attribute.key,
-        )
-    )
-    try:
-        any_attribute = attribute_wildcard_of(complex_type) if complex_type is not None else None
-    except SchemaNotRepresentable as failure:
-        raise SchemaNotRepresentable(f'{element.name}: {failure}') from failure
+    attributes, any_attribute = _attributes_of(prefixes, element.type, owner=element.name)
     return ElementDeclaration(
         key=key,
         name=element.local_name,
@@ -243,7 +380,44 @@ def _declaration(
         text=_text(element),
         parent_names=parent_names,
         constraints=tuple(_constraint(identity) for identity in element.identities),
+        variants=variants,
+        abstract_type=bool(getattr(element.type, 'abstract', False)),
     )
+
+
+def _type_definition(
+    *, prefixes: '_AttributePrefixes', xsd_type: XsdType, content_model: GroupParticle | None
+) -> TypeDefinition:
+    attributes, any_attribute = _attributes_of(prefixes, xsd_type, owner=xsd_type.name)
+    return TypeDefinition(
+        name=xsd_type.name,
+        attributes=attributes,
+        any_attribute=any_attribute,
+        content_model=content_model,
+        text=_text_of(xsd_type, default=None, fixed=None),
+    )
+
+
+def _attributes_of(
+    prefixes: '_AttributePrefixes', xsd_type: XsdType, *, owner: str
+) -> tuple[tuple[AttributeDeclaration, ...], Wildcard | None]:
+    """The attributes a type gives an element, sorted by key, and its attribute wildcard."""
+    complex_type = xsd_type if isinstance(xsd_type, XsdComplexType) else None
+    attributes = tuple(
+        sorted(
+            (
+                _attribute(prefixes, attribute)
+                for name, attribute in (complex_type.attributes.items() if complex_type is not None else ())
+                if name is not None and attribute.use != 'prohibited'
+            ),
+            key=lambda attribute: attribute.key,
+        )
+    )
+    try:
+        any_attribute = attribute_wildcard_of(complex_type) if complex_type is not None else None
+    except SchemaNotRepresentable as failure:
+        raise SchemaNotRepresentable(f'{owner}: {failure}') from failure
+    return attributes, any_attribute
 
 
 def _constraint(identity: XsdIdentity) -> IdentityConstraint:
@@ -272,18 +446,21 @@ def _in_scope(component: XsdComponent) -> dict[str, str]:
 
 
 def _text(element: XsdElement) -> TextDeclaration | None:
-    """The text the element holds: of its simple type, of its simple content, or untyped when its
+    return _text_of(element.type, default=element.default, fixed=element.fixed)
+
+
+def _text_of(xsd_type: XsdType, *, default: str | None, fixed: str | None) -> TextDeclaration | None:
+    """The text a type lets an element hold: of its simple type, of its simple content, or untyped when its
     content is mixed; none for element-only or empty content. Simple content is typed even in a type
     marked mixed: the mark only matters beside elements."""
-    element_type = element.type
-    if isinstance(element_type, XsdComplexType):
-        if element_type.has_simple_content():
-            element_type = element_type.content
-        elif element_type.mixed:
-            return TextDeclaration(datatype=None, default=element.default, fixed=element.fixed)
+    if isinstance(xsd_type, XsdComplexType):
+        if xsd_type.has_simple_content():
+            xsd_type = xsd_type.content
+        elif xsd_type.mixed:
+            return TextDeclaration(datatype=None, default=default, fixed=fixed)
         else:
             return None
-    return TextDeclaration(datatype=datatype_of(element_type), default=element.default, fixed=element.fixed)
+    return TextDeclaration(datatype=datatype_of(xsd_type), default=default, fixed=fixed)
 
 
 def _element_particle(

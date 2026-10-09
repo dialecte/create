@@ -16,11 +16,11 @@ def main(argv: list[str] | None = None) -> Path:
     parser.add_argument('--out-dir', required=True, type=Path, help='where definition.generated.ts is written')
     arguments = parser.parse_args(argv)
 
-    data = generate_definition(arguments.entry)
+    generated = generate_definition(arguments.entry)
     arguments.out_dir.mkdir(parents=True, exist_ok=True)
     output = arguments.out_dir / 'definition.generated.ts'
-    output.write_text(definition_source(data), encoding='utf-8')
-    print(f'{output} - {len(data)} elements')
+    output.write_text(definition_source(generated.definition, generated.types), encoding='utf-8')
+    print(f'{output} - {len(generated.definition)} elements, {len(generated.types)} xsi:type variants')
     return output
 
 

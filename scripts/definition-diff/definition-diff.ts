@@ -28,7 +28,12 @@ async function main(): Promise<void> {
 
 	const before = await readDefinition(beforePath)
 	const after = await readDefinition(afterPath)
-	const differences = diffDefinitions({ before, after })
+	const differences = diffDefinitions({
+		before: before.definition,
+		after: after.definition,
+		beforeTypes: before.types,
+		afterTypes: after.types,
+	})
 
 	process.stdout.write(
 		asJson ? `${JSON.stringify(differences, null, '\t')}\n` : formatReport({ differences }),
@@ -36,11 +41,15 @@ async function main(): Promise<void> {
 	process.exit(differences.length === 0 ? 0 : 1)
 }
 
-/** A generated definition as the data a consumer imports. */
-async function readDefinition(path: string): Promise<DefinitionData> {
-	const module: { DEFINITION?: DefinitionData } = await import(pathToFileURL(resolve(path)).href)
+/** A generated definition as the data a consumer imports, and its types (none before the rebuilt generator). */
+async function readDefinition(
+	path: string,
+): Promise<{ definition: DefinitionData; types: DefinitionData }> {
+	const module: { DEFINITION?: DefinitionData; TYPES?: DefinitionData } = await import(
+		pathToFileURL(resolve(path)).href
+	)
 	if (module.DEFINITION === undefined) throw new Error(`${path} exports no DEFINITION`)
-	return module.DEFINITION
+	return { definition: module.DEFINITION, types: module.TYPES ?? {} }
 }
 
 await main()

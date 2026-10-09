@@ -9,12 +9,15 @@ wildcard that admits them validates them by. An element a `*` step reaches count
 """
 from dataclasses import dataclass, field
 
-from generate_next.model.declarations import ElementDeclaration, ElementParticle, NameTest, SelectorPath
+from generate_next.model.declarations import ElementDeclaration, ElementParticle, NameTest, SelectorPath, TypeDefinition
 from generate_next.model.particles import held_leaves
 
 
 def identity_fields(
-    declarations: tuple[ElementDeclaration, ...], *, parent_mapping: dict[str, list[str]]
+    declarations: tuple[ElementDeclaration, ...],
+    *,
+    parent_mapping: dict[str, list[str]],
+    types: tuple[TypeDefinition, ...] = (),
 ) -> dict[int, set[str]]:
     """Per declaration key, the keys of the attributes that identify it."""
     by_key = {declaration.key: declaration for declaration in declarations}
@@ -26,7 +29,7 @@ def identity_fields(
     for child, parents in parent_mapping.items():
         for parent in parents:
             mapped.setdefault(parent, []).extend(globals_by_name.get(child, []))
-    children = _Children(by_key=by_key, mapped=mapped)
+    children = _Children(by_key=by_key, mapped=mapped, variants={variant.name: variant for variant in types})
     found: dict[int, set[str]] = {}
     for declaring in declarations:
         for constraint in declaring.constraints:
@@ -60,6 +63,8 @@ class _Children:
 
     by_key: dict[int, ElementDeclaration]
     mapped: dict[str, list[ElementDeclaration]]
+    # the types elements may take with xsi:type: what they hold, an instance's element may hold
+    variants: dict[str, TypeDefinition]
     found: dict[int, list[tuple[str, str, int]]] = field(default_factory=dict)
 
     def of(self, key: int) -> list[tuple[str, str, int]]:
@@ -69,9 +74,11 @@ class _Children:
 
     def _read(self, key: int) -> list[tuple[str, str, int]]:
         declaration = self.by_key[key]
+        models = [declaration.content_model, *(self.variants[name].content_model for name in declaration.variants)]
         held = [
             (leaf.name, leaf.namespace, leaf.declaration)
-            for leaf in held_leaves(declaration.content_model)
+            for model in models
+            for leaf in held_leaves(model)
             if isinstance(leaf, ElementParticle) and leaf.declaration in self.by_key
         ]
         attached = [(child.name, child.namespace.uri, child.key) for child in self.mapped.get(declaration.name, [])]

@@ -151,6 +151,14 @@ const cases: Record<string, DiffCase> = {
 			}),
 		],
 	},
+	'the types a declaration admits, and an abstract type -> variants differences': {
+		before: { Bay: element() },
+		after: { Bay: element({ variants: ['{urn:t}tExt'], abstractType: true }) },
+		expected: [
+			differenceAt(['abstractType'], 'variants', undefined, true),
+			differenceAt(['variants'], 'variants', undefined, ['{urn:t}tExt']),
+		],
+	},
 	'a tag now said to have a global declaration -> a global difference': {
 		before: { Bay: element() },
 		after: { Bay: element({ global: true }) },
@@ -319,4 +327,25 @@ describe('diffDefinitions', () => {
 			assert.deepEqual(diffDefinitions({ before, after }), expected)
 		})
 	}
+})
+
+describe('diffDefinitions - the types elements may take with xsi:type', () => {
+	it('a type added or changed -> a types difference, keyed by its name', () => {
+		const differences = diffDefinitions({
+			before: {},
+			after: {},
+			beforeTypes: { '{urn:t}tOld': { attributes: { sequence: ['a'], details: {} } } },
+			afterTypes: {
+				'{urn:t}tOld': { attributes: { sequence: ['a', 'b'], details: {} } },
+				'{urn:t}tNew': { attributes: { sequence: [], details: {} } },
+			},
+		})
+		assert.deepEqual(
+			differences.map(({ element, path, category }) => [element, path.join('.'), category]),
+			[
+				['{urn:t}tNew', '', 'types'],
+				['{urn:t}tOld', 'attributes.sequence', 'types'],
+			],
+		)
+	})
 })

@@ -27,12 +27,19 @@ const FIXTURES = join(CREATE_ROOT, 'test/fixtures/definition')
 for (const fixture of readdirSync(FIXTURES).sort()) {
 	describe(`derivation of the committed dialecte ${fixture}`, async () => {
 		const folder = join(FIXTURES, fixture)
-		const { DEFINITION } = await import(pathToFileURL(join(folder, 'definition.generated.ts')).href)
+		// TYPES: the types an instance may name with xsi:type, written by the rebuilt generator only
+		const { DEFINITION, TYPES } = await import(
+			pathToFileURL(join(folder, 'definition.generated.ts')).href
+		)
 		const root = deriveRoot({ definition: DEFINITION })
 		const formatted = format({
 			folder,
 			files: {
-				'constants.generated.ts': emitConstantsSource({ definition: DEFINITION, root }),
+				'constants.generated.ts': emitConstantsSource({
+					definition: DEFINITION,
+					root,
+					types: TYPES,
+				}),
 				'types.generated.ts': emitTypesSource({ definition: DEFINITION }),
 			},
 		})

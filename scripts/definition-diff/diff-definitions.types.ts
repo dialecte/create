@@ -14,6 +14,8 @@ export type DifferenceCategory =
 	| 'edge-definition'
 	| 'declarations'
 	| 'global'
+	| 'variants'
+	| 'types'
 	| 'content-model'
 	| 'constraints'
 	| 'identity-fields'

@@ -12,18 +12,26 @@ export type ElementData = {
 	}
 	readonly children: {
 		readonly sequence: readonly string[]
+		/** A wildcard admits other elements. */
+		readonly any?: true
 		readonly details: Readonly<Record<string, EdgeData>>
 	}
 	readonly contentModel?: ParticleData
 	/** Each way a tag declared several ways is declared, by number; the tag level is their union. */
 	readonly declarations?: Readonly<Record<string, DeclarationData>>
+	/** The types an instance may name instead of the declared one with xsi:type (Clark names, in `TYPES`). */
+	readonly variants?: readonly string[]
 }
+
+/** The types elements may take with xsi:type, by Clark name: what each lets an element hold. */
+export type TypesData = Readonly<Record<string, DeclarationData>>
 
 /** The element as one of its declarations has it. */
 export type DeclarationData = {
 	readonly attributes: ElementData['attributes']
 	readonly children: ElementData['children']
 	readonly contentModel?: ParticleData
+	readonly variants?: readonly string[]
 }
 
 export type AttributeData = {

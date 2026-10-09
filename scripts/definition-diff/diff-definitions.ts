@@ -8,8 +8,10 @@ import type { DefinitionData, Difference, DifferenceCategory } from './diff-defi
 export function diffDefinitions(params: {
 	before: DefinitionData
 	after: DefinitionData
+	beforeTypes?: DefinitionData
+	afterTypes?: DefinitionData
 }): Difference[] {
-	const { before, after } = params
+	const { before, after, beforeTypes = {}, afterTypes = {} } = params
 	const differences: Difference[] = []
 	for (const element of unionOfKeys({ before, after })) {
 		collectDifferences({
@@ -20,7 +22,21 @@ export function diffDefinitions(params: {
 			differences,
 		})
 	}
-	return differences
+	// the types elements may take with xsi:type: each difference filed under them, keyed by the type's name
+	const typeDifferences: Difference[] = []
+	for (const name of unionOfKeys({ before: beforeTypes, after: afterTypes })) {
+		collectDifferences({
+			element: name,
+			path: [],
+			before: beforeTypes[name],
+			after: afterTypes[name],
+			differences: typeDifferences,
+		})
+	}
+	return [
+		...differences,
+		...typeDifferences.map((difference) => ({ ...difference, category: 'types' as const })),
+	]
 }
 
 function collectDifferences(params: {
@@ -66,6 +82,7 @@ function categoryOf(path: readonly string[]): DifferenceCategory {
 	if (section === 'parents') return 'parents'
 	if (section === 'declarations') return 'declarations'
 	if (section === 'global') return 'global'
+	if (section === 'variants' || section === 'abstractType') return 'variants'
 	if (section === 'contentModel') return 'content-model'
 	if (section === 'constraints') return 'constraints'
 	if (section === 'textContent') return isValueFacet(second) ? 'facets' : 'text-content'
