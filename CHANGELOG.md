@@ -7,17 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-12
+
 ### Changed
 
-- **Breaking - the generator is rebuilt.** It reads any XSD 1.0 schema and writes the definition `@dialecte/core` 0.6 reads. A tag declared several ways lists each declaration, and its parents name the one they hold. An attribute's or a text's datatype carries its facets: enumerations, patterns (written for JavaScript), lengths and ranges. Identity constraints sit on the declaration that declares them. `TYPES` holds the types an element may take with `xsi:type`. Regenerate your dialecte: the definition, constants and types all change shape.
+- **Breaking:** The generator is rebuilt: it reads any XSD 1.0 schema and writes the definition `@dialecte/core` 0.6 reads, so regenerate your dialecte.
+- **Breaking:** A tag declared several ways keeps each declaration, attributes and text carry their facets in their datatype, and identity constraints sit on the declaration that declares them.
+- The generated `TYPES` lists the types an element may take with `xsi:type`, and the generated attribute types offer `xsi:type` where an element may name one.
+- For a tag declared several ways, the by-tag attribute type hints the values any of its declarations accepts.
 - A scaffolded package targets `@dialecte/core` `^0.6.0` and wires `TYPES` into its config and its XML assertions.
-- Generated attribute types offer an optional `xsi:type` where the element may name a type, with those types as hints. The definition declares no such attribute: XSD gives it to every element. For a tag declared several ways, the by-tag type hints the values any declaration accepts.
 
 ### Fixed
 
-- A substitution group member whose type derives by a method its head blocks no longer stands for the head. The head's `block`, the schema's `blockDefault`, the `block` of the head's type and of every type between the member's and the head's are honoured at every derivation step, as XSD says. Such a member is held by nothing, so like any global element nothing holds it may start a document: where that makes several roots, `--root` chooses one.
-- The members of a member that blocks substitution stand for the head again: only the head's own `block` decides.
-- An element of `anyType` no longer lists `xs:anySimpleType` and `xs:anyAtomicType` as `xsi:type` variants in a schema that imports the XML namespace. Built-in types are left to core, which knows their hierarchy.
+- A substitution group member whose type derives by a method its head, or a type on the way, blocks no longer stands for the head; if that leaves several possible roots, choose one with `--root`.
+- The members of a member that blocks substitution stand for the head again.
+- An element of `anyType` no longer offers `xs:anySimpleType` and `xs:anyAtomicType` as `xsi:type` types in a schema that imports the XML namespace.
 
 ## [0.0.7] - 2026-09-29
 
