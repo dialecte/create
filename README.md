@@ -127,6 +127,14 @@ each change, in copies of the package. A change no test notices must be listed i
 with an empty reason to fill. Run it before committing a change to `python/generate`: it takes the
 better part of an hour on the whole generator, less on the modules named.
 
+`npm run corpora:fetch` downloads the third-party corpora the licence review admitted (plan 10b of the
+validation plans), each pinned by sha256, into `.corpora/` (never committed); `npm run test:corpora` then runs
+every schema-tier check on every schema they hold - the generator reads it, its definition reads back, its
+constructs are classified, its patterns, identity paths, `xsi:type` variants and attribute wildcards agree with
+libxml2, and the facts the documents declare are kept. A disagreement a reviewed reason explains is listed in
+`python/corpora/known-exceptions.json`; a listed one that stops occurring fails too. `npm run fuzz -- --seed S
+--count N` judges generated schemas the same way, a fixed range of them with every `npm run test:py`.
+
 A construct of XSD the generator has never been shown to read fails the suite: every construct a
 schema writes is classified in `python/proof/constructs.json` as handled, excluded with the reason, or
 XSD 1.1.

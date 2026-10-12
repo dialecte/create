@@ -8,7 +8,7 @@ jobs:
   test-engine:
     name: Python engine (pytest)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: python
@@ -29,3 +29,23 @@ jobs:
 
       - name: Run pytest
         run: python -m pytest
+
+      - name: Judge generated schemas (a fixed range)
+        run: python -m proof.fuzz --seed ci --count 300
+
+      # the corpora the licence review admitted (python/corpora/manifest.json): fetched once per manifest change,
+      # every file checked against its recorded sha256 on each run
+      - name: Restore the corpora cache
+        uses: actions/cache@v5
+        with:
+          path: .corpora
+          key: corpora-${{ hashFiles('python/corpora/manifest.json') }}
+
+      - name: Fetch the corpora
+        run: python -m corpora.fetch
+
+      - name: Run the corpora tier
+        run: python -m pytest tests/corpora -q
+        env:
+          PROOF_CORPORA: '1'
+          PROOF_REQUIRE: corpora

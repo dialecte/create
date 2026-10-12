@@ -38,6 +38,9 @@
 		"test:cli:install": "SMOKE_INSTALL=1 npm run test:cli",
 		"proof": "node scripts/proof.mjs",
 		"mutants": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m mutants.run",
+		"corpora:fetch": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m corpora.fetch",
+		"test:corpora": "cd python && PROOF_CORPORA=1 $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m pytest tests/corpora -q",
+		"fuzz": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m proof.fuzz",
 		"prepack": "find python -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true",
 		"prepare": "husky",
 		"prepublishOnly": "npm run vendor && npm run build"

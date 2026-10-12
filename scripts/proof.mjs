@@ -5,11 +5,12 @@
  *   PROOF_REQUIRE=iec,corpora npm run proof     a tier named here and skipped fails the run
  *
  * self     no network: check, the TypeScript and Python suites (oracles, construct inventory, determinism,
- *          committed instances), and the CLI smoke test (the committed fixtures regenerate byte-identical through
+ *          committed instances, a fixed range of generated schemas), and the CLI smoke test (the committed fixtures regenerate byte-identical through
  *          the engine the CLI ships - needs `npm run vendor` once)
  * iec      local: the five dialectes' committed constants and types derive byte-identical from their committed
  *          definitions (the sibling repositories beside create, or in $DIALECTE_ROOT)
- * corpora  the W3C suite and the real-world families (plan 10c, lot P1): not built yet
+ * corpora  the sources the licence review admitted (python/corpora/manifest.json, fetched by
+ *          `npm run corpora:fetch` into .corpora/): every schema-tier check on every schema, a few minutes
  *
  * The mutation gate is its own command (`npm run mutants`): minutes, not seconds, run before a generator lot is
  * committed. Exit 1 on any failure or on a required tier skipped.
@@ -21,6 +22,7 @@ import { fileURLToPath } from 'node:url'
 
 const CREATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIALECTE_ROOT = resolve(process.env.DIALECTE_ROOT ?? join(CREATE_ROOT, '..'))
+const CORPORA_ROOT = resolve(process.env.DIALECTE_CORPORA_DIR ?? join(CREATE_ROOT, '.corpora'))
 const REQUIRED = new Set(
 	(process.env.PROOF_REQUIRE ?? '')
 		.split(',')
@@ -44,6 +46,12 @@ const STEPS = [
 	{ tier: 'self', name: 'Python suite', script: 'test:py' },
 	{ tier: 'self', name: 'CLI smoke + fixture regeneration', script: 'test:cli' },
 	{
+		tier: 'self',
+		name: 'generated schemas (300 draws)',
+		script: 'fuzz',
+		args: ['--seed', 'proof', '--count', '300'],
+	},
+	{
 		tier: 'iec',
 		name: 'five dialectes derive byte-identical',
 		script: 'derive:check',
@@ -55,8 +63,12 @@ const STEPS = [
 	},
 	{
 		tier: 'corpora',
-		name: 'W3C suite and real-world families',
-		absent: () => 'not built yet (plan 10c, P1)',
+		name: 'admitted corpora, every schema-tier check',
+		script: 'test:corpora',
+		absent: () =>
+			existsSync(join(CORPORA_ROOT, 'manifest.lock.json'))
+				? undefined
+				: `nothing fetched in ${CORPORA_ROOT} (npm run corpora:fetch)`,
 	},
 ]
 
@@ -72,7 +84,8 @@ for (const step of STEPS) {
 	}
 	process.stdout.write(`\n== ${step.tier}: ${step.name} (npm run ${step.script})\n`)
 	const started = Date.now()
-	const run = spawnSync('npm', ['run', '-s', step.script], {
+	const args = step.args === undefined ? [] : ['--', ...step.args]
+	const run = spawnSync('npm', ['run', '-s', step.script, ...args], {
 		cwd: CREATE_ROOT,
 		stdio: 'inherit',
 		env: { ...process.env, DIALECTE_ROOT },
