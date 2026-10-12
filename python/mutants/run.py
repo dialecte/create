@@ -287,15 +287,34 @@ def _baseline(copies: Queue) -> tuple[float, list[str]]:
         seconds = time.monotonic() - started
         by_file: dict[str, float] = {}
         for case in ElementTree.parse(report).iter('testcase'):
-            # classname: tests.test_x, or tests.test_x.TestClass
-            parts = case.get('classname', '').split('.')
-            if len(parts) > 1:
-                name = f'{parts[0]}/{parts[1]}.py'
+            # classname: a module path (tests.test_x, tests.corpora.test_y) and maybe a class: the longest prefix
+            # that names a file of the copy is the test file
+            name = _test_file(copy, case.get('classname', ''))
+            if name is not None:
                 by_file[name] = by_file.get(name, 0.0) + float(case.get('time', 0))
         report.unlink()
-        return seconds, sorted(by_file, key=lambda name: (by_file[name], name))
+        order = sorted(by_file, key=lambda name: (by_file[name], name))
+        ordered = _pytest(copy, timeout=600, extra=order)
+        if ordered.returncode != 0:
+            raise SystemExit(f'the suite run in its fast-first order fails without any mutant:\n{ordered.stdout[-2000:]}')
+        return seconds, order
     finally:
         copies.put(copy)
+
+
+def _test_file(copy: Path, classname: str) -> str | None:
+    parts = classname.split('.')
+    for length in range(len(parts), 0, -1):
+        candidate = '/'.join(parts[:length]) + '.py'
+        if (copy / candidate).is_file():
+            return candidate
+    return None
+
+
+# The ordered suite passes without the mutant, run with the very same arguments (checked before any mutant): any
+# other exit is the mutant's doing - a failing test, a broken import pytest reports as a collection, internal or
+# conftest (usage) error. Only `no test collected` (5) says nothing of it: the gate stops there.
+_SAYS_NOTHING = {5}
 
 
 def _outcome(copy: Path, mutant: Mutant, *, order: list[str], timeout: float) -> str:
@@ -304,7 +323,12 @@ def _outcome(copy: Path, mutant: Mutant, *, order: list[str], timeout: float) ->
     original = target.read_text(encoding='utf-8')
     target.write_text(mutant.source + '\n', encoding='utf-8')
     try:
-        return 'survived' if _pytest(copy, timeout=timeout, extra=order).returncode == 0 else 'killed'
+        run = _pytest(copy, timeout=timeout, extra=order)
+        if run.returncode == 0:
+            return 'survived'
+        if run.returncode not in _SAYS_NOTHING:
+            return 'killed'
+        raise SystemExit(f'pytest exited {run.returncode} on {mutant.module}:{mutant.line}, which says nothing of the mutant:\n{run.stdout[-2000:]}')
     except subprocess.TimeoutExpired:
         return 'timeout'
     finally:
