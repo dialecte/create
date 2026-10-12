@@ -45,6 +45,7 @@ export const DEFINITION = {
 			particles: [{ kind: 'any', notNamespace: [], processContents: 'lax' }],
 		},
 		textContent: {},
+		type: '{http://www.w3.org/2001/XMLSchema}anyType',
 	},
 	P: {
 		tag: 'P',

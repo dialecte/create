@@ -17,6 +17,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Anything: {
 		tag: 'Anything',
@@ -39,6 +40,7 @@ export const DEFINITION = {
 			particles: [{ kind: 'any', notNamespace: [], processContents: 'lax' }],
 		},
 		textContent: {},
+		type: '{http://www.w3.org/2001/XMLSchema}anyType',
 		variants: [
 			'{urn:dialecte:torture-ext}tExtBase',
 			'{urn:dialecte:torture}tAngular',
@@ -103,6 +105,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Bag: {
 		tag: 'Bag',
@@ -126,6 +129,7 @@ export const DEFINITION = {
 				{ kind: 'element', name: 'Three', maxOccurs: 1 },
 			],
 		},
+		type: '{urn:dialecte:torture}tBag',
 	},
 	Bit: {
 		tag: 'Bit',
@@ -143,6 +147,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Bold: {
 		tag: 'Bold',
@@ -157,6 +162,7 @@ export const DEFINITION = {
 			details: {},
 		},
 		textContent: {},
+		type: '{http://www.w3.org/2001/XMLSchema}string',
 	},
 	Bounded: {
 		tag: 'Bounded',
@@ -184,6 +190,7 @@ export const DEFINITION = {
 				facets: { maxInclusive: '100', fractionDigits: 1 },
 			},
 		},
+		type: '{urn:dialecte:torture}tBoundedMeasure',
 	},
 	Box: {
 		tag: 'Box',
@@ -290,6 +297,7 @@ export const DEFINITION = {
 				},
 			],
 		},
+		type: '{urn:dialecte:torture}tChoices',
 	},
 	Circle: {
 		tag: 'Circle',
@@ -315,6 +323,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tCircle',
 	},
 	Code: {
 		tag: 'Code',
@@ -490,6 +499,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Em: {
 		tag: 'Em',
@@ -504,6 +514,7 @@ export const DEFINITION = {
 			details: {},
 		},
 		textContent: {},
+		type: '{http://www.w3.org/2001/XMLSchema}string',
 		variants: [
 			'{urn:dialecte:torture}tCode',
 			'{urn:dialecte:torture}tCodeStrict',
@@ -523,6 +534,7 @@ export const DEFINITION = {
 					details: {},
 				},
 				textContent: {},
+				type: '{http://www.w3.org/2001/XMLSchema}string',
 				variants: [
 					'{urn:dialecte:torture}tCode',
 					'{urn:dialecte:torture}tCodeStrict',
@@ -542,6 +554,7 @@ export const DEFINITION = {
 					details: {},
 				},
 				textContent: {},
+				type: '{http://www.w3.org/2001/XMLSchema}string',
 				variants: [
 					'{urn:dialecte:torture}tCode',
 					'{urn:dialecte:torture}tCodeStrict',
@@ -590,6 +603,7 @@ export const DEFINITION = {
 		textContent: {
 			type: { builtin: 'token' },
 		},
+		type: '{urn:dialecte:torture}tEntry',
 	},
 	Extended: {
 		tag: 'Extended',
@@ -635,6 +649,7 @@ export const DEFINITION = {
 				},
 			],
 		},
+		type: '{urn:dialecte:torture}tExtended',
 	},
 	Extra: {
 		tag: 'Extra',
@@ -652,6 +667,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Extras: {
 		tag: 'Extras',
@@ -692,6 +708,7 @@ export const DEFINITION = {
 				{ kind: 'element', name: 'Gadget', maxOccurs: 1 },
 			],
 		},
+		type: '{urn:dialecte:torture}tExtras',
 	},
 	Figure: {
 		tag: 'Figure',
@@ -707,6 +724,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tFigure',
 		variants: ['{urn:dialecte:torture}tAngular', '{urn:dialecte:torture}tRound'],
 		abstractType: true,
 	},
@@ -727,6 +745,7 @@ export const DEFINITION = {
 		textContent: {
 			type: { builtin: 'boolean' },
 		},
+		type: '{http://www.w3.org/2001/XMLSchema}boolean',
 	},
 	Gadget: {
 		tag: 'Gadget',
@@ -744,6 +763,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tGadget',
 		variants: ['{urn:dialecte:torture}tGadgetLite'],
 	},
 	Garage: {
@@ -768,6 +788,7 @@ export const DEFINITION = {
 				{ kind: 'element', name: 'Value' },
 			],
 		},
+		type: '{urn:dialecte:torture}tGarage',
 	},
 	Greeting: {
 		tag: 'Greeting',
@@ -782,6 +803,7 @@ export const DEFINITION = {
 			details: {},
 		},
 		textContent: { default: 'hello' },
+		type: '{http://www.w3.org/2001/XMLSchema}string',
 		variants: [
 			'{urn:dialecte:torture}tCode',
 			'{urn:dialecte:torture}tCodeStrict',
@@ -839,6 +861,7 @@ export const DEFINITION = {
 				},
 			],
 		},
+		type: '{urn:dialecte:torture}tHammer',
 	},
 	Handle: {
 		tag: 'Handle',
@@ -856,6 +879,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Homonyms: {
 		tag: 'Homonyms',
@@ -880,6 +904,7 @@ export const DEFINITION = {
 				{ kind: 'element', name: 'Extended', maxOccurs: 1 },
 			],
 		},
+		type: '{urn:dialecte:torture}tHomonyms',
 	},
 	Item: {
 		tag: 'Item',
@@ -913,6 +938,7 @@ export const DEFINITION = {
 					details: {},
 				},
 				textContent: { fixed: 'rack' },
+				type: '{http://www.w3.org/2001/XMLSchema}string',
 				variants: [
 					'{urn:dialecte:torture}tCode',
 					'{urn:dialecte:torture}tCodeStrict',
@@ -965,6 +991,7 @@ export const DEFINITION = {
 						],
 					},
 				],
+				type: '{urn:dialecte:torture}tItem',
 			},
 			'3': {
 				namespace: { prefix: '', uri: 'urn:dialecte:torture' },
@@ -990,6 +1017,7 @@ export const DEFINITION = {
 					maxOccurs: 1,
 					particles: [{ kind: 'element', name: 'Tag' }],
 				},
+				type: '{urn:dialecte:torture}tItem',
 			},
 			'4': {
 				namespace: { prefix: 'x', uri: 'urn:dialecte:torture-ext' },
@@ -1002,6 +1030,7 @@ export const DEFINITION = {
 					details: {},
 				},
 				textContent: {},
+				type: '{http://www.w3.org/2001/XMLSchema}string',
 				variants: [
 					'{urn:dialecte:torture}tCode',
 					'{urn:dialecte:torture}tCodeStrict',
@@ -1111,6 +1140,7 @@ export const DEFINITION = {
 				fields: [[{ steps: [] }]],
 			},
 		],
+		type: '{urn:dialecte:torture}tKeys',
 	},
 	Left: {
 		tag: 'Left',
@@ -1128,6 +1158,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Legacy: {
 		tag: 'Legacy',
@@ -1160,6 +1191,7 @@ export const DEFINITION = {
 				},
 			],
 		},
+		type: '{urn:dialecte:torture}tLegacy',
 	},
 	Level: {
 		tag: 'Level',
@@ -1179,6 +1211,7 @@ export const DEFINITION = {
 				facets: { minExclusive: '0' },
 			},
 		},
+		type: '{urn:dialecte:torture}tLevel',
 	},
 	Lid: {
 		tag: 'Lid',
@@ -1259,6 +1292,7 @@ export const DEFINITION = {
 		textContent: {
 			type: { builtin: 'decimal' },
 		},
+		type: '{urn:dialecte:torture}tMeasure',
 		variants: ['{urn:dialecte:torture}tBoundedMeasure', '{urn:dialecte:torture}tRangedMeasure'],
 	},
 	Loose: {
@@ -1300,6 +1334,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tMallet',
 	},
 	Marker: {
 		tag: 'Marker',
@@ -1331,6 +1366,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Maybe: {
 		tag: 'Maybe',
@@ -1348,6 +1384,7 @@ export const DEFINITION = {
 		textContent: {
 			type: { builtin: 'int' },
 		},
+		type: '{http://www.w3.org/2001/XMLSchema}int',
 		variants: ['{urn:dialecte:torture}tLevel'],
 	},
 	Measure: {
@@ -1370,6 +1407,7 @@ export const DEFINITION = {
 		textContent: {
 			type: { builtin: 'decimal' },
 		},
+		type: '{urn:dialecte:torture}tMeasure',
 		variants: ['{urn:dialecte:torture}tBoundedMeasure', '{urn:dialecte:torture}tRangedMeasure'],
 	},
 	Measures: {
@@ -1394,6 +1432,7 @@ export const DEFINITION = {
 				{ kind: 'element', name: 'Bounded', maxOccurs: 1 },
 			],
 		},
+		type: '{urn:dialecte:torture}tMeasures',
 	},
 	Must: {
 		tag: 'Must',
@@ -1411,6 +1450,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	New: {
 		tag: 'New',
@@ -1425,6 +1465,7 @@ export const DEFINITION = {
 			details: {},
 		},
 		textContent: {},
+		type: '{http://www.w3.org/2001/XMLSchema}string',
 		variants: [
 			'{urn:dialecte:torture}tCode',
 			'{urn:dialecte:torture}tCodeStrict',
@@ -1496,6 +1537,7 @@ export const DEFINITION = {
 			details: {},
 		},
 		textContent: {},
+		type: '{http://www.w3.org/2001/XMLSchema}string',
 		variants: [
 			'{urn:dialecte:torture}tCode',
 			'{urn:dialecte:torture}tCodeStrict',
@@ -1520,6 +1562,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Open: {
 		tag: 'Open',
@@ -1551,6 +1594,7 @@ export const DEFINITION = {
 				{ kind: 'any', namespace: ['urn:dialecte:torture'], processContents: 'skip', maxOccurs: 1 },
 			],
 		},
+		type: '{urn:dialecte:torture}tOpen',
 	},
 	Pairs: {
 		tag: 'Pairs',
@@ -1623,6 +1667,7 @@ export const DEFINITION = {
 			details: {},
 		},
 		textContent: {},
+		type: '{http://www.w3.org/2001/XMLSchema}string',
 		variants: [
 			'{urn:dialecte:torture}tCode',
 			'{urn:dialecte:torture}tCodeStrict',
@@ -1646,6 +1691,7 @@ export const DEFINITION = {
 		textContent: {
 			type: { builtin: 'token' },
 		},
+		type: '{http://www.w3.org/2001/XMLSchema}token',
 		variants: [
 			'{urn:dialecte:torture}tCode',
 			'{urn:dialecte:torture}tCodeStrict',
@@ -1706,6 +1752,7 @@ export const DEFINITION = {
 		textContent: {
 			type: { builtin: 'decimal' },
 		},
+		type: '{urn:dialecte:torture}tRangedMeasure',
 		variants: ['{urn:dialecte:torture}tBoundedMeasure'],
 	},
 	Ref: {
@@ -1749,6 +1796,7 @@ export const DEFINITION = {
 			maxOccurs: 1,
 			particles: [{ kind: 'element', name: 'Must', minOccurs: 1, maxOccurs: 1 }],
 		},
+		type: '{urn:dialecte:torture}tRestricted',
 	},
 	Rich: {
 		tag: 'Rich',
@@ -1796,6 +1844,7 @@ export const DEFINITION = {
 			maxOccurs: 1,
 			particles: [{ kind: 'element', name: 'Plate', minOccurs: 1, maxOccurs: 1 }],
 		},
+		type: '{urn:dialecte:torture}tVehicle',
 		variants: ['{urn:dialecte:torture}tCar', '{urn:dialecte:torture}tTruck'],
 	},
 	Right: {
@@ -1814,6 +1863,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	RoundedSquare: {
 		tag: 'RoundedSquare',
@@ -1839,6 +1889,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tSquare',
 	},
 	Shapes: {
 		tag: 'Shapes',
@@ -1875,6 +1926,7 @@ export const DEFINITION = {
 				},
 			],
 		},
+		type: '{urn:dialecte:torture}tShapes',
 	},
 	Shelf: {
 		tag: 'Shelf',
@@ -1929,6 +1981,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tSquare',
 	},
 	Tag: {
 		tag: 'Tag',
@@ -1975,6 +2028,7 @@ export const DEFINITION = {
 				{ kind: 'element', name: 'Node', maxOccurs: 1 },
 			],
 		},
+		type: '{urn:dialecte:torture}tText',
 	},
 	Three: {
 		tag: 'Three',
@@ -1992,6 +2046,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Tool: {
 		tag: 'Tool',
@@ -2012,6 +2067,7 @@ export const DEFINITION = {
 			maxOccurs: 1,
 			particles: [{ kind: 'element', name: 'Handle', maxOccurs: 1 }],
 		},
+		type: '{urn:dialecte:torture}tTool',
 		variants: ['{urn:dialecte:torture}tMallet'],
 	},
 	Torture: {
@@ -2097,6 +2153,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Two: {
 		tag: 'Two',
@@ -2114,6 +2171,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Up: {
 		tag: 'Up',
@@ -2131,6 +2189,7 @@ export const DEFINITION = {
 			sequence: [],
 			details: {},
 		},
+		type: '{urn:dialecte:torture}tEmpty',
 	},
 	Value: {
 		tag: 'Value',
@@ -2157,6 +2216,7 @@ export const DEFINITION = {
 				],
 			},
 		},
+		type: '{urn:dialecte:torture}tCodeOrNumber',
 		variants: [
 			'{urn:dialecte:torture}tCode',
 			'{urn:dialecte:torture}tCodeOrNumberEnum',
@@ -2186,6 +2246,7 @@ export const DEFINITION = {
 			maxOccurs: 1,
 			particles: [{ kind: 'element', name: 'Plate', minOccurs: 1, maxOccurs: 1 }],
 		},
+		type: '{urn:dialecte:torture}tVehicle',
 		variants: ['{urn:dialecte:torture}tCar', '{urn:dialecte:torture}tTruck'],
 	},
 	bare: {
@@ -2201,6 +2262,7 @@ export const DEFINITION = {
 			details: {},
 		},
 		textContent: {},
+		type: '{http://www.w3.org/2001/XMLSchema}string',
 		variants: [
 			'{urn:dialecte:torture}tCode',
 			'{urn:dialecte:torture}tCodeStrict',

@@ -6,7 +6,7 @@ import pytest
 import xmlschema
 from lxml import etree
 
-from tests.conftest import TARGET, pick, schema
+from tests.conftest import TARGET, XS, pick, schema
 
 XSI = 'http://www.w3.org/2001/XMLSchema-instance'
 
@@ -96,11 +96,24 @@ def test_the_variants_are_those_libxml2_lets_an_instance_name(generated_of, tmp_
     generated = generated_of(entry)
     listed = set(pick(generated.definition, 'P.variants'))
     validator = etree.XMLSchema(etree.parse(str(tmp_path / 'entry.xsd')))
+    # what an instance may name: its declared type, or one of the variants
+    named = listed | {pick(generated.definition, 'P.type')}
     for name in ('tBase', 'tExt', 'tOther', 'tRestricted', 'tDeep', 'tAbstract'):
         instance = etree.fromstring(f'<t:Root xmlns:t="{TARGET}" xmlns:xsi="{XSI}"><t:P xsi:type="t:{name}"/></t:Root>')
-        admitted = validator.validate(instance)
-        if name != 'tBase':
-            assert admitted == (f'{{{TARGET}}}{name}' in listed), name
+        assert validator.validate(instance) == (f'{{{TARGET}}}{name}' in named), name
+
+
+@pytest.mark.parametrize(
+    ('element', 'declared'),
+    [
+        pytest.param('<xs:element name="P" type="tBase"/>', f'{{{TARGET}}}tBase', id='a named type -> its Clark name'),
+        pytest.param('<xs:element name="P" type="xs:token"/>', f'{{{XS}}}token', id='a built-in type -> its Clark name'),
+        pytest.param('<xs:element name="P"/>', f'{{{XS}}}anyType', id='no type -> anyType'),
+        pytest.param('<xs:element name="P"><xs:complexType/></xs:element>', None, id='an anonymous type -> none'),
+    ],
+)
+def test_a_declaration_names_its_declared_type(definition_of, element: str, declared: str | None) -> None:
+    assert definition_of(holding(element, more=BASE))['P'].get('type') == declared
 
 
 def test_a_selector_reaches_what_a_variant_holds(definition_of) -> None:

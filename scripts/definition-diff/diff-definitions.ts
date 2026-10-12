@@ -82,7 +82,8 @@ function categoryOf(path: readonly string[]): DifferenceCategory {
 	if (section === 'parents') return 'parents'
 	if (section === 'declarations') return 'declarations'
 	if (section === 'global') return 'global'
-	if (section === 'variants' || section === 'abstractType') return 'variants'
+	// what xsi:type may name: the declared type, the variants, and whether one must be named
+	if (section === 'type' || section === 'variants' || section === 'abstractType') return 'variants'
 	if (section === 'contentModel') return 'content-model'
 	if (section === 'constraints') return 'constraints'
 	if (section === 'textContent') return isValueFacet(second) ? 'facets' : 'text-content'

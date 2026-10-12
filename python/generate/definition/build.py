@@ -216,6 +216,10 @@ def _content(declarations: list[ElementDeclaration], *, holder: str, context: _C
     constraints = declarations[0].constraints
     if constraints and all(declaration.constraints == constraints for declaration in declarations):
         content['constraints'] = [_written_constraint(constraint) for constraint in constraints]
+    # the declared type, named: xsi:type may name it too; said where every declaration has the same
+    type_name = declarations[0].type_name
+    if type_name is not None and all(declaration.type_name == type_name for declaration in declarations):
+        content['type'] = type_name
     # the types an instance may name instead, said where every declaration admits the same
     variants = declarations[0].variants
     if variants and all(declaration.variants == variants for declaration in declarations):

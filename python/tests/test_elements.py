@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from tests.conftest import TARGET, schema
+from tests.conftest import TARGET, XS, schema
 
 CASES: dict[str, tuple[str, dict[str, Any]]] = {
     'one element holding another -> its children named, no edge details while nothing is known of the edge': (
@@ -32,6 +32,7 @@ CASES: dict[str, tuple[str, dict[str, Any]]] = {
                 'attributes': {'sequence': [], 'any': {'notNamespace': [], 'processContents': 'lax'}, 'details': {}},
                 'children': {'sequence': [], 'any': True, 'details': {}},
                 'textContent': {},
+                'type': f'{{{XS}}}anyType',
                 'contentModel': {
                     'kind': 'sequence',
                     'minOccurs': 1,

@@ -20,6 +20,8 @@ export type ElementData = {
 	readonly contentModel?: ParticleData
 	/** Each way a tag declared several ways is declared, by number; the tag level is their union. */
 	readonly declarations?: Readonly<Record<string, DeclarationData>>
+	/** The declared type when it is named (Clark name): an instance may name it with xsi:type too. */
+	readonly type?: string
 	/** The types an instance may name instead of the declared one with xsi:type (Clark names, in `TYPES`). */
 	readonly variants?: readonly string[]
 }
@@ -33,6 +35,7 @@ export type DeclarationData = {
 	readonly attributes: ElementData['attributes']
 	readonly children: ElementData['children']
 	readonly contentModel?: ParticleData
+	readonly type?: string
 	readonly variants?: readonly string[]
 }
 

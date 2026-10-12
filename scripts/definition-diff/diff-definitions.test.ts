@@ -159,6 +159,11 @@ const cases: Record<string, DiffCase> = {
 			differenceAt(['variants'], 'variants', undefined, ['{urn:t}tExt']),
 		],
 	},
+	'the declared type named -> a variants difference': {
+		before: { Bay: element() },
+		after: { Bay: element({ type: '{urn:t}tBay' }) },
+		expected: [differenceAt(['type'], 'variants', undefined, '{urn:t}tBay')],
+	},
 	'a tag now said to have a global declaration -> a global difference': {
 		before: { Bay: element() },
 		after: { Bay: element({ global: true }) },

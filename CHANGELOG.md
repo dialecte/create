@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Each declaration names its declared type in `type` (its Clark name) when the type is named: an instance may name that type with `xsi:type` too, besides its `variants`.
+
 ## [0.1.0] - 2026-10-12
 
 ### Changed

@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from tests.conftest import TARGET, pick, schema
+from tests.conftest import TARGET, XS, pick, schema
 
 
 def root_holding(content: str, *, more: str = '') -> str:
@@ -55,8 +55,8 @@ def test_a_tag_declared_with_two_fixed_values_keeps_each_declaration_where_it_ap
         under_left_and_right('<xs:element name="P" type="xs:token" fixed="a"/>', '<xs:element name="P" type="xs:token" fixed="b"/>')
     )
     assert pick(data, 'P.declarations') == {
-        '1': {'namespace': HERE, **EMPTY, 'textContent': {'type': {'builtin': 'token'}, 'fixed': 'a'}},
-        '2': {'namespace': HERE, **EMPTY, 'textContent': {'type': {'builtin': 'token'}, 'fixed': 'b'}},
+        '1': {'namespace': HERE, **EMPTY, 'textContent': {'type': {'builtin': 'token'}, 'fixed': 'a'}, 'type': f'{{{XS}}}token'},
+        '2': {'namespace': HERE, **EMPTY, 'textContent': {'type': {'builtin': 'token'}, 'fixed': 'b'}, 'type': f'{{{XS}}}token'},
     }
     # the tag level is the union: no fixed value, since they differ
     assert pick(data, 'P.textContent') == {'type': {'builtin': 'token'}}
