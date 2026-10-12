@@ -16,3 +16,6 @@ include = ["generate*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+	"corpora: reads the fetched corpora; runs with PROOF_CORPORA=1 (npm run test:corpora), required by PROOF_REQUIRE=corpora",
+]

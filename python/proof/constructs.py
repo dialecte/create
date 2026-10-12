@@ -8,6 +8,7 @@ A construct is an element of the XML Schema namespace (`element`), one of its at
 `documentation` is free text, not schema: it is not walked.
 """
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
@@ -30,11 +31,15 @@ class Classification:
     xsd11: frozenset[str]
 
     def unclassified(self, constructs: set[str]) -> list[str]:
-        return sorted(construct for construct in constructs - self.handled - self.excluded if not self._xsd11(construct))
+        return sorted(construct for construct in constructs - self.handled if not self._excluded(construct) and not self._xsd11(construct))
 
     def refused(self, constructs: set[str]) -> list[str]:
         """The XSD 1.1 constructs: those listed, and every attribute of an XSD 1.1 element."""
         return sorted(construct for construct in constructs if self._xsd11(construct))
+
+    def _excluded(self, construct: str) -> bool:
+        """Listed, or an attribute every schema element may carry (`*@xml:lang`)."""
+        return construct in self.excluded or ('@' in construct and '*@' + construct.split('@', 1)[1] in self.excluded)
 
     def _xsd11(self, construct: str) -> bool:
         return construct in self.xsd11 or construct.split('@', 1)[0] in self.xsd11
@@ -47,10 +52,10 @@ def read_table(path: Path = TABLE) -> Classification:
     )
 
 
-def documents_of(entry: Path) -> list[Path]:
+def documents_of(entry: Path, *, locations: Mapping[str, Path] | None = None) -> list[Path]:
     """`entry` and every local document it includes, imports, redefines or overrides, directly or not, in reading
-    order, named by a relative path or a file URL; a remote location is not followed (the generator reads local
-    documents only)."""
+    order, named by a relative path or a file URL; a remote location is followed only where `locations` maps it to
+    a local copy (as the generator reads it)."""
     found: dict[Path, None] = {}
     pending = [entry.resolve()]
     while pending:
@@ -64,7 +69,7 @@ def documents_of(entry: Path) -> list[Path]:
             name = etree.QName(reference)
             location = reference.get('schemaLocation')
             if name.namespace == XS and name.localname in _REFERENCING and location:
-                target = _local(document, location)
+                target = (locations or {}).get(location) or _local(document, location)
                 if target is not None and target.exists():
                     pending.append(target)
     return list(found)
@@ -81,10 +86,10 @@ def _local(document: Path, location: str) -> Path | None:
     return (document.parent / location).resolve()
 
 
-def constructs_of(entry: Path) -> set[str]:
+def constructs_of(entry: Path, *, locations: Mapping[str, Path] | None = None) -> set[str]:
     """Every construct the documents of the schema whose entry document is `entry` write."""
     constructs: set[str] = set()
-    for document in documents_of(entry):
+    for document in documents_of(entry, locations=locations):
         _walk(etree.parse(str(document)).getroot(), constructs)
     return constructs
 

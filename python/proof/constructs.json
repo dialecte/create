@@ -118,7 +118,10 @@
 	"excluded": {
 		"schema@id": { "reason": "an identifier of the schema component", "effect": "none" },
 		"schema@version": { "reason": "the schema's own version label", "effect": "none" },
-		"schema@xml:lang": { "reason": "the language of the schema's text", "effect": "none" },
+		"*@xml:lang": {
+			"reason": "the language of a schema component's text, on any schema element",
+			"effect": "none"
+		},
 		"schema@finalDefault": {
 			"reason": "schema legality: derivations other schema components may not make; the library refuses a schema breaking it",
 			"effect": "none on an instance of a valid schema"
@@ -145,7 +148,6 @@
 			"effect": "none"
 		},
 		"documentation@source": { "reason": "where the documentation comes from", "effect": "none" },
-		"documentation@xml:lang": { "reason": "the language of the documentation", "effect": "none" },
 		"notation": {
 			"reason": "a notation declaration; a NOTATION value is valid when the enumeration its type must carry (facets.enumeration, written) names it",
 			"effect": "none beyond that enumeration"
