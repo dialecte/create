@@ -2,6 +2,7 @@
 import pytest
 
 from generate.errors import SchemaNotReadable
+from generate.definition.build import generate_definition
 from generate.model.read_schema import read_schema
 from tests.conftest import pick, schema
 
@@ -95,3 +96,22 @@ def test_an_element_particle_names_the_declaration_it_holds(tmp_path) -> None:
     # a particle no document may hold names no declaration: it is never walked
     assert root.content_model.particles[2].declaration is None
     assert len({declaration.key for declaration in elements}) == len(elements)
+
+
+def test_a_document_named_by_a_remote_location_is_read_from_the_local_copy_it_is_mapped_to(tmp_path) -> None:
+    # how a cached corpus is read without rewriting its files: the remote location maps to a local copy
+    (tmp_path / 'copy.xsd').write_text(
+        schema('<xs:attribute name="href"/>', target='urn:remote', prefix='r'), encoding='utf-8'
+    )
+    entry = tmp_path / 'entry.xsd'
+    entry.write_text(
+        schema(
+            '<xs:import namespace="urn:remote" schemaLocation="http://example.invalid/remote.xsd"/>'
+            '<xs:element name="Root"><xs:complexType><xs:attribute ref="r:href"/></xs:complexType></xs:element>',
+            attributes='xmlns:r="urn:remote"',
+        ),
+        encoding='utf-8',
+    )
+    locations = {'http://example.invalid/remote.xsd': tmp_path / 'copy.xsd'}
+    generated = generate_definition(entry, locations=locations)
+    assert pick(generated.definition, 'Root.attributes.details.r:href.namespace.uri') == 'urn:remote'

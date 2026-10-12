@@ -1,6 +1,7 @@
 """Read a schema into its element declarations: every global of every document it reaches, and every
 local declaration their content models hold - each walked once, so recursive schemas end."""
 import warnings
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from itertools import count
 from pathlib import Path
@@ -51,10 +52,15 @@ ANY_SIMPLE_TYPE = '{http://www.w3.org/2001/XMLSchema}anySimpleType'
 _MADE_BY_THE_LIBRARY = frozenset({ANY_SIMPLE_TYPE, '{http://www.w3.org/2001/XMLSchema}anyAtomicType'})
 
 
-def read_schema(entry: Path, *, global_attributes: list[tuple[str, str]] | None = None) -> Schema:
+def read_schema(
+    entry: Path,
+    *,
+    global_attributes: list[tuple[str, str]] | None = None,
+    locations: Mapping[str, Path] | None = None,
+) -> Schema:
     """Every element declaration the schema whose entry document is `entry` makes, and the declarations of the
     global attributes asked for by (namespace, local name), those it declares."""
-    schema = _load(entry)
+    schema = _load(entry, locations=locations or {})
     reader = _Reader(schema)
     # the globals of the schema's own documents - not those of the XML Schema meta-schema, whatever
     # namespace the schema's documents target
@@ -64,14 +70,16 @@ def read_schema(entry: Path, *, global_attributes: list[tuple[str, str]] | None 
     return reader.schema_model(global_attributes=global_attributes or [])
 
 
-def _load(entry: Path) -> xmlschema.XMLSchema:
+def _load(entry: Path, *, locations: Mapping[str, Path]) -> xmlschema.XMLSchema:
     """The schema, read from local documents only: a document that cannot be read - out of reach, or
-    remote - is an error, never a warning, never a download."""
+    remote - is an error, never a warning, never a download. `locations` maps a location a document names (a
+    remote URL) to the local copy read in its place: the documents stay as written."""
+    mapped = {location: path.resolve().as_uri() for location, path in locations.items()}
     with warnings.catch_warnings():
         warnings.simplefilter('error', XMLSchemaImportWarning)
         warnings.simplefilter('error', XMLSchemaIncludeWarning)
         try:
-            schema = xmlschema.XMLSchema(str(entry), allow='local')
+            schema = xmlschema.XMLSchema(str(entry), allow='local', uri_mapper=lambda uri: mapped.get(uri, uri))
         except (XMLSchemaImportWarning, XMLSchemaIncludeWarning) as failure:
             raise SchemaNotReadable(f'{entry}: {failure}') from failure
     _give_members_their_head_type(schema)

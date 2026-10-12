@@ -6,6 +6,7 @@ several ways - declarations validation tells apart - also keeps each way, number
 holding it names the one it holds.
 """
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -54,11 +55,12 @@ class Generated:
     types: dict[str, Any]
 
 
-def generate_definition(entry: Path) -> Generated:
+def generate_definition(entry: Path, *, locations: Mapping[str, Path] | None = None) -> Generated:
     """The definition data of the schema whose entry document is `entry`, with what the sidecar files
-    beside it add, and its types."""
+    beside it add, and its types; `locations` maps a remote location a document names to the local copy read in its
+    place."""
     attribute_mapping = read_attribute_mapping(entry)
-    schema = read_schema(entry, global_attributes=mapped_attribute_names(attribute_mapping))
+    schema = read_schema(entry, global_attributes=mapped_attribute_names(attribute_mapping), locations=locations)
     declarations = attach_mapped_attributes(schema.elements, attribute_mapping, global_attributes=schema.global_attributes)
     parent_mapping = mapped_parents(read_parent_mapping(entry))
     generated = build_definition(declarations, parent_mapping=parent_mapping, types=schema.types)
