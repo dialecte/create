@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	The global attributes, attribute groups, element and model groups XLink 1.1 names, declared for
+	@dialecte/create's corpus tests (MIT). The corpora import the W3C's own document, which the licence review
+	excluded: the fetch script places this one at its path or maps its location here.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink"
+	targetNamespace="http://www.w3.org/1999/xlink" elementFormDefault="qualified" attributeFormDefault="qualified">
+	<xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+	<xs:attribute name="type">
+		<xs:simpleType>
+			<xs:restriction base="xs:token">
+				<xs:enumeration value="simple"/>
+				<xs:enumeration value="extended"/>
+				<xs:enumeration value="title"/>
+				<xs:enumeration value="resource"/>
+				<xs:enumeration value="locator"/>
+				<xs:enumeration value="arc"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:attribute>
+	<xs:attribute name="href" type="xs:anyURI"/>
+	<xs:attribute name="role" type="xs:anyURI"/>
+	<xs:attribute name="arcrole" type="xs:anyURI"/>
+	<xs:attribute name="title" type="xs:string"/>
+	<xs:attribute name="show">
+		<xs:simpleType>
+			<xs:restriction base="xs:token">
+				<xs:enumeration value="new"/>
+				<xs:enumeration value="replace"/>
+				<xs:enumeration value="embed"/>
+				<xs:enumeration value="other"/>
+				<xs:enumeration value="none"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:attribute>
+	<xs:attribute name="actuate">
+		<xs:simpleType>
+			<xs:restriction base="xs:token">
+				<xs:enumeration value="onLoad"/>
+				<xs:enumeration value="onRequest"/>
+				<xs:enumeration value="other"/>
+				<xs:enumeration value="none"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:attribute>
+	<xs:attribute name="label" type="xs:NCName"/>
+	<xs:attribute name="from" type="xs:NCName"/>
+	<xs:attribute name="to" type="xs:NCName"/>
+
+	<xs:attributeGroup name="simpleAttrs">
+		<xs:attribute ref="xlink:type" fixed="simple"/>
+		<xs:attribute ref="xlink:href"/>
+		<xs:attribute ref="xlink:role"/>
+		<xs:attribute ref="xlink:arcrole"/>
+		<xs:attribute ref="xlink:title"/>
+		<xs:attribute ref="xlink:show"/>
+		<xs:attribute ref="xlink:actuate"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="extendedAttrs">
+		<xs:attribute ref="xlink:type" fixed="extended" use="required"/>
+		<xs:attribute ref="xlink:role"/>
+		<xs:attribute ref="xlink:title"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="titleAttrs">
+		<xs:attribute ref="xlink:type" fixed="title" use="required"/>
+		<xs:attribute ref="xml:lang"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="resourceAttrs">
+		<xs:attribute ref="xlink:type" fixed="resource" use="required"/>
+		<xs:attribute ref="xlink:role"/>
+		<xs:attribute ref="xlink:title"/>
+		<xs:attribute ref="xlink:label"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="locatorAttrs">
+		<xs:attribute ref="xlink:type" fixed="locator" use="required"/>
+		<xs:attribute ref="xlink:href" use="required"/>
+		<xs:attribute ref="xlink:role"/>
+		<xs:attribute ref="xlink:title"/>
+		<xs:attribute ref="xlink:label"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="arcAttrs">
+		<xs:attribute ref="xlink:type" fixed="arc" use="required"/>
+		<xs:attribute ref="xlink:arcrole"/>
+		<xs:attribute ref="xlink:title"/>
+		<xs:attribute ref="xlink:show"/>
+		<xs:attribute ref="xlink:actuate"/>
+		<xs:attribute ref="xlink:from"/>
+		<xs:attribute ref="xlink:to"/>
+	</xs:attributeGroup>
+
+	<xs:group name="titleModel">
+		<xs:sequence>
+			<xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:group>
+	<xs:complexType name="titleEltType" mixed="true">
+		<xs:group ref="xlink:titleModel"/>
+		<xs:attributeGroup ref="xlink:titleAttrs"/>
+	</xs:complexType>
+	<xs:element name="title" type="xlink:titleEltType"/>
+</xs:schema>

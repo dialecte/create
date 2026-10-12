@@ -22,3 +22,6 @@ python/*.egg-info/
 
 # OS
 .DS_Store
+
+# Corpora cache (python -m corpora.fetch; never committed)
+.corpora/

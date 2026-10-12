@@ -1,0 +1,692 @@
+{
+	"$comment": "Corpora admitted by the licence review (plan 10b, licence table): fetched by `python -m corpora.fetch`, cached, never committed. A source needs license, terms and verdict; sha256 values are pinned by --pin and reviewed. verdict full = mutated copies allowed; schemas-only = never mutated.",
+	"sources": [
+		{
+			"id": "libxml2-tests",
+			"family": "suite",
+			"suite": "libxml2",
+			"license": "MIT",
+			"terms": "https://gitlab.gnome.org/GNOME/libxml2/-/raw/v2.15.4/Copyright",
+			"verdict": "full",
+			"note": "xml.xsd (W3C) replaced by our own; nvdcve_0.* (NIST feed, no licence stated), vdv-* (book examples, origin unstated) left out; po0/po1 and all.xsd (from the W3C XML Schema Primer) left out",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.15.4/libxml2-v2.15.4.tar.gz",
+				"sha256": "a569ee9c59eabb197a0d5047046d757ee14c86fb2d4a734555b633cb5584ad25",
+				"strip": "libxml2-v2.15.4/",
+				"keep": ["test/schemas/", "result/schemas/", "Copyright"]
+			},
+			"exclude": [
+				"test/schemas/xml.xsd",
+				"test/schemas/nvdcve_0.*",
+				"test/schemas/vdv-*",
+				"result/schemas/nvdcve_0*",
+				"result/schemas/vdv-*",
+				"test/schemas/po[0-9]_*",
+				"result/schemas/po[0-9]_*",
+				"test/schemas/all.xsd"
+			],
+			"substitute": {
+				"test/schemas/xml.xsd": "xml.xsd"
+			}
+		},
+		{
+			"id": "xmlschema-tests",
+			"family": "suite",
+			"suite": "xmlschema",
+			"license": "MIT",
+			"terms": "https://github.com/sissaschool/xmlschema/blob/v4.3.2/LICENSE",
+			"verdict": "full",
+			"note": "examples/stockquote, features/wsdl and issues/issue_237 WSDL files (W3C WSDL Note examples) left out",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://codeload.github.com/sissaschool/xmlschema/tar.gz/refs/tags/v4.3.2",
+				"sha256": "1be3f1a24871f51f89f4956512cd1d23c694dc99a447964e97f11de4b4679a49",
+				"strip": "xmlschema-4.3.2/",
+				"keep": ["tests/test_cases/", "LICENSE"]
+			},
+			"exclude": [
+				"tests/test_cases/examples/stockquote/*",
+				"tests/test_cases/features/wsdl/*",
+				"tests/test_cases/issues/issue_237/*.wsdl"
+			]
+		},
+		{
+			"id": "fhir-r4",
+			"family": "fhir",
+			"license": "BSD-3-Clause (HL7, file headers); spec CC0; xmldsig: W3C Software License",
+			"terms": "https://hl7.org/fhir/R4/license.html",
+			"verdict": "full",
+			"note": "examples not fetched (SNOMED CT / LOINC codes); xml.xsd and fhir-xhtml.xsd replaced by our own; the Schematron files (no licence header) left out",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://hl7.org/fhir/R4/fhir-all-xsd.zip",
+				"sha256": "78d818da86336ce065a8c030cd1308b72151f9797151565e6284916ede5c85b7",
+				"strip": "",
+				"keep": [""]
+			},
+			"exclude": ["xml.xsd", "fhir-xhtml.xsd", "*.sch"],
+			"substitute": {
+				"xml.xsd": "xml.xsd",
+				"fhir-xhtml.xsd": "fhir-xhtml.xsd"
+			},
+			"marker": [
+				{
+					"glob": "*.xsd",
+					"text": ["HL7", "Health Level 7", "W3C Software License"],
+					"except": ["xml.xsd", "fhir-xhtml.xsd"]
+				}
+			],
+			"entries": ["fhir-all.xsd"],
+			"instances": []
+		},
+		{
+			"id": "fhir-r5",
+			"family": "fhir",
+			"license": "Apache-2.0 and BSD-3-Clause (HL7, file headers); spec CC0; xmldsig: W3C Software License",
+			"terms": "https://hl7.org/fhir/R5/license.html",
+			"verdict": "full",
+			"note": "as R4; the Schematron files (no licence header) left out",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://hl7.org/fhir/R5/fhir-all-xsd.zip",
+				"sha256": "99ec737f19b257de339148f8a7d42f78fcb193ea84e09fee916e25786a138835",
+				"strip": "",
+				"keep": [""]
+			},
+			"exclude": ["xml.xsd", "fhir-xhtml.xsd", "*.sch"],
+			"substitute": {
+				"xml.xsd": "xml.xsd",
+				"fhir-xhtml.xsd": "fhir-xhtml.xsd"
+			},
+			"marker": [
+				{
+					"glob": "*.xsd",
+					"text": ["HL7", "Health Level 7", "W3C Software License"],
+					"except": ["xml.xsd", "fhir-xhtml.xsd"]
+				}
+			],
+			"entries": ["fhir-all.xsd"],
+			"instances": []
+		},
+		{
+			"id": "opc-ua",
+			"family": "opc-ua",
+			"license": "MIT (OPC Foundation MIT License 1.00 / SPDX MIT, per file header)",
+			"terms": "https://opcfoundation.org/license/mit/1.00/",
+			"verdict": "full",
+			"note": "core Schema/ and the companion files whose header says MIT (DI, ISA-95, MTConnect)",
+			"fetch": {
+				"kind": "files",
+				"files": {
+					"Schema/UANodeSet.xsd": {
+						"url": "https://raw.githubusercontent.com/OPCFoundation/UA-Nodeset/6338cced8e6cc2fa2c3816bc6b3bad5daee3f101/Schema/UANodeSet.xsd",
+						"sha256": "c7ac09ea7504d54174e1eb4c5a8123c0cc491040703dfcd6bfe085bf6c53f9f0"
+					},
+					"Schema/Opc.Ua.Types.xsd": {
+						"url": "https://raw.githubusercontent.com/OPCFoundation/UA-Nodeset/6338cced8e6cc2fa2c3816bc6b3bad5daee3f101/Schema/Opc.Ua.Types.xsd",
+						"sha256": "45270d114c97e751346446d65ca1fd5fc62e5850f6ab3833587e23e06f5571ea"
+					},
+					"Schema/SecuredApplication.xsd": {
+						"url": "https://raw.githubusercontent.com/OPCFoundation/UA-Nodeset/6338cced8e6cc2fa2c3816bc6b3bad5daee3f101/Schema/SecuredApplication.xsd",
+						"sha256": "0cff45cb8fb5e6f62f3078489feeba8a030b97d2e4ae18bbefc7b1a8a5f3242f"
+					},
+					"Schema/OPCBinarySchema.xsd": {
+						"url": "https://raw.githubusercontent.com/OPCFoundation/UA-Nodeset/6338cced8e6cc2fa2c3816bc6b3bad5daee3f101/Schema/OPCBinarySchema.xsd",
+						"sha256": "0ff505e2a6f282685884e93690b0d1e3c4d1b57be61c18220bd1a5b7ac512945"
+					},
+					"Schema/Opc.Ua.NodeSet2.xml": {
+						"url": "https://raw.githubusercontent.com/OPCFoundation/UA-Nodeset/6338cced8e6cc2fa2c3816bc6b3bad5daee3f101/Schema/Opc.Ua.NodeSet2.xml",
+						"sha256": "d29ad5eb20884935a6b7ef8f9b70a6ad72417411a3fd3e4e704dac5762d394c8"
+					},
+					"DI/Opc.Ua.Di.Types.xsd": {
+						"url": "https://raw.githubusercontent.com/OPCFoundation/UA-Nodeset/6338cced8e6cc2fa2c3816bc6b3bad5daee3f101/DI/Opc.Ua.Di.Types.xsd",
+						"sha256": "6b5c0a195f95aa329970927f2b03fccadbb0424cca07e5f5f6f945ce0b4e1df1"
+					},
+					"DI/Opc.Ua.Di.NodeSet2.xml": {
+						"url": "https://raw.githubusercontent.com/OPCFoundation/UA-Nodeset/6338cced8e6cc2fa2c3816bc6b3bad5daee3f101/DI/Opc.Ua.Di.NodeSet2.xml",
+						"sha256": "40a02d98a8b2a014ec9f961625a422df3566d4dd783151ec6ae55b47296199de"
+					},
+					"ISA-95/OPC.ISA95.Types.xsd": {
+						"url": "https://raw.githubusercontent.com/OPCFoundation/UA-Nodeset/6338cced8e6cc2fa2c3816bc6b3bad5daee3f101/ISA-95/OPC.ISA95.Types.xsd",
+						"sha256": "d255a1d3af388cfb76afa213912cb626ccf8509d3dc6a5e1ee0525d300d163eb"
+					},
+					"ISA-95/Opc.ISA95.NodeSet2.xml": {
+						"url": "https://raw.githubusercontent.com/OPCFoundation/UA-Nodeset/6338cced8e6cc2fa2c3816bc6b3bad5daee3f101/ISA-95/Opc.ISA95.NodeSet2.xml",
+						"sha256": "4f4acb7bb3f4bf0569335e9a0b8cdb5ac02bea1d7c0488a2131f955845458c36"
+					},
+					"MTConnect/Opc.Ua.MTConnect.Types.xsd": {
+						"url": "https://raw.githubusercontent.com/OPCFoundation/UA-Nodeset/6338cced8e6cc2fa2c3816bc6b3bad5daee3f101/MTConnect/Opc.Ua.MTConnect.Types.xsd",
+						"sha256": "dace144f29932106fcedcbc92c3468e2994cfb1f7b904e5d5e773ad190819db9"
+					},
+					"MTConnect/Opc.Ua.MTConnect.NodeSet2.xml": {
+						"url": "https://raw.githubusercontent.com/OPCFoundation/UA-Nodeset/6338cced8e6cc2fa2c3816bc6b3bad5daee3f101/MTConnect/Opc.Ua.MTConnect.NodeSet2.xml",
+						"sha256": "a9cbddef66c7ed9f5d80a838b07e31ad83f7d103a39a65a8057530b4572b7f84"
+					}
+				}
+			},
+			"marker": [
+				{
+					"glob": "*",
+					"text": ["MIT License", "SPDX-License-Identifier: MIT"]
+				}
+			],
+			"entries": [
+				"Schema/UANodeSet.xsd",
+				"Schema/Opc.Ua.Types.xsd",
+				"Schema/SecuredApplication.xsd",
+				"Schema/OPCBinarySchema.xsd",
+				"_wrappers/*.xsd"
+			],
+			"instances": ["*.NodeSet2.xml"],
+			"wrappers": {
+				"_wrappers/di.xsd": ["Schema/Opc.Ua.Types.xsd", "DI/Opc.Ua.Di.Types.xsd"],
+				"_wrappers/isa-95.xsd": ["Schema/Opc.Ua.Types.xsd", "ISA-95/OPC.ISA95.Types.xsd"],
+				"_wrappers/mtconnect.xsd": [
+					"Schema/Opc.Ua.Types.xsd",
+					"MTConnect/Opc.Ua.MTConnect.Types.xsd"
+				]
+			}
+		},
+		{
+			"id": "niem-6",
+			"family": "niem",
+			"license": "CC-BY-4.0 + OASIS Open Project non-assertion covenants",
+			"terms": "https://github.com/niemopen/niem-model/blob/6.0-ps02/LICENSE.md",
+			"verdict": "full",
+			"note": "xsd/external (third-party schemas) and the files importing them (adapters niem-cap, niem-de, niem-gml, niem-have; domains/mo.xsd) left out; external/xml.xsd replaced by our own; the domains that import an excluded adapter or domain are not entries",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://codeload.github.com/niemopen/niem-model/tar.gz/refs/tags/6.0-ps02",
+				"sha256": "cec4d7af5abb0949b9c31aa962810922ff6f213ef7024b1e14e6aad2c577ead4",
+				"strip": "niem-model-6.0-ps02/",
+				"keep": ["xsd/", "LICENSE.md"]
+			},
+			"exclude": [
+				"xsd/external/*",
+				"xsd/adapters/niem-cap.xsd",
+				"xsd/adapters/niem-de.xsd",
+				"xsd/adapters/niem-gml.xsd",
+				"xsd/adapters/niem-have.xsd",
+				"xsd/domains/mo.xsd"
+			],
+			"substitute": {
+				"xsd/external/xml.xsd": "xml.xsd"
+			},
+			"entries": [
+				"xsd/niem-core.xsd",
+				"xsd/domains/cyber.xsd",
+				"xsd/domains/infrastructureProtection.xsd",
+				"xsd/domains/mo-usmtf.xsd",
+				"xsd/domains/st.xsd"
+			],
+			"instances": []
+		},
+		{
+			"id": "maven",
+			"family": "maven",
+			"license": "Apache-2.0",
+			"terms": "https://www.apache.org/licenses/LICENSE-2.0",
+			"verdict": "full",
+			"fetch": {
+				"kind": "files",
+				"files": {
+					"maven-4.0.0.xsd": {
+						"url": "https://raw.githubusercontent.com/apache/maven-site/34db650da2546409fbe955cfa9f5f59d412a8c4a/content/resources/xsd/maven-4.0.0.xsd",
+						"sha256": "7515c6b6feed62595975289a30ab83ef8c6f545798e94c4af2fe3e3da6079a1b"
+					},
+					"poms/maven/pom.xml": {
+						"url": "https://raw.githubusercontent.com/apache/maven/maven-3.10.0/pom.xml",
+						"sha256": "65781ed5f7088b969f7d3d78f788320fa5b6e0ad123d220bb9bd476fe399f978"
+					},
+					"poms/maven-core/pom.xml": {
+						"url": "https://raw.githubusercontent.com/apache/maven/maven-3.10.0/maven-core/pom.xml",
+						"sha256": "7449bd312e9258d6a9ad46d22ff8921bab8109494ad572dbfe027f2dfa025857"
+					},
+					"poms/maven-model/pom.xml": {
+						"url": "https://raw.githubusercontent.com/apache/maven/maven-3.10.0/maven-model/pom.xml",
+						"sha256": "0ac6b18486b7b61e2e135f021f1c52aeae9589e0cb475dbdabe16cc201d7521d"
+					},
+					"poms/maven-embedder/pom.xml": {
+						"url": "https://raw.githubusercontent.com/apache/maven/maven-3.10.0/maven-embedder/pom.xml",
+						"sha256": "4b3b8b32a1ed2888de175abfb7deab4c6de2fc8115bce8a96e0eb72c4cc84412"
+					},
+					"poms/commons-lang/pom.xml": {
+						"url": "https://raw.githubusercontent.com/apache/commons-lang/rel/commons-lang-3.21.0/pom.xml",
+						"sha256": "9420ac3c5efb5bcf804552a7bec00a2d857120977fc12151f7606a67ba7a184d"
+					}
+				}
+			},
+			"entries": ["maven-4.0.0.xsd"],
+			"instances": ["poms/*/pom.xml"]
+		},
+		{
+			"id": "xhtml-1.1",
+			"family": "xhtml",
+			"license": "W3C grant in xhtml-copyright-1.xsd (use, copy, modify, distribute, notice kept)",
+			"terms": "https://www.w3.org/MarkUp/SCHEMA/xhtml-copyright-1.xsd",
+			"verdict": "full",
+			"fetch": {
+				"kind": "crawl",
+				"start": ["https://www.w3.org/MarkUp/SCHEMA/xhtml11.xsd"],
+				"hosts": ["www.w3.org"],
+				"files": {
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-attribs-1.xsd": "f21bc66bdcf548a6d396210decdf3612d99fbae030975427acc82b1c18079f50",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-base-1.xsd": "683aa6226a81d68306798ca0fbc2a39657de380da0bdf13a89c96e5cb2ab6f55",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-bdo-1.xsd": "d66db3f6dded9b31f5163b67ae8c4a491f31b2a2d19199175e4ec84cb41660f6",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-blkphras-1.xsd": "7b947bdc277b8888054892b4e789f4778d47f7e38a88b53d960762deea99fc75",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-blkpres-1.xsd": "6d528719fcb31b10371acc529edfdd2baa636e468463b17cd4f38ea91ff63235",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-blkstruct-1.xsd": "c413a3840cb68e8050eb185c9301eb49790db14e6c8e0f7b4a888fb70252c74b",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-csismap-1.xsd": "5c9eeb62617c4cc93525d672feaf67ed051c88c24a84f82dbf5790b30e658701",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-datatypes-1.xsd": "7ab50edf0160c4ab6c3e8ee5eb325f3c9463fbd9ae7d9b94c57b1bc8db6396ab",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-edit-1.xsd": "8093b0bd9789b5e551c652d554fe7f50784ce301fbb8103cd55f5d68ce03187c",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-events-1.xsd": "932995924a652991653a80edbc51edba5f2ecdf0754a504aacc0ac351e0743a2",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-form-1.xsd": "2acf200d60d01d6c4508bb24c9f5ffc80f1daebdaaf6e57f852ec9b2ae0691d9",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-framework-1.xsd": "f534abb42c167e3486a322cc316d7531b92282317d3f975304e5ed312284f812",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-hypertext-1.xsd": "b24be88fe6bbe670fa026c4dbce152b2c2b6aa7f09bc9ab29af8ee9d734e1322",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-image-1.xsd": "b2c74b6dece2bcd84b717257a71b1a34ea53c1eeb8ca9270261f33b02946509c",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-inlphras-1.xsd": "e4099a98a23e866dadf036315b15d4683c64fc98d7d21a90a7581985ff205ca5",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-inlpres-1.xsd": "f4fd643750dd51e4f4e0452cbd9abb747443654ee974d133896fb64acc96adf3",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-inlstruct-1.xsd": "36c22a2632806f18f41f836040687b189ccd3918d7b4648ea1e84a5acddb74ad",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-inlstyle-1.xsd": "d173db1e855a369570994a57f2ddde6f5985333d8bf9f950b7342ba7de112e6f",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-link-1.xsd": "e6e8600e9d1fb8e5fb8bac34b06442434e3bc6cafe443a0b1a852f4519fafe09",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-list-1.xsd": "3bf63d00adfa3368c5238a1aaab44bbd1af5a9bb3264f21707406880efaa6fe6",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-meta-1.xsd": "c48cc0ee43ff5ce4f7e1039a3bb1f9458c9bfca2194958394503e8dc11d928c1",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-object-1.xsd": "4caeceb6176f06cbee30485d5070409b6af4892f76858c1532d5135ad2eb596e",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-param-1.xsd": "cb8b341941fa752e8204629507e4e657b4a08e0c0c01d7d39a8df8dfcdcb9773",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-pres-1.xsd": "7212dc78171b5e6a9a439b5b5786cdd499bc5eb2215605d158dc35b31cba2893",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-ruby-1.xsd": "a9ca14a2c7cb997be7dabf647ce46e7780c8e7ad1307b7a6465e14c8aa474b02",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-script-1.xsd": "62a6aa86505f72527b242e3033e98352bd3aec76539c9ff9800495a18312fb2d",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-ssismap-1.xsd": "190d805fff1d31e71cf3607512826079367466178eeac3b5fe917fd5b7fbcd8a",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-struct-1.xsd": "a75981d6e8895149f4223529f2a9168cbae4be8008836265094be936a5b204d6",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-style-1.xsd": "085659da7963edb0aeb70e86a79763187995cbb7c76c90f41973999cec1ce414",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-table-1.xsd": "0ae2c765950e49cb846c6e4cec478ff7e63087171970dacc3d46045985d6327a",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-target-1.xsd": "a77da8307a1ec1db1932428b87cee4e3a155f3d0025b93be7b82ee0ac553d9f1",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml-text-1.xsd": "e022b7e24b6d04c24f0c8df81b18553c7d801e213a11675652eaa57337e90fca",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml11-model-1.xsd": "bb0159f6dc21c1b0ba5719c6275fc8af1a914cc24b92273bf7f24bb1bc21ad4e",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml11-modules-1.xsd": "fb5931a35fc6b2205e29cf3c21bc9a53df41741013ef16fcff2d3b319b37749d",
+					"https://www.w3.org/MarkUp/SCHEMA/xhtml11.xsd": "341d8fc062403f048026768ee043cab98af8960ff1880630a1c5b8f54bf42b1f"
+				}
+			},
+			"entries": ["www.w3.org/MarkUp/SCHEMA/xhtml11.xsd"],
+			"instances": []
+		},
+		{
+			"id": "docbook-5.0.1",
+			"family": "docbook",
+			"license": "OASIS work-product notice; DocBook Schema License (normative RNC)",
+			"terms": "https://docs.oasis-open.org/docbook/docbook/v5.0.1/cs01/docbook-v5.0.1-cs01.html",
+			"verdict": "schemas-only",
+			"note": "its xlink.xsd and xml.xsd (W3C copies) replaced by our own",
+			"fetch": {
+				"kind": "crawl",
+				"start": [
+					"https://docs.oasis-open.org/docbook/docbook/v5.0.1/cs01/schemas/xsd/docbook.xsd"
+				],
+				"hosts": ["docs.oasis-open.org"],
+				"skip": [
+					"https://docs.oasis-open.org/docbook/docbook/v5.0.1/cs01/schemas/xsd/xlink.xsd",
+					"https://docs.oasis-open.org/docbook/docbook/v5.0.1/cs01/schemas/xsd/xml.xsd"
+				],
+				"files": {
+					"https://docs.oasis-open.org/docbook/docbook/v5.0.1/cs01/schemas/xsd/docbook.xsd": "6e70846f840ab2b734b7489499cdab82812991915354b86c09f806c0c3cc2f37"
+				}
+			},
+			"substitute": {
+				"docs.oasis-open.org/docbook/docbook/v5.0.1/cs01/schemas/xsd/xlink.xsd": "xlink.xsd",
+				"docs.oasis-open.org/docbook/docbook/v5.0.1/cs01/schemas/xsd/xml.xsd": "xml.xsd"
+			},
+			"entries": ["docs.oasis-open.org/docbook/docbook/v5.0.1/cs01/schemas/xsd/docbook.xsd"],
+			"instances": []
+		},
+		{
+			"id": "fpml-confirmation",
+			"family": "fpml",
+			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
+			"terms": "https://www.fpml.org/license/license.html",
+			"verdict": "full",
+			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/confirmation-5-13_xml.zip",
+				"sha256": "52ecd86a6110438438a6dd0dc324a40751b06b5419c63cab92fe402447ceace5",
+				"strip": "confirmation/",
+				"keep": [""]
+			},
+			"exclude": ["*.pdf", "*.spp", "*.txt", "*.xls", "*.bat", "*.xsl", "*.log"],
+			"marker": [
+				{
+					"glob": "*.xsd",
+					"text": "subject to the FpML public license",
+					"except": ["xmldsig-core-schema.xsd"]
+				},
+				{
+					"glob": "*.xml",
+					"text": "subject to the FpML public license"
+				}
+			],
+			"entries": ["fpml-main-5-13.xsd"],
+			"instances": ["*.xml"]
+		},
+		{
+			"id": "fpml-reporting",
+			"family": "fpml",
+			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
+			"terms": "https://www.fpml.org/license/license.html",
+			"verdict": "full",
+			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/reporting-5-13_xml.zip",
+				"sha256": "93bee454d0e50a99bd189d0f652aa1f6c4eee975b3ea2b9c796402212d89f834",
+				"strip": "reporting/",
+				"keep": [""]
+			},
+			"exclude": ["*.pdf", "*.spp", "*.txt", "*.xls", "*.bat", "*.xsl", "*.log"],
+			"marker": [
+				{
+					"glob": "*.xsd",
+					"text": "subject to the FpML public license",
+					"except": ["xmldsig-core-schema.xsd"]
+				},
+				{
+					"glob": "*.xml",
+					"text": "subject to the FpML public license"
+				}
+			],
+			"entries": ["fpml-main-5-13.xsd"],
+			"instances": ["*.xml"]
+		},
+		{
+			"id": "fpml-recordkeeping",
+			"family": "fpml",
+			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
+			"terms": "https://www.fpml.org/license/license.html",
+			"verdict": "full",
+			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/recordkeeping-5-13_xml.zip",
+				"sha256": "196d9101c2a3c2946a33132e5c175e399d89cc947329de3357cf9c7d5267beba",
+				"strip": "recordkeeping/",
+				"keep": [""]
+			},
+			"exclude": ["*.pdf", "*.spp", "*.txt", "*.xls", "*.bat", "*.xsl", "*.log"],
+			"marker": [
+				{
+					"glob": "*.xsd",
+					"text": "subject to the FpML public license",
+					"except": ["xmldsig-core-schema.xsd"]
+				},
+				{
+					"glob": "*.xml",
+					"text": "subject to the FpML public license"
+				}
+			],
+			"entries": ["fpml-main-5-13.xsd"],
+			"instances": ["*.xml"]
+		},
+		{
+			"id": "fpml-transparency",
+			"family": "fpml",
+			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
+			"terms": "https://www.fpml.org/license/license.html",
+			"verdict": "full",
+			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/transparency-5-13_xml.zip",
+				"sha256": "71d5fac77914b2594fa5ecad90e03ab12475aae76df45641961f2b7c45cfa25c",
+				"strip": "transparency/",
+				"keep": [""]
+			},
+			"exclude": ["*.pdf", "*.spp", "*.txt", "*.xls", "*.bat", "*.xsl", "*.log"],
+			"marker": [
+				{
+					"glob": "*.xsd",
+					"text": "subject to the FpML public license",
+					"except": ["xmldsig-core-schema.xsd"]
+				},
+				{
+					"glob": "*.xml",
+					"text": "subject to the FpML public license"
+				}
+			],
+			"entries": ["fpml-main-5-13.xsd"],
+			"instances": ["*.xml"]
+		},
+		{
+			"id": "fpml-pretrade",
+			"family": "fpml",
+			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
+			"terms": "https://www.fpml.org/license/license.html",
+			"verdict": "full",
+			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/pretrade-5-13_xml.zip",
+				"sha256": "b6608701b3a04e62383b548b0a47f8764a69b12341c097723cf1479476938155",
+				"strip": "pretrade/",
+				"keep": [""]
+			},
+			"exclude": ["*.pdf", "*.spp", "*.txt", "*.xls", "*.bat", "*.xsl", "*.log"],
+			"marker": [
+				{
+					"glob": "*.xsd",
+					"text": "subject to the FpML public license",
+					"except": ["xmldsig-core-schema.xsd"]
+				},
+				{
+					"glob": "*.xml",
+					"text": "subject to the FpML public license"
+				}
+			],
+			"entries": ["fpml-main-5-13.xsd"],
+			"instances": ["*.xml"]
+		},
+		{
+			"id": "fpml-legal",
+			"family": "fpml",
+			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
+			"terms": "https://www.fpml.org/license/license.html",
+			"verdict": "full",
+			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/legal-5-13_xml.zip",
+				"sha256": "9026c7045a3ea5e5c806af2ea6bf5af53781ef4272bb1c7ad25a98ea4a0cc6ad",
+				"strip": "legal/",
+				"keep": [""]
+			},
+			"exclude": ["*.pdf", "*.spp", "*.txt", "*.xls", "*.bat", "*.xsl", "*.log"],
+			"marker": [
+				{
+					"glob": "*.xsd",
+					"text": "subject to the FpML public license",
+					"except": ["xmldsig-core-schema.xsd"]
+				},
+				{
+					"glob": "*.xml",
+					"text": "subject to the FpML public license"
+				}
+			],
+			"entries": ["fpml-main-5-13.xsd"],
+			"instances": ["*.xml"]
+		},
+		{
+			"id": "ubl-2.4",
+			"family": "ubl",
+			"license": "OASIS IPR Policy copyright notice (RF on Limited Terms)",
+			"terms": "https://www.oasis-open.org/policies-guidelines/ipr/",
+			"verdict": "full",
+			"decision": "kept by the user on 2026-10-09 although its schemas import ETSI XAdES copies carrying no licence (plan 10b)",
+			"fetch": {
+				"kind": "archive",
+				"url": "https://docs.oasis-open.org/ubl/os-UBL-2.4/UBL-2.4.zip",
+				"sha256": "5d3b72f246f79a9caf9361244da02785d4d87c87c0c2d98340351d2871873a88",
+				"strip": "",
+				"keep": ["xsd/", "xml/"]
+			},
+			"entries": ["_wrappers/ubl-all-documents.xsd", "xsd/maindoc/UBL-Invoice-2.4.xsd"],
+			"instances": ["xml/*.xml"],
+			"wrappers": {
+				"_wrappers/ubl-all-documents.xsd": ["xsd/maindoc/*.xsd"]
+			}
+		},
+		{
+			"id": "ogc-gml-3.2.1",
+			"family": "ogc",
+			"license": "OGC Document Notice; ISO 19139 (imported): ISO terms",
+			"terms": "https://www.ogc.org/legal/",
+			"verdict": "schemas-only",
+			"decision": "kept by the user on 2026-10-09 although the OGC notice grants no derivatives and the closure reaches ISO 19139 (plan 10b)",
+			"fetch": {
+				"kind": "crawl",
+				"start": ["https://schemas.opengis.net/gml/3.2.1/gml.xsd"],
+				"hosts": ["schemas.opengis.net"],
+				"files": {
+					"https://schemas.opengis.net/gml/3.2.1/basicTypes.xsd": "2e37d858bd5be1307892add40826632e4e16d5c44b032ba668c510f09588da5c",
+					"https://schemas.opengis.net/gml/3.2.1/coordinateOperations.xsd": "d9a96671453711b98301d8f796ba1bb47990b7ab4ea83e8a1803c27110bbc434",
+					"https://schemas.opengis.net/gml/3.2.1/coordinateReferenceSystems.xsd": "0b38a6d9a82b698307215be446cfbec18682f1edcdbdf531d0e9fadb88e3017e",
+					"https://schemas.opengis.net/gml/3.2.1/coordinateSystems.xsd": "50658a9b0cd0e8887dab3a54d0e66ea9d74e7737ac15b87fb3a88f6d578c884b",
+					"https://schemas.opengis.net/gml/3.2.1/coverage.xsd": "8861ca287202f3da462b3d78c71065dc78b3d24ac37304297601bd6599e8362f",
+					"https://schemas.opengis.net/gml/3.2.1/datums.xsd": "a5ac13d8015f8d9c0947e5ad614c482a0f2c632d168f87c631d953273bdeb30d",
+					"https://schemas.opengis.net/gml/3.2.1/deprecatedTypes.xsd": "cd02f14a1f83be529cb5d7ba8ce6a4089ebf26dcb3e287e4b81488cb6bf6dd5b",
+					"https://schemas.opengis.net/gml/3.2.1/dictionary.xsd": "fb5f633e6b441ed19bd17433e28efedfb7a335bdbde04b4e5383582a763beae5",
+					"https://schemas.opengis.net/gml/3.2.1/direction.xsd": "fed7bb5e0fcc13b78add0bdb4b603a278452b70617a207ee084d2427daa17011",
+					"https://schemas.opengis.net/gml/3.2.1/dynamicFeature.xsd": "457e07361d175c8c344d20fbed203f051b07dc13f7c637576247872fcf294c43",
+					"https://schemas.opengis.net/gml/3.2.1/feature.xsd": "aa8434aa6b38fe00ab9dd1a1e84c9288b4828484c783c04c8caf4ea5650ecb07",
+					"https://schemas.opengis.net/gml/3.2.1/geometryAggregates.xsd": "d1cb25b4e923d06c44d6930ced39848ea0e938e197f95a8794e73692d0ff425b",
+					"https://schemas.opengis.net/gml/3.2.1/geometryBasic0d1d.xsd": "b1f9e4c1714546cd1df6f03f459926c3714f6b4346bba58de7950eddedcc7d6c",
+					"https://schemas.opengis.net/gml/3.2.1/geometryBasic2d.xsd": "2fc0914ecd7ca02d41ec090d8202e754d67e40890d8846382e7e25446bf4b181",
+					"https://schemas.opengis.net/gml/3.2.1/geometryComplexes.xsd": "26e936aa53efe6e56bbcadd5528967c2b9ac2b08b869252703c757e7ffb9711c",
+					"https://schemas.opengis.net/gml/3.2.1/geometryPrimitives.xsd": "ddde612ddaa13fe8313ac5e0d70090d52459c83777e394b3d3917a205469b2af",
+					"https://schemas.opengis.net/gml/3.2.1/gml.xsd": "eb1e652fdc10fa70352c3fc554cd3bfacc5a863e964a4e64c76f25c762b80a3f",
+					"https://schemas.opengis.net/gml/3.2.1/gmlBase.xsd": "36825875b089ee8f69f42103d31ce52f6eb9489d2f40e11516495f7c152cc79d",
+					"https://schemas.opengis.net/gml/3.2.1/grids.xsd": "c317678414da9a28e0be87bb1544b875875746bc219aa0b7f6c31f32efd0c5f0",
+					"https://schemas.opengis.net/gml/3.2.1/measures.xsd": "3faae40533a200b6999278678ef43c90a508fd7f8ded474f50475b4c3f19f152",
+					"https://schemas.opengis.net/gml/3.2.1/observation.xsd": "514b7489b2aeaf58303e24c0180cba92654f2201e87a6aa7c2fe8e1c73ceff99",
+					"https://schemas.opengis.net/gml/3.2.1/referenceSystems.xsd": "5bbeb1210ead8b6fba6516c4a5b9e80c1b811b48ec9f3293bbaaa5346aeec0e8",
+					"https://schemas.opengis.net/gml/3.2.1/temporal.xsd": "e6336faf79732dd8cc79b4f18595a4ccf93ab9d7c55e9f6517b79f4f44572fdd",
+					"https://schemas.opengis.net/gml/3.2.1/temporalReferenceSystems.xsd": "f7671997af4fbd098ff53db1f025df3d1a678f707560a9bca83ca54d4ef61e7c",
+					"https://schemas.opengis.net/gml/3.2.1/temporalTopology.xsd": "ee8fd1e816cb41746c16443e47a0206f71ab77a621d49778dc565a9d6eff4352",
+					"https://schemas.opengis.net/gml/3.2.1/topology.xsd": "aa4e2db656a1dfad2fe50c23cccf5ab0f3bba5894087dca75e7bd25faf31ba12",
+					"https://schemas.opengis.net/gml/3.2.1/units.xsd": "b3e2b8f364b9b844dccc0d8314f9c6c952db5155bccfe7316a1742a63dcc29fe",
+					"https://schemas.opengis.net/gml/3.2.1/valueObjects.xsd": "ddf0c234b66363f596492f59b92e307d2d7d864a122c28abc32bcdf87ce7485e",
+					"https://schemas.opengis.net/iso/19139/20070417/gco/basicTypes.xsd": "5ac7545eedc0ebea9ee2788197ffc54eb32797cfde015239f33400f8527ff7f4",
+					"https://schemas.opengis.net/iso/19139/20070417/gco/gco.xsd": "bc3ea300204f6b99e696976aeb32207d604295f8e4c1d397cf5bb7b9e59bdabf",
+					"https://schemas.opengis.net/iso/19139/20070417/gco/gcoBase.xsd": "bc6ef613238a37d0cfcdcbb43df751de7c81ebe46e67b185bae477f530b3f9ab",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/applicationSchema.xsd": "bd5b9f294f42dbe0d78e7f760fae008fb061c8a23d6c45b34bef0bf1427b1ed5",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/citation.xsd": "dfdef7355c21e8780cb3d50b28dd6d4c556ef83a1082c3059fffe41e357ba97d",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/constraints.xsd": "b1f9c2971bbd1bf641f23a82ec87c0728bc19446b86ad490b5d3e917b096193e",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/content.xsd": "e2c31ad9e56c6682f137b200db430b11ea89ee667379615c6498c4267c129eda",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/dataQuality.xsd": "a1c97293e7966bf67ad4635894a5479c3e3f7044ad6253d3e87b74b3c34739cb",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/distribution.xsd": "1759a0d820644e07ed442b8385a87585cf62c68a7a257dcff109fb469109bb28",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/extent.xsd": "a1e35e7730774fd7c4229699ade5cd29a8449997452d6a017f8a797f2a0a8c41",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/freeText.xsd": "79fcacb8fe5d0000fce05bef5e6430c61af9c151edf50542de4f4d90f4d1d306",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/gmd.xsd": "62c01b7ac3a6d283a2ea4ac72891bc1b912ff43016367b8df30ec7a8dfa583b1",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/identification.xsd": "a9cbc54f0774b804a7e49e0713502d49ed051e2ad43d138b7ba840b7868ea937",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/maintenance.xsd": "49e16597d6ce1bf039db46ac6d4c0069b2c6297bfc8da3fdb28a4d2e717766f9",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/metadataApplication.xsd": "215e4f0e39b73c98c30e2c799b3c47448b420b481bed91087f983faf42074b6c",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/metadataEntity.xsd": "e780e56e534c58140df94625293f535827b966a662b01014802288c349f31a3a",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/metadataExtension.xsd": "2a59d200fbd0cf1229f908fa5ddfee71c7b2be273d6f2d9402e386390e2d1012",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/portrayalCatalogue.xsd": "e8b1086c78ef4474be9091839d3fa9aee3d9481c465fe5aa4372e2e2d3c2090a",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/referenceSystem.xsd": "320bf5301f0fc40fc028a5428133ee66ed2b5b99ea5b74544ebf0642a1083f06",
+					"https://schemas.opengis.net/iso/19139/20070417/gmd/spatialRepresentation.xsd": "3e4d2886b7816e1bc67fa23d82201e473162c5110aa6e6bd34478ad606c0b73c",
+					"https://schemas.opengis.net/iso/19139/20070417/gsr/gsr.xsd": "5066cfe4d0488b89cf7a15a990cd2e05f3dcdbb11c95df1ec73a1e714101161d",
+					"https://schemas.opengis.net/iso/19139/20070417/gsr/spatialReferencing.xsd": "19dcdbf1fcc296598dd5def55338bdf604e2ddd62358f7a3a9caa62bd7a6833b",
+					"https://schemas.opengis.net/iso/19139/20070417/gss/geometry.xsd": "fabf3df4d5d7098944494e4932426e4bfd7d56d73ac535edfcf5ef67292ad767",
+					"https://schemas.opengis.net/iso/19139/20070417/gss/gss.xsd": "1cb5492d7cb110ced0d46e8bc858dc3b340e1350b0b16f99772318c7df4d3906",
+					"https://schemas.opengis.net/iso/19139/20070417/gts/gts.xsd": "bef7c0ed6e63cd2be4b54defe994125783491a4a750c675cd28ca01382c9b273",
+					"https://schemas.opengis.net/iso/19139/20070417/gts/temporalObjects.xsd": "22d2c593d31cd6c91e245bebd44240bd89046cc45c8e7f3a79b22442d9ee2595"
+				}
+			},
+			"entries": ["schemas.opengis.net/gml/3.2.1/gml.xsd"],
+			"instances": []
+		},
+		{
+			"id": "ogc-citygml-2.0",
+			"family": "ogc",
+			"license": "OGC Document Notice; OASIS xAL notice; W3C SMIL (via GML 3.1.1)",
+			"terms": "https://www.ogc.org/legal/",
+			"verdict": "schemas-only",
+			"decision": "kept by the user on 2026-10-09; its samples stay out (SIG 3D, no grant)",
+			"fetch": {
+				"kind": "crawl",
+				"start": ["https://schemas.opengis.net/citygml/profiles/base/2.0/CityGML.xsd"],
+				"hosts": ["schemas.opengis.net", "docs.oasis-open.org"],
+				"files": {
+					"https://docs.oasis-open.org/election/external/xAL.xsd": "cc8353e803f2ccb594cea247b00935477d672f2c5b5affc95a04cb3721a50f0e",
+					"https://schemas.opengis.net/citygml/2.0/cityGMLBase.xsd": "f87fe8de043a835ca6dedef7d198ac53fbe0aa8d6496b4d230145c765f38f431",
+					"https://schemas.opengis.net/citygml/appearance/2.0/appearance.xsd": "4199977b3c2775f7382cb49820a05d65270261fdbcf96ec40e196d1165d25eb3",
+					"https://schemas.opengis.net/citygml/bridge/2.0/bridge.xsd": "9fd548e0e20d1c47973f04ef40721cac82160e766ed2ee36bc5a4f2c5a656cb6",
+					"https://schemas.opengis.net/citygml/building/2.0/building.xsd": "906c8f7ed29ed6352b8d1372661a80de113794c938c4a0865ef2d7bdb38e7d15",
+					"https://schemas.opengis.net/citygml/cityfurniture/2.0/cityFurniture.xsd": "4acc55c502ede8d009b589a7f7a9a173d113730a903c36a744463e99e2ee253f",
+					"https://schemas.opengis.net/citygml/cityobjectgroup/2.0/cityObjectGroup.xsd": "abdbab7e0ce8b475c4b1f6e7086eecea8b6df6ca29daa0b0e90b3d55894e5936",
+					"https://schemas.opengis.net/citygml/generics/2.0/generics.xsd": "47b8bd89589ef221c3b97fe7a707cd867a14fa299010be8f27e99e0970c12d29",
+					"https://schemas.opengis.net/citygml/landuse/2.0/landUse.xsd": "f98bdec0bc3ab81cc89e1574ffa7e0244042a4bae409ac9a971bed09c3247d8d",
+					"https://schemas.opengis.net/citygml/profiles/base/2.0/CityGML.xsd": "a511ec64ec364134fbcc2ebe0958c87289ac318490e6e539aa2b38fc4bcc6e68",
+					"https://schemas.opengis.net/citygml/relief/2.0/relief.xsd": "9cafca7d53f9d0fd9f2991fcb6d1abd527dcb6bd8394c01c977834c5ce2343fc",
+					"https://schemas.opengis.net/citygml/texturedsurface/2.0/texturedSurface.xsd": "af9b0e17621afd64758926432ec52715ac8369acc9e0ac353650892cb555bf0f",
+					"https://schemas.opengis.net/citygml/transportation/2.0/transportation.xsd": "61623e4c11dc0dc914ba905cb797481d2bbd2e512ea35094a55b0f3527c52369",
+					"https://schemas.opengis.net/citygml/tunnel/2.0/tunnel.xsd": "e340351793ed8db7e980a89a632468ef41fa16ba2a57ea58535373d7db060dc9",
+					"https://schemas.opengis.net/citygml/vegetation/2.0/vegetation.xsd": "c9b3d43504399876d94d124c5f7af7f811c3259795ff69888a9d90aa619b2864",
+					"https://schemas.opengis.net/citygml/waterbody/2.0/waterBody.xsd": "150ffcbb3c822236741e9efb60612ce05f8d5db96b911ab2f808cbc493992b16",
+					"https://schemas.opengis.net/gml/3.1.1/base/basicTypes.xsd": "1ad3ab76ce16b5d272d3b2adad25144eef5c340dcf4709f360ecbc092dc9111e",
+					"https://schemas.opengis.net/gml/3.1.1/base/coordinateOperations.xsd": "31e238a7625bb6f08d3b7f2d8cadd3817e0ccb269279ce0d4134d5848ad824b3",
+					"https://schemas.opengis.net/gml/3.1.1/base/coordinateReferenceSystems.xsd": "5d194502380d66f6750c481f68ffbabefb4a8790dbebb4e3047135a871b29f83",
+					"https://schemas.opengis.net/gml/3.1.1/base/coordinateSystems.xsd": "ba5d4d351d1ecc275abaa88bc3f4e263526e869056ec8d11b6b4cfa6cf1eb5fd",
+					"https://schemas.opengis.net/gml/3.1.1/base/coverage.xsd": "68f46c8de0c0ccd9ccd02b0f490117edc2ca8d57c0609796173f2f4c658dabb3",
+					"https://schemas.opengis.net/gml/3.1.1/base/dataQuality.xsd": "5e0398809ebf1885b04f413df12569a7eddc7773975db1ad3e57329b844a8151",
+					"https://schemas.opengis.net/gml/3.1.1/base/datums.xsd": "68b341e83a6b7132e1ee63f8fcffadc5125a2bdbdda2e7d1a5611d8162ae4649",
+					"https://schemas.opengis.net/gml/3.1.1/base/defaultStyle.xsd": "365b26485e119440901a25dd46886de12cfd2b0f27d8b465f1c506afa275d5a3",
+					"https://schemas.opengis.net/gml/3.1.1/base/dictionary.xsd": "0c031a4cf085a1e495a85762172a13c5221c25af23007b3328f95ecc63601b79",
+					"https://schemas.opengis.net/gml/3.1.1/base/direction.xsd": "6dcede87a2fec8d9daa1fcd605a5596481c528147990ca0856c33e60bee066f7",
+					"https://schemas.opengis.net/gml/3.1.1/base/dynamicFeature.xsd": "a17d6b052cb75ed6b342f9d7526b642daf31b715e588bc3b72cb0068a18b6afe",
+					"https://schemas.opengis.net/gml/3.1.1/base/feature.xsd": "36dd578e74bfc913e7b8f78e1003a98bbabaadb693ea7d577dcb7ae8b5d86806",
+					"https://schemas.opengis.net/gml/3.1.1/base/geometryAggregates.xsd": "b438f20abb5697b87d68979c44021117a859bbb8f0bdf44488c68bfc8145ca2b",
+					"https://schemas.opengis.net/gml/3.1.1/base/geometryBasic0d1d.xsd": "addfe8997866b9b19e06dcab4c36ec99a23cc352c9d66ca0c0dbac9b245d8421",
+					"https://schemas.opengis.net/gml/3.1.1/base/geometryBasic2d.xsd": "f70d60629adf0e6cb17a735c0aa1367d4073458822c4a89e1034cfffebd050a9",
+					"https://schemas.opengis.net/gml/3.1.1/base/geometryComplexes.xsd": "2ce094104fa5bde175fe1246e2c2612ae16862bd730b16896e04146954f7cb3d",
+					"https://schemas.opengis.net/gml/3.1.1/base/geometryPrimitives.xsd": "298d359d83610e0c0efd4ae14bdd3d38ab6167e08b065bfb72e66a209cac70fe",
+					"https://schemas.opengis.net/gml/3.1.1/base/gml.xsd": "b7fcaf63660b8f9505c383edaf7ed4aa25d0750129eeb3819e1654dd996ff755",
+					"https://schemas.opengis.net/gml/3.1.1/base/gmlBase.xsd": "5853e7faf42272adeb8dea0c7739243fc5221228dd4ac2f16ea4eaf30ac67709",
+					"https://schemas.opengis.net/gml/3.1.1/base/grids.xsd": "184a953eb4ee6bfe17c62e2a407446af602782d167916f1b7b2c0529f22114cd",
+					"https://schemas.opengis.net/gml/3.1.1/base/measures.xsd": "c53bf83033bf989baa6ca50d956a46f90b23862ae2463879b9051d779ecdfaec",
+					"https://schemas.opengis.net/gml/3.1.1/base/observation.xsd": "000a77173d4979e2cad9d696d173abad2d30c807e197f2cf05c45dc9e294187d",
+					"https://schemas.opengis.net/gml/3.1.1/base/referenceSystems.xsd": "d07424782a210b1719e3131a104a1f95dbd84ee789a9e8fed4f7d2a6c11c2b57",
+					"https://schemas.opengis.net/gml/3.1.1/base/temporal.xsd": "208f43442ebcf91666885396d2cac5dc06cb8da880a30bf26902d56fe2acbfe3",
+					"https://schemas.opengis.net/gml/3.1.1/base/temporalReferenceSystems.xsd": "a849439f6cf97b6f1ddc5ec6d0eace9d96d234cd6003277eab6787855b330e6e",
+					"https://schemas.opengis.net/gml/3.1.1/base/temporalTopology.xsd": "c507feed9f9393e616c887189a6ad4dfb227e0cb51d9410a2f80dce395266925",
+					"https://schemas.opengis.net/gml/3.1.1/base/topology.xsd": "08cbe50aa848765dfecda183106a91cc533e9615f46e0feebcc9d6d03d9ab23e",
+					"https://schemas.opengis.net/gml/3.1.1/base/units.xsd": "d7044a7aac4f4ed239dc5d6075cb9d8ce3cbf821472fb9bc3ac0007037052055",
+					"https://schemas.opengis.net/gml/3.1.1/base/valueObjects.xsd": "3e2eb6a488ec4ed70089b9ec8edc0d830305dd5efc8c754b6dec57566332679d",
+					"https://schemas.opengis.net/gml/3.1.1/smil/smil20-language.xsd": "71a6af850b0701b34c594ba749ed42ce621cf669b3cb0ec339ce9dd254314787",
+					"https://schemas.opengis.net/gml/3.1.1/smil/smil20.xsd": "3e5224ef365247c202680e64d8e7bba4882697bc38442bbb883a8dd12cb86315"
+				}
+			},
+			"entries": ["schemas.opengis.net/citygml/profiles/base/2.0/CityGML.xsd"],
+			"instances": []
+		},
+		{
+			"id": "ogc-kml-2.2",
+			"family": "ogc",
+			"license": "OGC Document Notice; OASIS xAL notice",
+			"terms": "https://www.ogc.org/legal/",
+			"verdict": "schemas-only",
+			"decision": "kept by the user on 2026-10-09",
+			"fetch": {
+				"kind": "crawl",
+				"start": ["https://schemas.opengis.net/kml/2.2.0/ogckml22.xsd"],
+				"hosts": ["schemas.opengis.net", "docs.oasis-open.org"],
+				"files": {
+					"https://docs.oasis-open.org/election/external/xAL.xsd": "cc8353e803f2ccb594cea247b00935477d672f2c5b5affc95a04cb3721a50f0e",
+					"https://schemas.opengis.net/kml/2.2.0/atom-author-link.xsd": "62bb577edde174cfcc68c7edfdab04f49c455d194d83e2dfa9649605126fa884",
+					"https://schemas.opengis.net/kml/2.2.0/ogckml22.xsd": "67bb8fd82e7098245360f2aeb2afb561a8eb868ec3660dc06542475f67a4b665"
+				}
+			},
+			"entries": ["schemas.opengis.net/kml/2.2.0/ogckml22.xsd"],
+			"instances": []
+		}
+	]
+}
