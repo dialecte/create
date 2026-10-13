@@ -127,6 +127,15 @@ each change, in copies of the package. A change no test notices must be listed i
 with an empty reason to fill. Run it before committing a change to `python/generate`: it takes the
 better part of an hour on the whole generator, less on the modules named.
 
+The TypeScript side - the constants and types `src/derive` writes from a definition - has its own oracle,
+`scripts/derive-oracle`: every fact the constants state is recomputed from the definition by another route (parents
+as the inverse of children, closures by fixed point, attribute keys per element and per parent, required
+attributes), and per element a type probe checks that the generated attribute type accepts the required attributes
+alone and refuses one missing or an unknown key, all under `tsc --strict`. It runs on the committed fixtures
+(`test:ts`), on the sibling dialectes (`derive:check`), on every generated schema (`npm run fuzz`) and on every
+corpus schema (`npm run test:corpora`). `npm run mutants:ts [-- <file> ...]` is the TypeScript twin of the mutation
+gate (StrykerJS over `node --test`), its record in `scripts/mutants-ts/records/`.
+
 `npm run corpora:fetch` downloads the third-party corpora the licence review admitted (plan 10b of the
 validation plans), each pinned by sha256, into `.corpora/` (never committed); `npm run test:corpora` then runs
 every schema-tier check on every schema they hold - the generator reads it, its definition reads back, its

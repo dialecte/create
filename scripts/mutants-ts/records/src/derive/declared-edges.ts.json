@@ -1,0 +1,57 @@
+{
+	"9962d44ad4fccb98": {
+		"line": 31,
+		"mutation": "ConditionalExpression: tagLevel === undefined -> false",
+		"equivalent": "declaredUnder returned a declaration of definition[child], so the tag level exists: the guard is never taken."
+	},
+	"8348e5fadba72217": {
+		"line": 48,
+		"mutation": "ConditionalExpression: item !== null -> true",
+		"equivalent": "Definition data holds no null (JSON of the generator, no null written): every item is an object, an array or a scalar."
+	},
+	"65ede69c61e30690": {
+		"line": 50,
+		"mutation": "EqualityOperator: first < second -> first >= second",
+		"equivalent": "Object keys are never equal: <= and < order them the same; >= reverses the order on both sides of the comparison alike."
+	},
+	"c4f9487951deb2b2": {
+		"line": 50,
+		"mutation": "EqualityOperator: first < second -> first <= second",
+		"equivalent": "Object keys are never equal: <= and < order them the same; >= reverses the order on both sides of the comparison alike."
+	},
+	"4f23131d3bc2eb1c": {
+		"line": 66,
+		"mutation": "OptionalChaining: definition[parent]?.children -> definition[parent].children",
+		"equivalent": "Every parent the emitters name is an element of the definition (they iterate its keys): the fallback is never read."
+	},
+	"100f73562b003ecc": {
+		"line": 68,
+		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
+		"equivalent": "Every parent the emitters name is an element of the definition (they iterate its keys): the fallback is never read."
+	},
+	"7cf0224347553b24": {
+		"line": 69,
+		"mutation": "ConditionalExpression: only === undefined -> false",
+		"equivalent": "With no id, declaredUnder reads declarations[undefined]: undefined either way."
+	},
+	"24469369f97365e0": {
+		"line": 70,
+		"mutation": "OptionalChaining: definition[child]?.declarations?.[only] -> definition[child]?.declarations[only]",
+		"equivalent": "An edge naming a declaration id implies the child has declarations (the generator writes both together)."
+	},
+	"546a10bf78f45646": {
+		"line": 70,
+		"mutation": "OptionalChaining: definition[child]?.declarations -> definition[child].declarations",
+		"equivalent": "An edge naming a declaration id implies the child has declarations (the generator writes both together)."
+	},
+	"4f23131d3bc2eb1c-1": {
+		"line": 76,
+		"mutation": "OptionalChaining: definition[parent]?.children -> definition[parent].children",
+		"equivalent": "Every parent the emitters name is an element of the definition (they iterate its keys): the fallback is never read."
+	},
+	"100f73562b003ecc-1": {
+		"line": 76,
+		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
+		"equivalent": "Every parent the emitters name is an element of the definition (they iterate its keys): the fallback is never read."
+	}
+}

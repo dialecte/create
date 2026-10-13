@@ -1,0 +1,67 @@
+{
+	"0fc24f58d963d75b": {
+		"line": 32,
+		"mutation": "ConditionalExpression: occurrences === undefined -> true",
+		"equivalent": "A memo: recomputing the occurrences of a content model gives the same map."
+	},
+	"15f9deaed36b489c": {
+		"line": 33,
+		"mutation": "ConditionalExpression: contentModel === undefined -> false",
+		"equivalent": "A content model is undefined only for an xsi:type variant missing from TYPES, which the generator never writes."
+	},
+	"c4b0f142ec7162b4": {
+		"line": 34,
+		"mutation": "CallExpression: occurrencesByModel.set(contentModel, occurrences) -> ;",
+		"equivalent": "A memo: not storing the occurrences only recomputes them, with the same result."
+	},
+	"15f9deaed36b489c-1": {
+		"line": 38,
+		"mutation": "ConditionalExpression: contentModel === undefined -> false",
+		"equivalent": "A content model is undefined only for an xsi:type variant missing from TYPES, which the generator never writes."
+	},
+	"cf915ae7440e20da": {
+		"line": 47,
+		"mutation": "ConditionalExpression: element === undefined -> false",
+		"equivalent": "contentModelsOf is called with parents taken from the definition: the element exists."
+	},
+	"36a1b27cc6ca975f": {
+		"line": 47,
+		"mutation": "ArrayDeclaration: [undefined] -> []",
+		"equivalent": "contentModelsOf is called with parents taken from the definition: the element exists."
+	},
+	"9a6d5df1db6e94bd": {
+		"line": 80,
+		"mutation": "StringLiteral: 'sequence' -> \"\"",
+		"equivalent": "NO_ELEMENT holds no particle: any group kind gives it no occurrence."
+	},
+	"c54824ed0a659ef9": {
+		"line": 108,
+		"mutation": "StringLiteral: '#any wildcard' -> \"\"",
+		"equivalent": "The wildcard key only has to differ from every element name; no element is named '' or '#any wildcard'."
+	},
+	"120b7e76f9b4a1e0": {
+		"line": 114,
+		"mutation": "OptionalChaining: definition[tag]?.parents -> definition[tag].parents",
+		"equivalent": "Every parent the emitters name is an element of the definition (they iterate its keys): the fallback is never read."
+	},
+	"a65a2421c07f9004": {
+		"line": 114,
+		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
+		"equivalent": "Every parent the emitters name is an element of the definition (they iterate its keys): the fallback is never read."
+	},
+	"24b85ebc224ca44d": {
+		"line": 117,
+		"mutation": "ConditionalExpression: next === undefined -> false",
+		"equivalent": "pending holds only strings: pop() returns undefined only when the loop condition already ended it."
+	},
+	"cf7d28bd26d55142": {
+		"line": 120,
+		"mutation": "OptionalChaining: definition[next]?.parents -> definition[next].parents",
+		"equivalent": "Every parent the emitters name is an element of the definition (they iterate its keys): the fallback is never read."
+	},
+	"a65a2421c07f9004-1": {
+		"line": 120,
+		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
+		"equivalent": "Every parent the emitters name is an element of the definition (they iterate its keys): the fallback is never read."
+	}
+}

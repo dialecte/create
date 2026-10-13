@@ -17,6 +17,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { deriveRoot } from '../../src/derive/derive-root.ts'
 import { emitConstantsSource } from '../../src/derive/emit-constants.ts'
 import { emitTypesSource } from '../../src/derive/emit-types.ts'
+import { checkDerivation, describeDisagreements } from '../derive-oracle/derive-oracle.ts'
 
 import type { DefinitionData } from '../../src/derive/derive.types.ts'
 import type { DialecteLocation, ProofRoot } from './derive-check.types.ts'
@@ -55,10 +56,12 @@ async function main(): Promise<void> {
 				`${name}: its definition exports no TYPES - regenerate it with @dialecte/create`,
 			)
 		}
-		const { ROOT_ELEMENT } = await import(
-			pathToFileURL(join(folder, 'constants.generated.ts')).href
-		)
-		const root = rootOf({ definition: DEFINITION, committed: ROOT_ELEMENT })
+		const constants = await import(pathToFileURL(join(folder, 'constants.generated.ts')).href)
+		// the committed constants against what the definition implies - not against what this code would write
+		const disagreements = checkDerivation({ definition: DEFINITION, constants })
+		if (disagreements.length > 0) differing++
+		process.stdout.write(`${name} oracle: ${describeDisagreements({ disagreements })}\n`)
+		const root = rootOf({ definition: DEFINITION, committed: constants.ROOT_ELEMENT })
 		process.stdout.write(`${name} root: ${root.note}\n`)
 		const derived = {
 			'constants.generated.ts': emitConstantsSource({

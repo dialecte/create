@@ -30,7 +30,7 @@
 		"format:check": "oxfmt --check",
 		"format:fix": "oxfmt",
 		"check": "npm run type-check && npm run lint:check && npm run format:check",
-		"test:ts": "node --test 'src/**/*.test.ts' 'scripts/**/*.test.ts'",
+		"test:ts": "node scripts/test-runner/run-tests.ts all",
 		"derive:check": "node scripts/derive-check/derive-check.ts",
 		"definition:diff": "node scripts/definition-diff/definition-diff.ts",
 		"test:py": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m pytest",
@@ -38,6 +38,7 @@
 		"test:cli:install": "SMOKE_INSTALL=1 npm run test:cli",
 		"proof": "node scripts/proof.mjs",
 		"mutants": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m mutants.run",
+		"mutants:ts": "node scripts/mutants-ts/mutants-ts.ts",
 		"corpora:fetch": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m corpora.fetch",
 		"test:corpora": "cd python && PROOF_CORPORA=1 $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m pytest tests/corpora -q",
 		"fuzz": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m proof.fuzz",
@@ -50,6 +51,7 @@
 		"pyodide": "^0.27.2"
 	},
 	"devDependencies": {
+		"@stryker-mutator/core": "10.0.0",
 		"@types/node": "^22.0.0",
 		"husky": "^9.1.7",
 		"oxlint": "^1.68.0",

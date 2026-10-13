@@ -24,6 +24,24 @@ jobs:
           cache: 'pip'
           cache-dependency-path: python/pyproject.toml
 
+      # the TypeScript oracle and its type probes judge what the emitter writes for every definition (pytest, fuzz,
+      # corpora): node runs create's scripts, tsc comes from node_modules
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 'latest'
+          cache: 'npm'
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v5
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        working-directory: .
+        run: npm ci
+
       - name: Install engine (with dev extras)
         run: pip install -e ".[dev]"
 

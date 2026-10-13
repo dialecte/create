@@ -1,0 +1,22 @@
+{
+	"03234958b63ce242": {
+		"line": 32,
+		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
+		"equivalent": "tsRecord reads data[key] for keys of data: the fallback is never read."
+	},
+	"b261174bce9d6683": {
+		"line": 43,
+		"mutation": "MethodExpression: names.filter(isIdentifier) -> names",
+		"equivalent": "A non-identifier name kept as its own type name is overwritten by its PascalCase in the next loop; it cannot equal a PascalCase name (it holds a character no identifier holds)."
+	},
+	"ddf6e8b3634106b3": {
+		"line": 74,
+		"mutation": "Regex: /[^0-9A-Za-z_]+/ -> /[^0-9A-Za-z_]/",
+		"equivalent": "Empty parts are filtered out: splitting on one separator or on a run of them gives the same non-empty parts."
+	},
+	"e7feb9fff312202e": {
+		"line": 75,
+		"mutation": "OptionalChaining: part[0]?.toUpperCase -> part[0].toUpperCase",
+		"equivalent": "Parts are non-empty after the filter: part[0] exists."
+	}
+}

@@ -114,6 +114,59 @@ def read_back(schema: CorpusSchema) -> list[str]:
     return [] if read == built else ['differs']
 
 
+def derivation(schema: CorpusSchema) -> list[str]:
+    """The constants create's TypeScript emitter writes for the definition agree with it (`derivation_of`)."""
+    generated = schema.generated
+    if isinstance(generated, Exception):
+        return []
+    return derivation_of(generated.definition, generated.types)
+
+
+# the oracle of the TypeScript derivations, run by node on generated data (scripts/derive-oracle)
+DERIVE_ORACLE = Path(__file__).resolve().parents[2] / 'scripts' / 'derive-oracle' / 'run-oracle.ts'
+
+
+def derivation_of(definition: dict[str, Any], types: dict[str, Any]) -> list[str]:
+    """Each fact the emitted constants state that the definition does not imply, as `<fact>/<element>` or
+    `<fact>/<parent>><element>`; `does-not-run` when the oracle itself fails. Nothing where create's scripts are not
+    beside the package (a mutant copy of it: the oracle judges the TypeScript side, not the generator)."""
+    if not DERIVE_ORACLE.exists():
+        return []
+    with tempfile.TemporaryDirectory() as scratch:
+        data = Path(scratch) / 'generated.json'
+        data.write_text(json.dumps({'definition': definition, 'types': types}), encoding='utf-8')
+        run = subprocess.run(['node', str(DERIVE_ORACLE), str(data)], capture_output=True, text=True)
+    if run.returncode != 0:
+        return ['does-not-run']
+    return json.loads(run.stdout)
+
+
+def write_probed(schema: CorpusSchema, folder: Path) -> bool:
+    """The schema's generated files - the definition, the constants and types the TypeScript emitter writes - and
+    their type probes, in `folder` for `failing_types`; False when there is nothing to write (no definition, no
+    root, no oracle beside the package)."""
+    generated = schema.generated
+    if isinstance(generated, Exception) or not DERIVE_ORACLE.exists():
+        return False
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / 'definition.generated.ts').write_text(definition_source(generated.definition, generated.types), encoding='utf-8')
+    data = folder.parent / f'{folder.name}.json'
+    data.write_text(json.dumps({'definition': generated.definition, 'types': generated.types}), encoding='utf-8')
+    run = subprocess.run(['node', str(DERIVE_ORACLE), str(data), '--write', str(folder)], capture_output=True, text=True)
+    data.unlink()
+    return run.returncode == 0 and (folder / 'probes.ts').exists()
+
+
+def failing_types(folders: list[Path]) -> list[Path]:
+    """The folders `write_probed` filled whose files or probes do not type-check, judged in one tsc run."""
+    if not folders:
+        return []
+    run = subprocess.run(['node', str(DERIVE_ORACLE.parent / 'type-check.ts'), *map(str, folders)], capture_output=True, text=True)
+    if run.returncode != 0:
+        return list(folders)
+    return [Path(folder) for folder in json.loads(run.stdout)]
+
+
 def constructs(schema: CorpusSchema) -> list[str]:
     table = read_table()
     found = constructs_of(schema.entry, locations=schema.locations)

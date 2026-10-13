@@ -1,0 +1,17 @@
+{
+	"cd96c0ca5dff595b": {
+		"line": 41,
+		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
+		"equivalent": "The closure starts from tags of the definition: graph[start] exists, the fallback is never read."
+	},
+	"a8ab62c6d1684723": {
+		"line": 44,
+		"mutation": "ConditionalExpression: next === undefined -> false",
+		"equivalent": "pending holds only strings: pop() returns undefined only when the loop condition already ended it."
+	},
+	"cd96c0ca5dff595b-1": {
+		"line": 46,
+		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
+		"equivalent": "Every reached tag is a key of the graph (built over the definition's keys): the fallback is never read."
+	}
+}

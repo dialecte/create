@@ -1,0 +1,27 @@
+{
+	"ca7611286e6ae50f": {
+		"line": 36,
+		"mutation": "ConditionalExpression: declarationId === undefined -> false",
+		"equivalent": "With no id held, declarations[undefined] is undefined either way."
+	},
+	"3ba381c9ddc86e77": {
+		"line": 36,
+		"mutation": "OptionalChaining: child.declarations?.[declarationId] -> child.declarations[declarationId]",
+		"equivalent": "With no id held, declarations[undefined] is undefined either way."
+	},
+	"5beec7800bace693": {
+		"line": 45,
+		"mutation": "OptionalChaining: attributes.details[name]?.required -> attributes.details[name].required",
+		"equivalent": "Every name of an attribute sequence has its details entry (the generator writes both): the guard is never taken."
+	},
+	"69541fbdba2ac88d": {
+		"line": 53,
+		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
+		"equivalent": "details[childName] is read only for a child of the root's content model; an absent entry and an empty one both give no declaration."
+	},
+	"69541fbdba2ac88d-1": {
+		"line": 110,
+		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
+		"equivalent": "A wildcard particle names no element; a placeholder name is never an element of the definition, so find() skips it either way."
+	}
+}

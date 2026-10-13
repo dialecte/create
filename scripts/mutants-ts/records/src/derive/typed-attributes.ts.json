@@ -1,0 +1,17 @@
+{
+	"c10a4ed126cfe586": {
+		"line": 63,
+		"mutation": "EqualityOperator: hints.length > 0 -> hints.length >= 0",
+		"equivalent": "An empty hint list adds an empty enumeration, which every reader treats as none (enumerated, the emitted value type, the comparison of declarations, both sides alike)."
+	},
+	"93895d49949fe7fc": {
+		"line": 63,
+		"mutation": "ConditionalExpression: hints.length > 0 -> true",
+		"equivalent": "An empty hint list adds an empty enumeration, which every reader treats as none (enumerated, the emitted value type, the comparison of declarations, both sides alike)."
+	},
+	"e44d2593d700dbd2": {
+		"line": 84,
+		"mutation": "Regex: /^\\{[^}]*\\}/ -> /\\{[^}]*\\}/",
+		"equivalent": "A Clark name starts with its {uri} or holds no brace at all: anchoring the match changes nothing."
+	}
+}

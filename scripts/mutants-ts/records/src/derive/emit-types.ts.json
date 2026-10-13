@@ -1,0 +1,12 @@
+{
+	"a41cb6f354c67cf7": {
+		"line": 31,
+		"mutation": "ConditionalExpression: element === undefined -> false",
+		"equivalent": "The emitter iterates the definition's own keys: the element exists, the guard is never taken."
+	},
+	"952d7f3845a0b874": {
+		"line": 40,
+		"mutation": "EqualityOperator: first.parent < second.parent -> first.parent <= second.parent",
+		"equivalent": "Two declared edges of one child never share a parent: < and <= sort them the same."
+	}
+}

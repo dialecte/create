@@ -207,7 +207,7 @@ def judge(entry: Path, draw: Draw) -> tuple[list[str], list[str]]:
     findings = [f'generation/{item}' for item in corpus.generation(schema)]
     if findings:
         return findings, []
-    for check in (corpus.constructs, corpus.identity_paths, corpus.preserved_sets):
+    for check in (corpus.constructs, corpus.identity_paths, corpus.preserved_sets, corpus.derivation):
         findings += [f'{check.__name__}/{item}' for item in check(schema)]
     disputed = []
     for check in (corpus.variants, corpus.attribute_wildcards):
@@ -404,7 +404,8 @@ def main(argv: list[str] | None = None) -> int:
     arguments = parser.parse_args(argv)
     report = run(seed=arguments.seed, count=arguments.count, out=arguments.out)
     print(
-        f'{report["drawn"]} drawn, {report["loaded"]} loaded by both libraries, {len(report["hangs"])} hanging a library, '
+        f'{report["drawn"]} drawn, {report["loaded"]} loaded by both libraries, {report["typed"]} type-checked with their '
+        f'probes, {len(report["hangs"])} hanging a library, '
         f'{len(report["failing"])} failing, {len(report["disputed"])} disputed between the libraries'
     )
     for name, findings in report['failing'].items():
@@ -415,8 +416,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def run(*, seed: str, count: int, out: Path) -> dict:
-    report: dict = {'drawn': 0, 'loaded': 0, 'hangs': [], 'failing': {}, 'disputed': {}}
+    report: dict = {'drawn': 0, 'loaded': 0, 'typed': 0, 'hangs': [], 'failing': {}, 'disputed': {}}
     scratch = Path(tempfile.mkdtemp(prefix='dialecte-fuzz-'))
+    # each judged draw's generated files and type probes, type-checked together once the draws are judged
+    probed: dict[Path, tuple[str, Draw]] = {}
     try:
         for index in range(count):
             rng = random.Random(f'{seed}:{index}')
@@ -439,6 +442,14 @@ def run(*, seed: str, count: int, out: Path) -> dict:
             if disputed:
                 write(draw, out / f'{name}-disputed')
                 report['disputed'][name] = disputed
+            folder = scratch / 'probed' / name
+            if not findings and corpus.write_probed(CorpusSchema(id=name, entry=entry), folder):
+                probed[folder] = (name, draw)
+        report['typed'] = len(probed)
+        for folder in corpus.failing_types(list(probed)):
+            name, draw = probed[folder]
+            write(draw, out / name)
+            report['failing'][name] = ['types/probes']
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
     return report
