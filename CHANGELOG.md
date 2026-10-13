@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Breaking (generated types):** an element that may take another type with `xsi:type` gets a union of attribute types on `'xsi:type'` instead of one type with an open hint. Its own member has its attributes, with `'xsi:type'` naming its own type or absent (no own member for an abstract type: an instance names one of the others); each type it may take has its member `AttributesType_<type>`, `'xsi:type'` required. Each literal is the value core stores: the local name in the default namespace, `prefix:local` in another. Reading an attribute only some types have now needs a check of `'xsi:type'` first. Every member lists every attribute of the union, those it lacks as optional `undefined` (a local `Exclusive` helper in the types file): the attribute names of the element reach every member, and an attribute of another type is refused once a type is named. Elements without such types are generated as before.
+- **Breaking (generated types):** an element that may take another type with `xsi:type` gets a union of attribute types on `'xsi:type'` instead of one type with an open hint. Its own member has its attributes, with `'xsi:type'` naming its own type or absent (no own member for an abstract type: an instance names one of the others); each type it may take has its member, `'xsi:type'` required. Each member is a type of its own, named after the union: `AttributesGetDirectory_tSCSM`, `AttributesGetDirectory_Own` for the element's own (a number added if another type of the file has the name). Each literal is the value core stores: the local name in the default namespace, `prefix:local` in another. Reading an attribute only some types have now needs a check of `'xsi:type'` first. Every member is written out with every attribute of the union, those it lacks as optional `undefined`: the attribute names of the element reach every member, and an attribute of another type is refused once a type is named - and TypeScript checks them as written, no helper type to compute. Elements without such types are generated as before.
 - **Breaking (CLI):** `create --namespace` is removed. The default namespace is the root element's, which the generated `xsi:type` values and the scaffold's namespaces check rely on; any other made a package that failed its own test.
 - A flag a command does not take is refused by name instead of ignored.
 - `OptionalAttributeNames` lists the attributes of every member of a union, not only those all members share.
@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A scaffolded package whose schema writes its default namespace with a prefix (PLC's `ppx`) no longer declares that namespace a second time under the prefix, and its namespaces test leaves the default namespace out.
 - Two types sharing a local name in two namespaces no longer get the same `xsi:type` value in the types (`'tA'` twice): the one outside the default namespace is `'prefix:tA'`.
 - An element reached only through a type an element of `xs:anyType` may take no longer lists that element as its parent: such an element admits any content, so the parent and child tables now agree (it held no child either).
 
