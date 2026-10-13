@@ -71,10 +71,14 @@ function namespaceEntries(namespaces: readonly { prefix: string; uri: string }[]
 			let key = prefix
 			for (let suffix = 2; keys.has(key); suffix++) key = `${prefix}_${suffix}`
 			keys.add(key)
-			const quoted = (value: string) => `'${escapeForSingleQuotedString(value)}'`
 			return `\t${tsKey(key)}: { uri: ${quoted(uri)}, prefix: ${quoted(prefix)} },\n`
 		})
 		.join('')
+}
+
+/** A value as a single-quoted TypeScript string. */
+function quoted(value: string): string {
+	return `'${escapeForSingleQuotedString(value)}'`
 }
 
 /** The namespace URI lands inside a single-quoted TypeScript string: it must not end it. */

@@ -188,7 +188,7 @@ describe('type probes', () => {
 		const folders = ['/f/a', '/f/b', '/f/c', '/f/d', '/f/e']
 		const compiled: number[] = []
 		/** Crashes on more than two folders, like tsc out of memory; reports an error in folder c. */
-		const compile = (batch: readonly string[]): Compiled => {
+		function compile(batch: readonly string[]): Compiled {
 			compiled.push(batch.length)
 			if (batch.length > 2) return { outcome: 'crashed', output: '' }
 			return batch.includes('/f/c')

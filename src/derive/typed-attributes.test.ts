@@ -6,7 +6,10 @@ import { enumerated, typedAttributes } from './typed-attributes.ts'
 import type { DataTypeData, ElementData } from './derive.types.ts'
 
 const nothing = { sequence: [], details: {} }
-const versioned = (fixed: string) => ({ sequence: ['version'], details: { version: { fixed } } })
+/** A `version` attribute fixed to `fixed`. */
+function versioned(fixed: string): ElementData['attributes'] {
+	return { sequence: ['version'], details: { version: { fixed } } }
+}
 
 describe('typedAttributes', () => {
 	it('a tag level with a value of its own (its declarations agree) -> that value, not hints', () => {
@@ -23,10 +26,13 @@ describe('typedAttributes', () => {
 	})
 
 	it('a tag level whose attribute is typed, declarations enumerating it -> its own type, not hints', () => {
-		const enumerating = (values: string[]) => ({
-			sequence: ['mode'],
-			details: { mode: { type: { builtin: 'token', facets: { enumeration: values } } } },
-		})
+		/** A `mode` attribute enumerating `values`. */
+		function enumerating(values: string[]): ElementData['attributes'] {
+			return {
+				sequence: ['mode'],
+				details: { mode: { type: { builtin: 'token', facets: { enumeration: values } } } },
+			}
+		}
 		const tag: ElementData = {
 			parents: [],
 			attributes: { sequence: ['mode'], details: { mode: { type: { builtin: 'token' } } } },

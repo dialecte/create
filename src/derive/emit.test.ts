@@ -202,7 +202,10 @@ describe('emitted order and edge shapes', () => {
 	// `definition` lists Root, PhysConn, Address, Empty, P: each table must come out sorted whatever that order
 	const constants = emitConstantsSource({ definition, root: 'Root', types }).split('\n')
 	const emitted = emitTypesSource({ definition, types, root: 'Root' }).split('\n')
-	const order = (lines: string[], wanted: string[]) => wanted.map((line) => lines.indexOf(line))
+	/** Where each wanted line is in `lines`: -1 for one missing. */
+	function order(lines: string[], wanted: string[]): number[] {
+		return wanted.map((line) => lines.indexOf(line))
+	}
 
 	it('the attribute skeletons by tag -> sorted by element', () => {
 		const positions = order(constants, [
@@ -291,12 +294,10 @@ describe('emitted order and edge shapes', () => {
 describe('emitTypesSource - xsi:type unions', () => {
 	const DEFAULT = 'urn:default'
 	const EXT = 'urn:ext'
-	const element = (content: Partial<ElementData>): ElementData => ({
-		parents: [],
-		attributes: noChildren,
-		children: noChildren,
-		...content,
-	})
+	/** An element of no parent, attribute or child but those `content` gives. */
+	function element(content: Partial<ElementData>): ElementData {
+		return { parents: [], attributes: noChildren, children: noChildren, ...content }
+	}
 	const onlyA: ElementData['attributes'] = { sequence: ['a'], details: { a: { required: true } } }
 	const unions: DefinitionData = {
 		Root: element({ namespace: { prefix: '', uri: DEFAULT }, attributes: onlyA }),

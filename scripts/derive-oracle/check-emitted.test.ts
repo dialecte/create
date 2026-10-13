@@ -33,12 +33,14 @@ describe('checkEmitted', () => {
 
 	it('every element held by another, one of them global -> the files written for it, no disagreement', async () => {
 		/** A global element held by `other`, holding it in turn. */
-		const held = (other: string): DefinitionData[string] => ({
-			parents: [other],
-			global: true,
-			attributes: { sequence: [], details: {} },
-			children: { sequence: [other], details: {} },
-		})
+		function held(other: string): DefinitionData[string] {
+			return {
+				parents: [other],
+				global: true,
+				attributes: { sequence: [], details: {} },
+				children: { sequence: [other], details: {} },
+			}
+		}
 		assert.deepEqual(
 			await checkEmitted({ definition: { A: held('B'), B: held('A') }, types: {} }),
 			[],
