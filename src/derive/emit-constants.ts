@@ -11,7 +11,7 @@ import {
 } from './ts-syntax.ts'
 import { attributeShape, shapeKeys, xsiTypeLiterals } from './xsi-type-shapes.ts'
 
-import type { DefinitionData, LiteralOf, TypesData } from './derive.types.ts'
+import type { AttributeShape, DefinitionData, LiteralOf, TypesData } from './derive.types.ts'
 
 /** `constants.generated.ts`: the lookup tables a dialecte config is built from, derived from the definition. */
 export function emitConstantsSource(params: {
@@ -50,7 +50,7 @@ export function emitConstantsSource(params: {
 		'',
 		`export const SINGLETON_ELEMENTS = ${tsStringArray(deriveSingletons({ definition, root, types }))} as const`,
 		'',
-		`const ATTRIBUTES_BY_TAG = ${attributesByTag({ definition, types, literalOf, names })} as const`,
+		`const ATTRIBUTES_BY_TAG = ${attributesByTag({ definition, types, literalOf })} as const`,
 		'',
 		'/**',
 		' * Attribute skeletons: one key per attribute name, typed for the type system; what an attribute',
@@ -73,22 +73,22 @@ function attributesByTag(params: {
 	definition: DefinitionData
 	types: TypesData
 	literalOf: LiteralOf
-	names: readonly string[]
 }): string {
-	const { definition, types, literalOf, names } = params
+	const { definition, types, literalOf } = params
 	const lines = ['{']
-	for (const name of names) {
-		const element = definition[name]
-		const sequence =
-			element === undefined
-				? []
-				: shapeKeys({ shape: attributeShape({ content: element, types, literalOf }) })
+	// by element name, sorted
+	const elements = Object.entries(definition).sort(([first], [second]) => (first < second ? -1 : 1))
+	for (const [name, element] of elements) {
+		const shape = attributeShape({ content: element, types, literalOf })
+		const sequence = shapeKeys({ shape })
 		if (sequence.length === 0) {
 			lines.push(`\t${tsKey(name)}: {} as AttributesOf<'${name}'>,`)
 			continue
 		}
 		lines.push(`\t${tsKey(name)}: {`)
-		for (const attribute of sequence) lines.push(`\t\t${tsKey(attribute)}: '' as string,`)
+		for (const attribute of sequence) {
+			lines.push(`\t\t${tsKey(attribute)}: ${skeletonValue(shape)},`)
+		}
 		lines.push(`\t} as AttributesOf<'${name}'>,`)
 	}
 	lines.push('}')
@@ -116,9 +116,7 @@ function attributesByParent(params: {
 				continue
 			}
 			const typeName = edgeTypeName({ typeNames, element: child, parent })
-			lines.push(
-				`\t\t\t${tsKey(child)}: ${skeleton(shapeKeys({ shape: declared }))} as ${typeName},`,
-			)
+			lines.push(`\t\t\t${tsKey(child)}: ${skeleton(declared)} as ${typeName},`)
 		}
 		lines.push('\t\t},')
 	}
@@ -126,9 +124,19 @@ function attributesByParent(params: {
 	return lines.join('\n')
 }
 
-function skeleton(sequence: readonly string[]): string {
+function skeleton(shape: AttributeShape): string {
+	const sequence = shapeKeys({ shape })
 	if (sequence.length === 0) return '{}'
-	return `{ ${sequence.map((attribute) => `${tsKey(attribute)}: '' as string`).join(', ')} }`
+	const value = skeletonValue(shape)
+	return `{ ${sequence.map((attribute) => `${tsKey(attribute)}: ${value}`).join(', ')} }`
+}
+
+/**
+ * The value of a skeleton key, typed so the skeleton casts to its attribute type: a member of a union has the keys of
+ * the others as `?: undefined`, which a `string` would not overlap.
+ */
+function skeletonValue(shape: AttributeShape): string {
+	return shape.variants.length === 0 ? "'' as string" : "'' as string | undefined"
 }
 
 function requiredAttributes(params: { definition: DefinitionData }): Record<string, string[]> {

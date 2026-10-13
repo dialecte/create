@@ -56,6 +56,7 @@ export function emitTypesSource(params: {
 		'',
 		'export type AvailableElement = (typeof ELEMENT_NAMES)[number]',
 		'',
+		...(variants.size === 0 ? [] : EXCLUSIVE),
 	]
 
 	for (const { literal, attributes } of [...variants.values()].sort((first, second) =>
@@ -131,8 +132,27 @@ export function emitTypesSource(params: {
 }
 
 /**
- * An attribute type: its own attributes alone, or - where it may name a type with `xsi:type` - the union of its own
- * member (closed: `xsi:type` names its own type or is absent) and one per type it may name.
+ * The helper a union on `xsi:type` is written with: every member lists every key of the union - one it does not have
+ * as `?: undefined` -, so `keyof` reaches each member's attributes (and a record of one element stays one of any) and
+ * naming a type rules the other types' attributes out by type, while a write may still clear them.
+ */
+const EXCLUSIVE = [
+	'/**',
+	' * A union on xsi:type whose every member lists every key of the union - one it does not have as `?: undefined` - so',
+	" * `keyof` reaches each member's attributes and naming a type rules out the other types'.",
+	' */',
+	'type Exclusive<Members, Keys extends PropertyKey = AllKeys<Members>> = Members extends unknown',
+	'\t? Flat<Members & { [K in Exclude<Keys, keyof Members>]?: undefined }>',
+	'\t: never',
+	'type AllKeys<Members> = Members extends unknown ? keyof Members : never',
+	'/** One object type per member, not an intersection: what TypeScript picks a member of a large union by. */',
+	'type Flat<Intersection> = { [K in keyof Intersection]: Intersection[K] }',
+	'',
+]
+
+/**
+ * An attribute type: its own attributes alone, or - where it may name a type with `xsi:type` - the exclusive union of
+ * its own member (closed: `xsi:type` names its own type or is absent) and one per type it may name.
  */
 function shapeType(params: {
 	typeName: string
@@ -142,7 +162,8 @@ function shapeType(params: {
 	const { typeName, shape, variantTypeName } = params
 	const named = shape.variants.map(({ literal }) => variantTypeName(literal))
 	// no own member: an abstract type, which has variants
-	if (shape.own === undefined) return [`export type ${typeName} = ${named.join(' | ')}`, '']
+	if (shape.own === undefined)
+		return [`export type ${typeName} = Exclusive<${named.join(' | ')}>`, '']
 	if (named.length === 0) {
 		const { attributes } = shape.own
 		return [`export type ${typeName} = {`, ...attributeLines({ attributes, indent: '\t' }), '}', '']
@@ -150,12 +171,13 @@ function shapeType(params: {
 	const ownType =
 		shape.own.literals.length === 0 ? 'never' : shape.own.literals.map(tsString).join(' | ')
 	return [
-		`export type ${typeName} =`,
+		`export type ${typeName} = Exclusive<`,
 		'\t| {',
 		...attributeLines({ attributes: shape.own.attributes, indent: '\t\t\t' }),
 		`\t\t\t${tsKey(XSI_TYPE)}?: ${ownType}`,
 		'\t  }',
 		...named.map((name) => `\t| ${name}`),
+		'>',
 		'',
 	]
 }

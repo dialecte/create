@@ -4,6 +4,17 @@ import type { ELEMENT_NAMES, REQUIRED_ATTRIBUTES } from './constants.generated'
 
 export type AvailableElement = (typeof ELEMENT_NAMES)[number]
 
+/**
+ * A union on xsi:type whose every member lists every key of the union - one it does not have as `?: undefined` - so
+ * `keyof` reaches each member's attributes and naming a type rules out the other types'.
+ */
+type Exclusive<Members, Keys extends PropertyKey = AllKeys<Members>> = Members extends unknown
+	? Flat<Members & { [K in Exclude<Keys, keyof Members>]?: undefined }>
+	: never
+type AllKeys<Members> = Members extends unknown ? keyof Members : never
+/** One object type per member, not an intersection: what TypeScript picks a member of a large union by. */
+type Flat<Intersection> = { [K in keyof Intersection]: Intersection[K] }
+
 export type AttributesType_ExtTDD_1A = {
 	'xsi:type': 'ext:tDD_1A'
 	aDD_1: string
@@ -290,7 +301,7 @@ export type AttributesDDD_1 = {
 	'ext:cDDD_1'?: string
 }
 
-export type AttributesDDD_2 =
+export type AttributesDDD_2 = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
@@ -310,16 +321,18 @@ export type AttributesDDD_2 =
 	| AttributesType_ExtTDD_1C
 	| AttributesType_ExtTDD_3
 	| AttributesType_ExtTDD_3A
+>
 
 export type AttributesDDD_3 = {}
 
-export type AttributesDD_1 =
+export type AttributesDD_1 = Exclusive<
 	| AttributesType_tDD_1A
 	| AttributesType_tDD_1B
 	| AttributesType_ExtTDD_1A
 	| AttributesType_ExtTDD_1C
+>
 
-export type AttributesDD_2 =
+export type AttributesDD_2 = Exclusive<
 	| {
 			aDD_2: string
 			bDD_2?: string
@@ -327,6 +340,7 @@ export type AttributesDD_2 =
 			'xsi:type'?: 'tDD_2'
 	  }
 	| AttributesType_tDD_2A
+>
 
 export type AttributesDD_3 = {
 	'ext:aDD_3': string

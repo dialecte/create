@@ -1,12 +1,7 @@
 {
-	"66cb0bb67d906dbd": {
-		"line": 83,
-		"mutation": "ConditionalExpression: element === undefined -> false",
-		"equivalent": "The emitter iterates the definition's own keys: the element exists, the fallback is never read."
-	},
-	"97c45c15fe70f37c": {
-		"line": 84,
-		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
-		"equivalent": "The emitter iterates the definition's own keys: the element exists, the fallback is never read."
+	"c04b289cd0b4b5ed": {
+		"line": 80,
+		"mutation": "EqualityOperator: first < second -> first <= second",
+		"equivalent": "Element names are keys of the definition, never equal: < and <= sort them the same."
 	}
 }

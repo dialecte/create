@@ -4,6 +4,17 @@ import type { ELEMENT_NAMES, REQUIRED_ATTRIBUTES } from './constants.generated'
 
 export type AvailableElement = (typeof ELEMENT_NAMES)[number]
 
+/**
+ * A union on xsi:type whose every member lists every key of the union - one it does not have as `?: undefined` - so
+ * `keyof` reaches each member's attributes and naming a type rules out the other types'.
+ */
+type Exclusive<Members, Keys extends PropertyKey = AllKeys<Members>> = Members extends unknown
+	? Flat<Members & { [K in Exclude<Keys, keyof Members>]?: undefined }>
+	: never
+type AllKeys<Members> = Members extends unknown ? keyof Members : never
+/** One object type per member, not an intersection: what TypeScript picks a member of a large union by. */
+type Flat<Intersection> = { [K in keyof Intersection]: Intersection[K] }
+
 export type AttributesType_tAngular = {
 	'xsi:type': 'tAngular'
 	corners: string
@@ -225,7 +236,7 @@ export type AttributesA = {
 	n?: string
 }
 
-export type AttributesAnything =
+export type AttributesAnything = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
@@ -275,6 +286,7 @@ export type AttributesAnything =
 	| AttributesType_tTruck
 	| AttributesType_tVehicle
 	| AttributesType_tWarm
+>
 
 export type AttributesB = {
 	n?: string
@@ -322,7 +334,7 @@ export type AttributesDown = {
 	n?: string
 }
 
-export type AttributesEm =
+export type AttributesEm = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
@@ -331,6 +343,7 @@ export type AttributesEm =
 	| AttributesType_tColors
 	| AttributesType_tEntry
 	| AttributesType_tWarm
+>
 
 export type AttributesEmpty = {}
 
@@ -347,23 +360,23 @@ export type AttributesExtra = {
 
 export type AttributesExtras = {}
 
-export type AttributesFigure =
-	| AttributesType_XTRound
-	| AttributesType_tAngular
-	| AttributesType_tRound
+export type AttributesFigure = Exclusive<
+	AttributesType_XTRound | AttributesType_tAngular | AttributesType_tRound
+>
 
 export type AttributesFlag = {}
 
-export type AttributesGadget =
+export type AttributesGadget = Exclusive<
 	| {
 			model?: string
 			'xsi:type'?: 'tGadget'
 	  }
 	| AttributesType_tGadgetLite
+>
 
 export type AttributesGarage = {}
 
-export type AttributesGreeting =
+export type AttributesGreeting = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
@@ -372,6 +385,7 @@ export type AttributesGreeting =
 	| AttributesType_tColors
 	| AttributesType_tEntry
 	| AttributesType_tWarm
+>
 
 export type AttributesGroup = {}
 
@@ -385,7 +399,7 @@ export type AttributesHandle = {
 
 export type AttributesHomonyms = {}
 
-export type AttributesItem =
+export type AttributesItem = Exclusive<
 	| {
 			name?: string
 			qty?: string
@@ -396,13 +410,14 @@ export type AttributesItem =
 	| AttributesType_tColors
 	| AttributesType_tEntry
 	| AttributesType_tWarm
+>
 
 export type AttributesItemInCrate = {
 	name: string
 	qty?: string
 }
 
-export type AttributesItemInExtended =
+export type AttributesItemInExtended = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
@@ -411,8 +426,9 @@ export type AttributesItemInExtended =
 	| AttributesType_tColors
 	| AttributesType_tEntry
 	| AttributesType_tWarm
+>
 
-export type AttributesItemInRack =
+export type AttributesItemInRack = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
@@ -421,6 +437,7 @@ export type AttributesItemInRack =
 	| AttributesType_tColors
 	| AttributesType_tEntry
 	| AttributesType_tWarm
+>
 
 export type AttributesItemInShelf = {
 	name: string
@@ -442,13 +459,14 @@ export type AttributesLid = {
 	size?: string
 }
 
-export type AttributesLoad =
+export type AttributesLoad = Exclusive<
 	| {
 			unit: string
 			'xsi:type'?: 'tMeasure'
 	  }
 	| AttributesType_tBoundedMeasure
 	| AttributesType_tRangedMeasure
+>
 
 export type AttributesLoose = {
 	plain?: string
@@ -463,23 +481,25 @@ export type AttributesMay = {
 	n?: string
 }
 
-export type AttributesMaybe =
+export type AttributesMaybe = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
 	| AttributesType_tLevel
+>
 
-export type AttributesMeasure =
+export type AttributesMeasure = Exclusive<
 	| {
 			unit: string
 			'xsi:type'?: 'tMeasure'
 	  }
 	| AttributesType_tBoundedMeasure
 	| AttributesType_tRangedMeasure
+>
 
 export type AttributesMeasures = {}
 
-export type AttributesMount =
+export type AttributesMount = Exclusive<
 	| {
 			label?: string
 			seats?: string
@@ -491,13 +511,13 @@ export type AttributesMount =
 	| AttributesType_tCar
 	| AttributesType_tCompactCar
 	| AttributesType_tTruck
+>
 
-export type AttributesMountInGarage =
-	| AttributesType_XTRound
-	| AttributesType_tAngular
-	| AttributesType_tRound
+export type AttributesMountInGarage = Exclusive<
+	AttributesType_XTRound | AttributesType_tAngular | AttributesType_tRound
+>
 
-export type AttributesMountInHomonyms =
+export type AttributesMountInHomonyms = Exclusive<
 	| {
 			seats?: string
 			'xsi:type'?: 'tVehicle'
@@ -505,12 +525,13 @@ export type AttributesMountInHomonyms =
 	| AttributesType_tCar
 	| AttributesType_tCompactCar
 	| AttributesType_tTruck
+>
 
 export type AttributesMust = {
 	n?: string
 }
 
-export type AttributesNew =
+export type AttributesNew = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
@@ -519,6 +540,7 @@ export type AttributesNew =
 	| AttributesType_tColors
 	| AttributesType_tEntry
 	| AttributesType_tWarm
+>
 
 export type AttributesNode = {
 	name: string
@@ -526,7 +548,7 @@ export type AttributesNode = {
 
 export type AttributesNote = {}
 
-export type AttributesOld =
+export type AttributesOld = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
@@ -535,6 +557,7 @@ export type AttributesOld =
 	| AttributesType_tColors
 	| AttributesType_tEntry
 	| AttributesType_tWarm
+>
 
 export type AttributesOne = {
 	n?: string
@@ -549,7 +572,7 @@ export type AttributesPara = {
 	'xml:lang'?: string
 }
 
-export type AttributesPlain =
+export type AttributesPlain = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
@@ -558,8 +581,9 @@ export type AttributesPlain =
 	| AttributesType_tColors
 	| AttributesType_tEntry
 	| AttributesType_tWarm
+>
 
-export type AttributesPlate =
+export type AttributesPlate = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
@@ -568,16 +592,18 @@ export type AttributesPlate =
 	| AttributesType_tColors
 	| AttributesType_tEntry
 	| AttributesType_tWarm
+>
 
 export type AttributesRack = {}
 
-export type AttributesRanged =
+export type AttributesRanged = Exclusive<
 	| {
 			min?: string
 			unit: string
 			'xsi:type'?: 'tRangedMeasure'
 	  }
 	| AttributesType_tBoundedMeasure
+>
 
 export type AttributesRef = {
 	target?: string
@@ -592,13 +618,14 @@ export type AttributesRich = {
 	n?: string
 }
 
-export type AttributesRide =
+export type AttributesRide = Exclusive<
 	| {
 			seats?: string
 			'xsi:type'?: 'tVehicle'
 	  }
 	| AttributesType_tCar
 	| AttributesType_tTruck
+>
 
 export type AttributesRight = {
 	n?: string
@@ -628,11 +655,12 @@ export type AttributesThree = {
 	n?: string
 }
 
-export type AttributesTool =
+export type AttributesTool = Exclusive<
 	| {
 			'xsi:type'?: 'tTool'
 	  }
 	| AttributesType_tMallet
+>
 
 export type AttributesTorture = {
 	id?: string
@@ -655,7 +683,7 @@ export type AttributesUp = {
 	n?: string
 }
 
-export type AttributesValue =
+export type AttributesValue = Exclusive<
 	| {
 			'xsi:type'?: 'tCodeOrNumber'
 	  }
@@ -663,16 +691,18 @@ export type AttributesValue =
 	| AttributesType_tCodeOrNumberEnum
 	| AttributesType_tCodeStrict
 	| AttributesType_tLevel
+>
 
-export type AttributesVehicle =
+export type AttributesVehicle = Exclusive<
 	| {
 			seats?: string
 			'xsi:type'?: 'tVehicle'
 	  }
 	| AttributesType_tCar
 	| AttributesType_tTruck
+>
 
-export type Attributesbare =
+export type Attributesbare = Exclusive<
 	| {
 			'xsi:type'?: never
 	  }
@@ -681,6 +711,7 @@ export type Attributesbare =
 	| AttributesType_tColors
 	| AttributesType_tEntry
 	| AttributesType_tWarm
+>
 
 export type AttributesMap = {
 	A: AttributesA

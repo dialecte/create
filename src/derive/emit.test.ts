@@ -98,6 +98,8 @@ describe('emitConstantsSource', () => {
 	const source = emitConstantsSource({ definition, root: 'Root', types })
 
 	const expectedLines: Record<string, string> = {
+		"the element names -> sorted, whatever the definition's order":
+			"export const ELEMENT_NAMES = ['Address', 'Empty', 'P', 'PhysConn', 'Root'] as const",
 		'the root -> ROOT_ELEMENT': "export const ROOT_ELEMENT = 'Root' as const",
 		'a child at most once under the root -> a singleton, a repeatable one not':
 			"export const SINGLETON_ELEMENTS = ['Address', 'Empty', 'Root'] as const",
@@ -106,7 +108,7 @@ describe('emitConstantsSource', () => {
 		'an element without attributes -> an empty skeleton typed by its element':
 			"\tEmpty: {} as AttributesOf<'Empty'>,",
 		'a homonym -> its own skeleton under each parent: xsi:type and what the types it may name add':
-			"\t\t\tP: { type: '' as string, 'xsi:type': '' as string, mac: '' as string } as AttributesPInAddress,",
+			"\t\t\tP: { type: '' as string | undefined, 'xsi:type': '' as string | undefined, mac: '' as string | undefined } as AttributesPInAddress,",
 		'an element declared once -> the by-tag object under its parent':
 			'\t\t\tAddress: ATTRIBUTES_BY_TAG.Address,',
 		'required attributes -> listed for their element, sorted': "\tRoot: ['id', 'version'],",
@@ -121,9 +123,9 @@ describe('emitTypesSource', () => {
 
 	const expectedBlocks: Record<string, string> = {
 		'a tag declared several ways -> its own member with the values any declaration accepts, one per type any may name':
-			"export type AttributesP =\n\t| {\n\t\t\ttype?: 'IP' | 'MAC' | 'Plug' | (string & {})\n\t\t\t'xsi:type'?: never\n\t  }\n\t| AttributesType_tP_IP\n\t| AttributesType_tP_MAC\n",
+			"export type AttributesP = Exclusive<\n\t| {\n\t\t\ttype?: 'IP' | 'MAC' | 'Plug' | (string & {})\n\t\t\t'xsi:type'?: never\n\t  }\n\t| AttributesType_tP_IP\n\t| AttributesType_tP_MAC\n>\n",
 		'an enumeration under a parent -> the union of its values; one member per type it may name':
-			"export type AttributesPInAddress =\n\t| {\n\t\t\ttype: 'IP' | 'MAC' | (string & {})\n\t\t\t'xsi:type'?: never\n\t  }\n\t| AttributesType_tP_IP\n\t| AttributesType_tP_MAC\n",
+			"export type AttributesPInAddress = Exclusive<\n\t| {\n\t\t\ttype: 'IP' | 'MAC' | (string & {})\n\t\t\t'xsi:type'?: never\n\t  }\n\t| AttributesType_tP_IP\n\t| AttributesType_tP_MAC\n>\n",
 		'a type an element may name -> its attributes, xsi:type naming it':
 			"export type AttributesType_tP_MAC = {\n\t'xsi:type': 'tP_MAC'\n\ttype: 'MAC'\n\tmac: string\n}",
 		'a fixed value under a parent -> its literal':
@@ -222,7 +224,7 @@ describe('emitted order and edge shapes', () => {
 		const positions = order(emitted, [
 			'export type AttributesAddress = {',
 			'export type AttributesEmpty = {',
-			'export type AttributesP =',
+			'export type AttributesP = Exclusive<',
 			'export type AttributesPhysConn = {',
 			'export type AttributesRoot = {',
 		])
@@ -335,9 +337,9 @@ describe('emitTypesSource - xsi:type unions', () => {
 
 	const expectedBlocks: Record<string, string> = {
 		'an abstract type -> no own member: the types it may name, nothing else':
-			'export type AttributesShape = AttributesType_tCircle | AttributesType_ExtTSquare\n',
+			'export type AttributesShape = Exclusive<AttributesType_tCircle | AttributesType_ExtTSquare>\n',
 		'a concrete type -> its own member naming it or nothing, then the types it may name':
-			"export type AttributesPlain =\n\t| {\n\t\t\ta: string\n\t\t\t'xsi:type'?: 'tPlain'\n\t  }\n\t| AttributesType_tCircle\n",
+			"export type AttributesPlain = Exclusive<\n\t| {\n\t\t\ta: string\n\t\t\t'xsi:type'?: 'tPlain'\n\t  }\n\t| AttributesType_tCircle\n>\n",
 		'a type of another namespace -> its prefixed literal':
 			"export type AttributesType_ExtTSquare = {\n\t'xsi:type': 'ext:tSquare'\n\ta: string\n}",
 		"a tag declared several ways -> its own member names each declaration's type":
@@ -349,6 +351,16 @@ describe('emitTypesSource - xsi:type unions', () => {
 		it(name, () => assert.ok(source.includes(block), `missing block:\n${block}\nin:\n${source}`))
 	}
 
+	it('a union -> exclusive: the helper written once, every member listing every key of the union', () => {
+		assert.equal(source.split('\ntype Exclusive<').length, 2)
+		assert.ok(
+			source.includes('? Flat<Members & { [K in Exclude<Keys, keyof Members>]?: undefined }>'),
+		)
+		assert.ok(
+			source.includes('type Flat<Intersection> = { [K in keyof Intersection]: Intersection[K] }'),
+		)
+	})
+
 	it('a type two elements may name -> one type, written once', () => {
 		assert.equal(source.split('export type AttributesType_tCircle = {').length, 2)
 	})
@@ -358,6 +370,17 @@ describe('emitTypesSource - xsi:type unions', () => {
 			source.includes(
 				'\tAttributesOf<T> extends infer Member ? (Member extends unknown ? keyof Member : never) : never,',
 			),
+		)
+	})
+})
+
+describe('emitTypesSource - no union', () => {
+	it('no element taking another type -> no exclusive helper to leave unused', () => {
+		const plain: DefinitionData = {
+			Root: { parents: [], attributes: noChildren, children: noChildren },
+		}
+		assert.ok(
+			!emitTypesSource({ definition: plain, types: {}, root: 'Root' }).includes('Exclusive'),
 		)
 	})
 })
