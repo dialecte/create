@@ -66,9 +66,21 @@ describe('prefixedNamespaces', () => {
 				},
 			}),
 		}
-		assert.deepEqual(prefixedNamespaces({ definition }), [
+		assert.deepEqual(prefixedNamespaces({ definition, root: 'Root' }), [
 			{ prefix: 'att', uri: 'urn:att' },
 			{ prefix: 'dec', uri: 'urn:dec' },
+			{ prefix: 'ext', uri: EXT },
+		])
+	})
+})
+
+describe('prefixedNamespaces - the default namespace', () => {
+	it("the root's namespace, written with a prefix by its schema -> not among them: it is the default one", () => {
+		const definition: DefinitionData = {
+			Root: element({ namespace: { prefix: 'ppx', uri: DEFAULT } }),
+			Other: element({ namespace: { prefix: 'ext', uri: EXT } }),
+		}
+		assert.deepEqual(prefixedNamespaces({ definition, root: 'Root' }), [
 			{ prefix: 'ext', uri: EXT },
 		])
 	})

@@ -44,7 +44,7 @@ export async function writeGenerated(params: {
 	formatGeneratedFiles({ outDir: outAbs, files: [...GENERATED_FILES] })
 	return {
 		example: exampleFacts({ definition, root: rootElement }),
-		namespaces: prefixedNamespaces({ definition }),
+		namespaces: prefixedNamespaces({ definition, root: rootElement }),
 	}
 }
 

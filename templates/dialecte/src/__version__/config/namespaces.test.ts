@@ -23,7 +23,7 @@ describe('the namespaces agree with the definition', () => {
 		expect(__DIALECTE_NAME___NAMESPACES.default.uri).toBe(root?.namespace?.uri ?? '')
 	})
 
-	it('a namespace the definition gives a prefix -> declared, with that prefix', () => {
+	it('a namespace the definition gives a prefix, but the default one -> declared, with that prefix', () => {
 		const declared = Object.values(
 			__DIALECTE_NAME___NAMESPACES as Readonly<Record<string, Namespace>>,
 		)
@@ -33,7 +33,11 @@ describe('the namespaces agree with the definition', () => {
 				way.namespace,
 				...Object.values(way.attributes.details).map((attribute) => attribute.namespace),
 			])
-			.filter((namespace): namespace is Namespace => Boolean(namespace?.prefix))
+			// the root's namespace is the default one, even where its schema writes it with a prefix
+			.filter(
+				(namespace): namespace is Namespace =>
+					Boolean(namespace?.prefix) && namespace?.uri !== __DIALECTE_NAME___NAMESPACES.default.uri,
+			)
 		const missing = prefixed.filter(
 			(namespace) =>
 				!declared.some(({ prefix, uri }) => prefix === namespace.prefix && uri === namespace.uri),

@@ -24,7 +24,7 @@ export function xsiTypeLiterals(params: { definition: DefinitionData; root: stri
 	const { definition, root } = params
 	const defaultUri = definition[root]?.namespace?.uri ?? ''
 	const prefixes = new Map(
-		prefixedNamespaces({ definition }).map((namespace) => [namespace.uri, namespace.prefix]),
+		prefixedNamespaces({ definition, root }).map((namespace) => [namespace.uri, namespace.prefix]),
 	)
 	return function literalOf(clark) {
 		// a local name holds no brace: `}` closes the namespace of a Clark name, when it has one
@@ -89,10 +89,15 @@ export function shapeKeys(params: { shape: AttributeShape }): string[] {
 
 /**
  * The namespaces the definition gives a prefix - an element, a declaration or an attribute in each -, once each,
- * sorted by prefix: what a dialecte declares beside its default namespace.
+ * sorted by prefix: what a dialecte declares beside its default namespace. The root's namespace is that default one,
+ * even where its schema writes it with a prefix (PLC's `ppx`).
  */
-export function prefixedNamespaces(params: { definition: DefinitionData }): NamespaceData[] {
-	const { definition } = params
+export function prefixedNamespaces(params: {
+	definition: DefinitionData
+	root: string
+}): NamespaceData[] {
+	const { definition, root } = params
+	const defaultUri = definition[root]?.namespace?.uri ?? ''
 	const byUri = new Map<string, NamespaceData>()
 	for (const element of Object.values(definition)) {
 		for (const way of [element, ...Object.values(element.declarations ?? {})]) {
@@ -101,7 +106,9 @@ export function prefixedNamespaces(params: { definition: DefinitionData }): Name
 				...Object.values(way.attributes.details).map((attribute) => attribute.namespace),
 			]
 			for (const namespace of namespaces) {
-				if (namespace?.prefix && !byUri.has(namespace.uri)) byUri.set(namespace.uri, namespace)
+				if (namespace?.prefix && namespace.uri !== defaultUri && !byUri.has(namespace.uri)) {
+					byUri.set(namespace.uri, namespace)
+				}
 			}
 		}
 	}

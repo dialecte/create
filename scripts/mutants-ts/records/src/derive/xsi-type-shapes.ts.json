@@ -14,8 +14,18 @@
 		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
 		"equivalent": "A placeholder variant is no Clark name of TYPES: types[clark] is undefined and it is left out, as an absent list."
 	},
+	"df29de46a4a117aa-1": {
+		"line": 100,
+		"mutation": "OptionalChaining: definition[root]?.namespace -> definition[root].namespace",
+		"equivalent": "The root is an element of the definition (derived, or chosen among them): definition[root] exists."
+	},
+	"65289dd5016f9542": {
+		"line": 100,
+		"mutation": "StringLiteral: '' -> \"Stryker was here!\"",
+		"equivalent": "A prefixed namespace never has an empty URI: an empty or a placeholder default URI leaves the same namespaces out."
+	},
 	"3bcf7c19c209a800": {
-		"line": 108,
+		"line": 115,
 		"mutation": "EqualityOperator: first.prefix < second.prefix -> first.prefix <= second.prefix",
 		"equivalent": "The definition gives each namespace one prefix and no two namespaces the same: prefixes are distinct, < and <= sort them the same."
 	}
