@@ -570,6 +570,25 @@ const ATTRIBUTES_BY_TAG = {
 	} as AttributesOf<'A'>,
 	Anything: {
 		'xsi:type': '' as string,
+		label: '' as string,
+		'x:diameter': '' as string,
+		corners: '' as string,
+		min: '' as string,
+		unit: '' as string,
+		seats: '' as string,
+		color: '' as string,
+		radius: '' as string,
+		n: '' as string,
+		id: '' as string,
+		kind: '' as string,
+		dropped: '' as string,
+		kept: '' as string,
+		model: '' as string,
+		extra: '' as string,
+		weight: '' as string,
+		name: '' as string,
+		qty: '' as string,
+		side: '' as string,
 	} as AttributesOf<'Anything'>,
 	B: {
 		n: '' as string,
@@ -608,6 +627,8 @@ const ATTRIBUTES_BY_TAG = {
 	} as AttributesOf<'Down'>,
 	Em: {
 		'xsi:type': '' as string,
+		id: '' as string,
+		kind: '' as string,
 	} as AttributesOf<'Em'>,
 	Empty: {} as AttributesOf<'Empty'>,
 	Entry: {
@@ -620,8 +641,11 @@ const ATTRIBUTES_BY_TAG = {
 	} as AttributesOf<'Extra'>,
 	Extras: {} as AttributesOf<'Extras'>,
 	Figure: {
-		label: '' as string,
 		'xsi:type': '' as string,
+		label: '' as string,
+		'x:diameter': '' as string,
+		corners: '' as string,
+		radius: '' as string,
 	} as AttributesOf<'Figure'>,
 	Flag: {} as AttributesOf<'Flag'>,
 	Gadget: {
@@ -631,6 +655,8 @@ const ATTRIBUTES_BY_TAG = {
 	Garage: {} as AttributesOf<'Garage'>,
 	Greeting: {
 		'xsi:type': '' as string,
+		id: '' as string,
+		kind: '' as string,
 	} as AttributesOf<'Greeting'>,
 	Group: {} as AttributesOf<'Group'>,
 	Hammer: {
@@ -644,6 +670,8 @@ const ATTRIBUTES_BY_TAG = {
 		name: '' as string,
 		qty: '' as string,
 		'xsi:type': '' as string,
+		id: '' as string,
+		kind: '' as string,
 	} as AttributesOf<'Item'>,
 	Keys: {} as AttributesOf<'Keys'>,
 	Left: {
@@ -658,6 +686,7 @@ const ATTRIBUTES_BY_TAG = {
 	Load: {
 		unit: '' as string,
 		'xsi:type': '' as string,
+		min: '' as string,
 	} as AttributesOf<'Load'>,
 	Loose: {
 		plain: '' as string,
@@ -674,18 +703,24 @@ const ATTRIBUTES_BY_TAG = {
 	Measure: {
 		unit: '' as string,
 		'xsi:type': '' as string,
+		min: '' as string,
 	} as AttributesOf<'Measure'>,
 	Measures: {} as AttributesOf<'Measures'>,
 	Mount: {
 		label: '' as string,
 		seats: '' as string,
 		'xsi:type': '' as string,
+		'x:diameter': '' as string,
+		corners: '' as string,
+		radius: '' as string,
 	} as AttributesOf<'Mount'>,
 	Must: {
 		n: '' as string,
 	} as AttributesOf<'Must'>,
 	New: {
 		'xsi:type': '' as string,
+		id: '' as string,
+		kind: '' as string,
 	} as AttributesOf<'New'>,
 	Node: {
 		name: '' as string,
@@ -693,6 +728,8 @@ const ATTRIBUTES_BY_TAG = {
 	Note: {} as AttributesOf<'Note'>,
 	Old: {
 		'xsi:type': '' as string,
+		id: '' as string,
+		kind: '' as string,
 	} as AttributesOf<'Old'>,
 	One: {
 		n: '' as string,
@@ -705,9 +742,13 @@ const ATTRIBUTES_BY_TAG = {
 	} as AttributesOf<'Para'>,
 	Plain: {
 		'xsi:type': '' as string,
+		id: '' as string,
+		kind: '' as string,
 	} as AttributesOf<'Plain'>,
 	Plate: {
 		'xsi:type': '' as string,
+		id: '' as string,
+		kind: '' as string,
 	} as AttributesOf<'Plate'>,
 	Rack: {} as AttributesOf<'Rack'>,
 	Ranged: {
@@ -778,6 +819,8 @@ const ATTRIBUTES_BY_TAG = {
 	} as AttributesOf<'Vehicle'>,
 	bare: {
 		'xsi:type': '' as string,
+		id: '' as string,
+		kind: '' as string,
 	} as AttributesOf<'bare'>,
 } as const
 
@@ -809,7 +852,11 @@ export const ATTRIBUTES = {
 			Item: { name: '' as string, qty: '' as string } as AttributesItemInCrate,
 		},
 		Extended: {
-			Item: { 'xsi:type': '' as string } as AttributesItemInExtended,
+			Item: {
+				'xsi:type': '' as string,
+				id: '' as string,
+				kind: '' as string,
+			} as AttributesItemInExtended,
 			Extra: ATTRIBUTES_BY_TAG.Extra,
 		},
 		Extras: {
@@ -826,7 +873,13 @@ export const ATTRIBUTES = {
 			Vehicle: ATTRIBUTES_BY_TAG.Vehicle,
 			Figure: ATTRIBUTES_BY_TAG.Figure,
 			Value: ATTRIBUTES_BY_TAG.Value,
-			Mount: { label: '' as string, 'xsi:type': '' as string } as AttributesMountInGarage,
+			Mount: {
+				'xsi:type': '' as string,
+				label: '' as string,
+				'x:diameter': '' as string,
+				corners: '' as string,
+				radius: '' as string,
+			} as AttributesMountInGarage,
 		},
 		Group: {
 			Entry: ATTRIBUTES_BY_TAG.Entry,
@@ -885,7 +938,11 @@ export const ATTRIBUTES = {
 			Em: ATTRIBUTES_BY_TAG.Em,
 		},
 		Rack: {
-			Item: { 'xsi:type': '' as string } as AttributesItemInRack,
+			Item: {
+				'xsi:type': '' as string,
+				id: '' as string,
+				kind: '' as string,
+			} as AttributesItemInRack,
 			Box: ATTRIBUTES_BY_TAG.Box,
 		},
 		Restricted: {

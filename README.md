@@ -7,7 +7,10 @@ The XSD reader is written in Python but runs inside Node via
 installed**. Pure-Python dependencies are vendored as wheels and installed
 offline at runtime. It writes the definition - every element declaration of the schema, its values
 with their facets, identity constraints and the types an element may take with `xsi:type` (`TYPES`);
-the constants and types are derived from it in TypeScript.
+the constants and types are derived from it in TypeScript. An element that may take another type has a union of
+attribute types on `xsi:type`: its own attributes (none for an abstract type), and one `AttributesType_<type>` per
+type it may take, each written with the value core stores (`local`, or `prefix:local` outside the default
+namespace). A scaffolded package checks that its `namespaces` config gives each namespace the definition's prefix.
 
 ## Quick start
 
@@ -39,7 +42,6 @@ element definitions from the schema in one step.
 | `--name <pkg>`         | `@dialecte/<schema basename>` | npm package name                                    |
 | `--out <dir>`          | `./<dialecte id>`             | target directory                                    |
 | `--version <vN>`       | `v1`                          | version folder name                                 |
-| `--namespace <uri>`    | the root element's namespace  | default XML namespace URI                           |
 | `--core-version <ver>` | `^0.6.0`                      | `@dialecte/core` version range                      |
 | `--root <element>`     | the one root candidate        | which element starts a document, when several could |
 
@@ -130,8 +132,9 @@ better part of an hour on the whole generator, less on the modules named.
 The TypeScript side - the constants and types `src/derive` writes from a definition - has its own oracle,
 `scripts/derive-oracle`: every fact the constants state is recomputed from the definition by another route (parents
 as the inverse of children, closures by fixed point, attribute keys per element and per parent, required
-attributes), and per element a type probe checks that the generated attribute type accepts the required attributes
-alone and refuses one missing or an unknown key, all under `tsc --strict`. It runs on the committed fixtures
+attributes), and per element a type probe checks that each member of the generated attribute type accepts the
+required attributes alone and refuses one missing or an unknown key - and, where it may take another type, that a type
+it may not take is refused, and an abstract type without one - all under `tsc --strict`. It runs on the committed fixtures
 (`test:ts`), on the sibling dialectes (`derive:check`), on every generated schema (`npm run fuzz`) and on every
 corpus schema (`npm run test:corpora`). `npm run mutants:ts [-- <file> ...]` is the TypeScript twin of the mutation
 gate (StrykerJS over `node --test`), its record in `scripts/mutants-ts/records/`.

@@ -27,7 +27,7 @@ export async function checkEmitted(params: {
 	const root = firstRoot({ definition })
 	if (root === undefined) return [{ fact: 'root', element: '*', expected: [], emitted: undefined }]
 	const constants = await loaded({ source: emitConstantsSource({ definition, root, types }) })
-	return checkDerivation({ definition, constants })
+	return checkDerivation({ definition, types, constants })
 }
 
 /**
@@ -43,8 +43,8 @@ export function emittedFiles(params: {
 	if (root === undefined) return undefined
 	return {
 		'constants.generated.ts': emitConstantsSource({ definition, root, types }),
-		'types.generated.ts': emitTypesSource({ definition }),
-		'probes.ts': typeProbesSource({ definition }),
+		'types.generated.ts': emitTypesSource({ definition, types, root }),
+		'probes.ts': typeProbesSource({ definition, types, root }),
 	}
 }
 

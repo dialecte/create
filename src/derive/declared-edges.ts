@@ -1,41 +1,63 @@
-import { typedAttributes } from './typed-attributes.ts'
+import { attributeShape } from './xsi-type-shapes.ts'
 
-import type { DeclarationData, DeclaredEdge, DefinitionData, ElementData } from './derive.types.ts'
+import type {
+	AttributeShape,
+	DeclarationData,
+	DeclaredEdge,
+	DefinitionData,
+	LiteralOf,
+	TypesData,
+} from './derive.types.ts'
 
-/** Every edge whose child carries other attributes there than at its tag level: each gets a type of its own. */
-export function findDeclaredEdges(params: { definition: DefinitionData }): DeclaredEdge[] {
+/** Every edge whose child carries another attribute type there than at its tag level: each gets a type of its own. */
+export function findDeclaredEdges(params: {
+	definition: DefinitionData
+	types: TypesData
+	literalOf: LiteralOf
+}): DeclaredEdge[] {
 	const { definition } = params
 	const edges: DeclaredEdge[] = []
 	for (const [parent, element] of Object.entries(definition)) {
 		for (const child of Object.keys(element.children.details)) {
-			const attributes = attributesDeclaredUnder({ definition, parent, child })
-			if (attributes !== undefined) edges.push({ parent, child, attributes })
+			const shape = shapeDeclaredUnder({ ...params, parent, child })
+			if (shape !== undefined) edges.push({ parent, child, shape })
 		}
 	}
 	return edges
 }
 
 /**
- * The attributes of `child` under `parent` when they are not its tag level's: those the declaration the edge
- * references offers (`typedAttributes`: its `xsi:type` included), when they differ (a tag declared two ways by
- * namespace alone keeps one type).
+ * The attribute type of `child` under `parent` when it is not its tag level's: the shape of the declaration the
+ * edge references (`attributeShape`: its attributes, the types it may name), when they differ (a tag declared two
+ * ways by namespace alone keeps one type).
  */
-export function attributesDeclaredUnder(params: {
+export function shapeDeclaredUnder(params: {
 	definition: DefinitionData
+	types: TypesData
+	literalOf: LiteralOf
 	parent: string
 	child: string
-}): ElementData['attributes'] | undefined {
-	const { definition, parent, child } = params
+}): AttributeShape | undefined {
+	const { definition, types, literalOf, parent, child } = params
 	const declared = declaredUnder({ definition, parent, child })
 	const tagLevel = definition[child]
 	if (declared === undefined || tagLevel === undefined) return undefined
-	const offered = typedAttributes(declared)
-	// what the attribute type is made of: the attributes and what each is, not which identify the element
-	return sameData(typed(offered), typed(typedAttributes(tagLevel))) ? undefined : offered
+	const offered = attributeShape({ content: declared, types, literalOf })
+	const general = attributeShape({ content: tagLevel, types, literalOf })
+	return sameData(typed(offered), typed(general)) ? undefined : offered
 }
 
-function typed(attributes: ElementData['attributes'] | undefined): unknown {
-	return attributes && { sequence: attributes.sequence, details: attributes.details }
+/** What an attribute type is made of: the attributes and what each is - not which identify the element - and the types. */
+function typed(shape: AttributeShape): unknown {
+	const { own, variants } = shape
+	return {
+		own: own && {
+			sequence: own.attributes.sequence,
+			details: own.attributes.details,
+			literals: own.literals,
+		},
+		variants,
+	}
 }
 
 /** Whether two pieces of definition data say the same, whatever the order of their keys. */

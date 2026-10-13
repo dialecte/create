@@ -7,10 +7,10 @@ import { writeGenerated } from './write-generated.ts'
 
 import { loadPyodide, type PyodideInterface } from 'pyodide'
 
-import type { ExampleFacts } from '../derive/derive.types.ts'
+import type { GeneratedFacts } from '../derive/derive.types.ts'
 import type { GeneratedDefinition } from './write-generated.types.ts'
 
-export type { ExampleFacts } from '../derive/derive.types.ts'
+export type { ExampleFacts, GeneratedFacts } from '../derive/derive.types.ts'
 
 export interface GenerateOptions {
 	/** Absolute path to the entry .xsd file. */
@@ -103,10 +103,10 @@ async function listWheels(): Promise<string[]> {
 
 /**
  * Run the Python schema reader inside Pyodide (WebAssembly) - no host Python installation is required -, then
- * write the definition it returns with the constants and types derived from it, and return the facts the scaffold's
- * worked example names.
+ * write the definition it returns with the constants and types derived from it, and return what the scaffold needs
+ * (`GeneratedFacts`).
  */
-export async function runGenerator(options: GenerateOptions): Promise<ExampleFacts> {
+export async function runGenerator(options: GenerateOptions): Promise<GeneratedFacts> {
 	const { entry, outDir, quiet = false, root } = options
 
 	const entryAbs = resolve(entry)

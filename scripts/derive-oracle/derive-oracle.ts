@@ -1,4 +1,9 @@
-import type { DeclarationData, DefinitionData, ElementData } from '../../src/derive/derive.types.ts'
+import type {
+	DeclarationData,
+	DefinitionData,
+	ElementData,
+	TypesData,
+} from '../../src/derive/derive.types.ts'
 /**
  * The oracle of the derivations: every fact `constants.generated.ts` states, recomputed from the definition by the
  * plainest route there is - never through `src/derive` - and compared. The derivation tests compare with files the
@@ -8,10 +13,12 @@ import type { DerivedFact, Disagreement, EmittedConstants } from './derive-oracl
 
 export function checkDerivation(params: {
 	definition: DefinitionData
+	types: TypesData
 	constants: EmittedConstants
 }): Disagreement[] {
-	const { definition, constants } = params
+	const { definition, types, constants } = params
 	const tags = Object.keys(definition).sort()
+	const literalOf = storedLiterals({ definition, types, root: constants.ROOT_ELEMENT })
 	const children = Object.fromEntries(
 		tags.map((tag) => [tag, definition[tag]?.children.sequence ?? []]),
 	)
@@ -77,7 +84,7 @@ export function checkDerivation(params: {
 			compare({
 				fact: 'attributes',
 				element: tag,
-				expected: attributeNames({ content: definition[tag] }),
+				expected: attributeNames({ content: definition[tag], types, literalOf }),
 				emitted: keysOf(constants.ATTRIBUTES.byTag[tag]),
 			}),
 		),
@@ -100,7 +107,11 @@ export function checkDerivation(params: {
 						fact: 'attributes-by-parent',
 						element: child,
 						parent,
-						expected: attributeNames({ content: declarationUnder({ definition, parent, child }) }),
+						expected: attributeNames({
+							content: declarationUnder({ definition, parent, child }),
+							types,
+							literalOf,
+						}),
 						emitted: keysOf(constants.ATTRIBUTES.byParent[parent]?.[child]),
 					}),
 				),
@@ -125,17 +136,78 @@ export function declarationUnder(params: {
 }
 
 /**
- * The attribute names an element's or a declaration's type offers, sorted: what it declares, and `xsi:type` when it
- * - or, for a tag declared several ways, one of its declarations - may name a type.
+ * The attribute names an element's or a declaration's type offers, sorted. Where it - or, for a tag declared several
+ * ways, one of its declarations - may name a type core stores by a literal (`variantsOf`): `xsi:type` and every
+ * attribute those types have, beside its own unless its declared type is abstract. Otherwise its own alone.
  */
 export function attributeNames(params: {
 	content: ElementData | DeclarationData | undefined
+	types: TypesData
+	literalOf: (clark: string) => string | undefined
 }): string[] {
-	const { content } = params
+	const { content, types, literalOf } = params
 	if (content === undefined) return []
-	const ways = 'declarations' in content ? Object.values(content.declarations ?? {}) : []
-	const namesType = [content, ...ways].some((way) => (way.variants ?? []).length > 0)
-	return [...content.attributes.sequence, ...(namesType ? ['xsi:type'] : [])].sort()
+	const variants = variantsOf({ content, literalOf })
+	if (variants.length === 0) return [...content.attributes.sequence].sort()
+	const names = new Set(content.abstractType ? [] : content.attributes.sequence)
+	names.add('xsi:type')
+	for (const { clark } of variants) {
+		for (const name of types[clark]?.attributes.sequence ?? []) names.add(name)
+	}
+	return [...names].sort()
+}
+
+/** The types an element - or any declaration of a tag declared several ways - may name by a stored literal, once. */
+export function variantsOf(params: {
+	content: ElementData | DeclarationData
+	literalOf: (clark: string) => string | undefined
+}): { clark: string; literal: string }[] {
+	const { content, literalOf } = params
+	const ways = [
+		content,
+		...('declarations' in content ? Object.values(content.declarations ?? {}) : []),
+	]
+	const variants = new Map<string, string>()
+	for (const clark of ways.flatMap((way) => way.variants ?? [])) {
+		const literal = literalOf(clark)
+		if (literal !== undefined) variants.set(clark, literal)
+	}
+	return [...variants].map(([clark, literal]) => ({ clark, literal }))
+}
+
+/**
+ * How core stores an `xsi:type` value naming a type of TYPES: its local name in the root's namespace, `prefix:local`
+ * in one an element or attribute of the definition carries that prefix for - the namespaces a dialecte declares;
+ * `undefined` for any other type, kept as written.
+ */
+export function storedLiterals(params: {
+	definition: DefinitionData
+	types: TypesData
+	root: string
+}): (clark: string) => string | undefined {
+	const { definition, types, root } = params
+	const defaultUri = definition[root]?.namespace?.uri ?? ''
+	const prefixes = new Map<string, string>()
+	for (const element of Object.values(definition)) {
+		for (const way of [element, ...Object.values(element.declarations ?? {})]) {
+			const namespaces = [
+				way.namespace,
+				...Object.values(way.attributes.details).map((attribute) => attribute.namespace),
+			]
+			for (const namespace of namespaces) {
+				if (namespace?.prefix && !prefixes.has(namespace.uri)) {
+					prefixes.set(namespace.uri, namespace.prefix)
+				}
+			}
+		}
+	}
+	return function literalOf(clark) {
+		if (!(clark in types)) return undefined
+		const [, uri = '', local = clark] = /^\{([^}]*)\}(.*)$/.exec(clark) ?? []
+		if (uri === defaultUri) return local
+		const prefix = prefixes.get(uri)
+		return prefix === undefined ? undefined : `${prefix}:${local}`
+	}
 }
 
 function keysOf(value: object | undefined): string[] | undefined {

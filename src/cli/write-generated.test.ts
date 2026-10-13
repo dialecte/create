@@ -34,7 +34,10 @@ describe('writeGenerated', () => {
 				"ROOT_ELEMENT = 'Second'",
 			),
 		)
-		assert.deepEqual(facts, { root: { name: 'Second', namespaceUri: 'urn:t' }, child: null })
+		assert.deepEqual(facts, {
+			example: { root: { name: 'Second', namespaceUri: 'urn:t' }, child: null },
+			namespaces: [],
+		})
 	})
 
 	it('a root left undecided -> refused, naming --root, and the folder left as it was', async () => {
@@ -43,5 +46,22 @@ describe('writeGenerated', () => {
 		await assert.rejects(writeGenerated({ outDir, generated: twoRoots }), /--root/)
 		assert.deepEqual(readdirSync(outDir), ['definition.generated.ts'])
 		assert.equal(readFileSync(join(outDir, 'definition.generated.ts'), 'utf-8'), 'previous')
+	})
+
+	it('a namespace the definition prefixes -> handed back for the package to declare', async () => {
+		const outDir = mkdtempSync(join(tmpdir(), 'write-generated-'))
+		const ext = { prefix: 'ext', uri: 'urn:ext' }
+		const facts = await writeGenerated({
+			outDir,
+			generated: {
+				...twoRoots,
+				definition: {
+					...twoRoots.definition,
+					Other: { namespace: ext, parents: [], attributes: nothing, children: nothing },
+				},
+			},
+			root: 'Second',
+		})
+		assert.deepEqual(facts.namespaces, [ext])
 	})
 })

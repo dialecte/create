@@ -8,8 +8,11 @@ import { fileURLToPath } from 'node:url'
 import { emittedFiles } from './check-emitted.ts'
 import { typeCheck, typeProbesSource } from './type-probes.ts'
 
-import type { DefinitionData } from '../../src/derive/derive.types.ts'
+import type { DefinitionData, TypesData } from '../../src/derive/derive.types.ts'
 import type { Compiled } from './type-probes.types.ts'
+
+/** A committed fixture's definition, as its generated file exports it. */
+type Generated = { DEFINITION: DefinitionData; TYPES: TypesData }
 
 const FIXTURES = fileURLToPath(new URL('../../test/fixtures/definition/', import.meta.url))
 const GENERATED = ['definition.generated.ts', 'constants.generated.ts', 'types.generated.ts']
@@ -26,15 +29,23 @@ function probed(params: { fixture: string; tamper?: (types: string) => string })
 	return folder
 }
 
+/** The probes of a committed fixture, read with the root its constants were written for. */
+async function fixtureProbes(fixture: string): Promise<string> {
+	const { DEFINITION, TYPES } = (await import(
+		join(FIXTURES, fixture, 'definition.generated.ts')
+	)) as Generated
+	const { ROOT_ELEMENT } = (await import(join(FIXTURES, fixture, 'constants.generated.ts'))) as {
+		ROOT_ELEMENT: string
+	}
+	return typeProbesSource({ definition: DEFINITION, types: TYPES, root: ROOT_ELEMENT })
+}
+
 describe('type probes', () => {
 	for (const fixture of ['core-test', 'homonym', 'torture']) {
 		it(`${fixture}: the generated types accept and refuse what the definition says`, async () => {
-			const { DEFINITION } = (await import(join(FIXTURES, fixture, 'definition.generated.ts'))) as {
-				DEFINITION: DefinitionData
-			}
 			const folder = probed({ fixture })
 			try {
-				writeFileSync(join(folder, 'probes.ts'), typeProbesSource({ definition: DEFINITION }))
+				writeFileSync(join(folder, 'probes.ts'), await fixtureProbes(fixture))
 				assert.deepEqual(typeCheck({ folders: [folder] }), [])
 			} finally {
 				rmSync(folder, { recursive: true, force: true })
@@ -43,18 +54,13 @@ describe('type probes', () => {
 	}
 
 	it('a required attribute the types make optional -> the probe fails', async () => {
-		const { DEFINITION } = (await import(
-			join(FIXTURES, 'core-test', 'definition.generated.ts')
-		)) as {
-			DEFINITION: DefinitionData
-		}
 		// AttributesA declares `aA: string`, required: made optional, the missing-attribute probe must catch it
 		const folder = probed({
 			fixture: 'core-test',
 			tamper: (types) => types.replace('\taA: ', '\taA?: '),
 		})
 		try {
-			writeFileSync(join(folder, 'probes.ts'), typeProbesSource({ definition: DEFINITION }))
+			writeFileSync(join(folder, 'probes.ts'), await fixtureProbes('core-test'))
 			assert.deepEqual(typeCheck({ folders: [folder] }), [folder])
 		} finally {
 			rmSync(folder, { recursive: true, force: true })
@@ -62,11 +68,6 @@ describe('type probes', () => {
 	})
 
 	it('a type open to any key -> the unknown-attribute probe fails', async () => {
-		const { DEFINITION } = (await import(
-			join(FIXTURES, 'core-test', 'definition.generated.ts')
-		)) as {
-			DEFINITION: DefinitionData
-		}
 		const folder = probed({
 			fixture: 'core-test',
 			tamper: (types) =>
@@ -76,19 +77,43 @@ describe('type probes', () => {
 				),
 		})
 		try {
-			writeFileSync(join(folder, 'probes.ts'), typeProbesSource({ definition: DEFINITION }))
+			writeFileSync(join(folder, 'probes.ts'), await fixtureProbes('core-test'))
 			assert.deepEqual(typeCheck({ folders: [folder] }), [folder])
 		} finally {
 			rmSync(folder, { recursive: true, force: true })
 		}
 	})
 
+	const unionTampers: Record<string, (types: string) => string> = {
+		'an abstract type given a member of its own -> the probe fails': (types) =>
+			types.replace(
+				'export type AttributesDD_1 =\n',
+				'export type AttributesDD_1 =\n\t| { aDD_1: string }\n',
+			),
+		'a type of another namespace named by its local name (the old hint) -> the probe fails': (
+			types,
+		) => types.replace("'xsi:type': 'ext:tDD_1A'", "'xsi:type': 'tDD_1A'"),
+		'an own member open to any xsi:type -> the probe fails': (types) =>
+			types.replace("'xsi:type'?: 'tDD_2'", "'xsi:type'?: string"),
+	}
+	for (const [name, tamper] of Object.entries(unionTampers)) {
+		it(name, async () => {
+			const folder = probed({ fixture: 'core-test', tamper })
+			try {
+				assert.notEqual(
+					readFileSync(join(folder, 'types.generated.ts'), 'utf-8'),
+					readFileSync(join(FIXTURES, 'core-test', 'types.generated.ts'), 'utf-8'),
+					'the tamper changed nothing',
+				)
+				writeFileSync(join(folder, 'probes.ts'), await fixtureProbes('core-test'))
+				assert.deepEqual(typeCheck({ folders: [folder] }), [folder])
+			} finally {
+				rmSync(folder, { recursive: true, force: true })
+			}
+		})
+	}
+
 	it('folders whose names prefix one another -> only the failing one', async () => {
-		const { DEFINITION } = (await import(
-			join(FIXTURES, 'core-test', 'definition.generated.ts')
-		)) as {
-			DEFINITION: DefinitionData
-		}
 		const root = mkdtempSync(join(tmpdir(), 'probes-prefix-'))
 		try {
 			const [ok, broken] = [join(root, '1'), join(root, '10')]
@@ -103,7 +128,7 @@ describe('type probes', () => {
 					join(folder, 'types.generated.ts'),
 					tamper(readFileSync(join(folder, 'types.generated.ts'), 'utf-8')),
 				)
-				writeFileSync(join(folder, 'probes.ts'), typeProbesSource({ definition: DEFINITION }))
+				writeFileSync(join(folder, 'probes.ts'), await fixtureProbes('core-test'))
 			}
 			assert.deepEqual(typeCheck({ folders: [ok, broken] }), [broken])
 		} finally {

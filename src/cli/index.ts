@@ -20,7 +20,7 @@ interface ParsedArgs {
 
 /**
  * A flag is `--name` or a single-letter `-x`. Anything else after a flag is its value, so a value
- * that starts with a dash (`--namespace -x`) is not mistaken for the next flag.
+ * that starts with a dash (`--out -build`) is not mistaken for the next flag.
  */
 function isFlag(arg: string): boolean {
 	return arg.startsWith('--') ? arg.length > 2 : /^-[a-zA-Z]$/.test(arg)
@@ -61,7 +61,6 @@ create options:
   --name <pkg>           npm package name (default: @dialecte/<schema basename>)
   --out <dir>            target directory (default: ./<dialecte id>)
   --version <vN>         version folder name (default: ${DEFAULT_VERSION})
-  --namespace <uri>      default XML namespace URI (default: the namespace of the root element)
   --core-version <ver>   @dialecte/core version range (default: ${DEFAULT_CORE_VERSION})
   --root <element>       the element that starts a document, when more than one could
 
@@ -82,7 +81,26 @@ async function printVersion(): Promise<void> {
 	console.log(manifest.version)
 }
 
+/** The flags each command takes: any other is refused, never ignored. */
+const COMMAND_FLAGS = {
+	create: ['name', 'out', 'version', 'core-version', 'root'],
+	generate: ['entry', 'out-dir', 'root'],
+} as const
+
+function refuseUnknownFlags(params: {
+	command: keyof typeof COMMAND_FLAGS
+	flags: Record<string, string | boolean>
+}): void {
+	const { command, flags } = params
+	const known: readonly string[] = COMMAND_FLAGS[command]
+	const unknown = Object.keys(flags).filter((flag) => !known.includes(flag))
+	if (unknown.length === 0) return
+	const written = unknown.map((flag) => (flag.length === 1 ? `-${flag}` : `--${flag}`))
+	throw new Error(`${command} does not take ${written.join(', ')} - see --help`)
+}
+
 async function runGenerateCommand(flags: Record<string, string | boolean>): Promise<void> {
+	refuseUnknownFlags({ command: 'generate', flags })
 	const entry = typeof flags.entry === 'string' ? flags.entry : undefined
 	const outDir = typeof flags['out-dir'] === 'string' ? flags['out-dir'] : undefined
 
@@ -101,6 +119,7 @@ async function runCreateCommand(
 	positionals: string[],
 	flags: Record<string, string | boolean>,
 ): Promise<void> {
+	refuseUnknownFlags({ command: 'create', flags })
 	const entry = positionals[0]
 	if (!entry) {
 		throw new Error('create requires a path to an XSD schema: create-dialecte create <schema.xsd>')
@@ -115,7 +134,6 @@ async function runCreateCommand(
 	const dialecteId = dialecteIdFromPackageName(packageName)
 
 	const version = typeof flags.version === 'string' ? flags.version : DEFAULT_VERSION
-	const namespaceOverride = typeof flags.namespace === 'string' ? flags.namespace : undefined
 	const coreVersion =
 		typeof flags['core-version'] === 'string' ? flags['core-version'] : DEFAULT_CORE_VERSION
 	const targetDir =
@@ -127,18 +145,13 @@ async function runCreateCommand(
 		targetDir,
 		packageName,
 		version,
-		namespaceUri: namespaceOverride,
 		coreVersion,
 		root,
 	})
 
-	if (namespaceOverride === undefined) {
-		const described = namespaceUri === '' ? 'none' : `"${namespaceUri}"`
-		console.log('')
-		console.log(
-			`Note: default namespace taken from the root element <${rootElement}>: ${described}.`,
-		)
-	}
+	const described = namespaceUri === '' ? 'none' : `"${namespaceUri}"`
+	console.log('')
+	console.log(`Note: default namespace taken from the root element <${rootElement}>: ${described}.`)
 }
 
 export async function main(argv: string[] = process.argv.slice(2)): Promise<void> {

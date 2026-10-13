@@ -4,7 +4,7 @@ import { describe, it } from 'node:test'
 import { emitConstantsSource } from './emit-constants.ts'
 import { emitTypesSource } from './emit-types.ts'
 
-import type { DefinitionData, ElementData } from './derive.types.ts'
+import type { DefinitionData, ElementData, TypesData } from './derive.types.ts'
 
 // A root holding an Address and a PhysConn, both holding a P declared differently under each: the
 // tag level is the union, each parent names the declaration it holds.
@@ -24,6 +24,7 @@ const noChildren = { sequence: [], details: {} }
 // emitters sort must come out sorted
 const definition: DefinitionData = {
 	Root: {
+		namespace: { prefix: '', uri: 'urn:t' },
 		parents: [],
 		attributes: {
 			sequence: ['version', 'id'],
@@ -78,8 +79,23 @@ const definition: DefinitionData = {
 	},
 }
 
+// the types P may name under Address
+const types: TypesData = {
+	'{urn:t}tP_IP': {
+		attributes: { sequence: ['type'], details: { type: { required: true, fixed: 'IP' } } },
+		children: noChildren,
+	},
+	'{urn:t}tP_MAC': {
+		attributes: {
+			sequence: ['type', 'mac'],
+			details: { type: { required: true, fixed: 'MAC' }, mac: { required: true } },
+		},
+		children: noChildren,
+	},
+}
+
 describe('emitConstantsSource', () => {
-	const source = emitConstantsSource({ definition, root: 'Root', types: {} })
+	const source = emitConstantsSource({ definition, root: 'Root', types })
 
 	const expectedLines: Record<string, string> = {
 		'the root -> ROOT_ELEMENT': "export const ROOT_ELEMENT = 'Root' as const",
@@ -89,8 +105,8 @@ describe('emitConstantsSource', () => {
 			"import type { AvailableElement, AttributesOf, AttributesByParent, AttributesPInAddress, AttributesPInPhysConn } from './types.generated'",
 		'an element without attributes -> an empty skeleton typed by its element':
 			"\tEmpty: {} as AttributesOf<'Empty'>,",
-		'a homonym -> its own skeleton under each parent, xsi:type where it may name a type':
-			"\t\t\tP: { type: '' as string, 'xsi:type': '' as string } as AttributesPInAddress,",
+		'a homonym -> its own skeleton under each parent: xsi:type and what the types it may name add':
+			"\t\t\tP: { type: '' as string, 'xsi:type': '' as string, mac: '' as string } as AttributesPInAddress,",
 		'an element declared once -> the by-tag object under its parent':
 			'\t\t\tAddress: ATTRIBUTES_BY_TAG.Address,',
 		'required attributes -> listed for their element, sorted': "\tRoot: ['id', 'version'],",
@@ -101,13 +117,15 @@ describe('emitConstantsSource', () => {
 })
 
 describe('emitTypesSource', () => {
-	const source = emitTypesSource({ definition })
+	const source = emitTypesSource({ definition, types, root: 'Root' })
 
 	const expectedBlocks: Record<string, string> = {
-		'a tag declared several ways -> the values any declaration accepts, xsi:type any may name, open to others':
-			"export type AttributesP = {\n\ttype?: 'IP' | 'MAC' | 'Plug' | (string & {})\n\t'xsi:type'?: 'tP_IP' | 'tP_MAC' | (string & {})\n}",
-		'an enumeration under a parent -> the union of its values; the types it may name with xsi:type':
-			"export type AttributesPInAddress = {\n\ttype: 'IP' | 'MAC' | (string & {})\n\t'xsi:type'?: 'tP_IP' | 'tP_MAC' | (string & {})\n}",
+		'a tag declared several ways -> its own member with the values any declaration accepts, one per type any may name':
+			"export type AttributesP =\n\t| {\n\t\t\ttype?: 'IP' | 'MAC' | 'Plug' | (string & {})\n\t\t\t'xsi:type'?: never\n\t  }\n\t| AttributesType_tP_IP\n\t| AttributesType_tP_MAC\n",
+		'an enumeration under a parent -> the union of its values; one member per type it may name':
+			"export type AttributesPInAddress =\n\t| {\n\t\t\ttype: 'IP' | 'MAC' | (string & {})\n\t\t\t'xsi:type'?: never\n\t  }\n\t| AttributesType_tP_IP\n\t| AttributesType_tP_MAC\n",
+		'a type an element may name -> its attributes, xsi:type naming it':
+			"export type AttributesType_tP_MAC = {\n\t'xsi:type': 'tP_MAC'\n\ttype: 'MAC'\n\tmac: string\n}",
 		'a fixed value under a parent -> its literal':
 			"export type AttributesPInPhysConn = {\n\ttype: 'Plug'\n}",
 		'a homonym in the parent map -> the type of its declaration there':
@@ -118,9 +136,10 @@ describe('emitTypesSource', () => {
 	}
 
 	it('the declarations of a homonym -> one type each, in the order of their parents', () => {
-		assert.ok(
-			source.indexOf('AttributesPInAddress = {') < source.indexOf('AttributesPInPhysConn = {'),
+		const [address, physConn] = ['AttributesPInAddress', 'AttributesPInPhysConn'].map((name) =>
+			source.indexOf(`export type ${name} =`),
 		)
+		assert.ok(address !== undefined && address >= 0 && physConn !== undefined && address < physConn)
 	})
 
 	it('the names of the required and optional attributes -> derived from the constants', () => {
@@ -158,7 +177,7 @@ describe('emitTypesSource - values typed by their datatype', () => {
 			children: { sequence: [], details: {} },
 		},
 	}
-	const source = emitTypesSource({ definition: typed })
+	const source = emitTypesSource({ definition: typed, types: {}, root: 'Root' })
 
 	const expectedLines: Record<string, string> = {
 		'an enumeration in the datatype -> the union of its values, open to others':
@@ -179,8 +198,8 @@ describe('emitTypesSource - values typed by their datatype', () => {
 
 describe('emitted order and edge shapes', () => {
 	// `definition` lists Root, PhysConn, Address, Empty, P: each table must come out sorted whatever that order
-	const constants = emitConstantsSource({ definition, root: 'Root', types: {} }).split('\n')
-	const types = emitTypesSource({ definition }).split('\n')
+	const constants = emitConstantsSource({ definition, root: 'Root', types }).split('\n')
+	const emitted = emitTypesSource({ definition, types, root: 'Root' }).split('\n')
 	const order = (lines: string[], wanted: string[]) => wanted.map((line) => lines.indexOf(line))
 
 	it('the attribute skeletons by tag -> sorted by element', () => {
@@ -199,8 +218,26 @@ describe('emitted order and edge shapes', () => {
 		)
 	})
 
+	it('the attribute types -> declared sorted by element', () => {
+		const positions = order(emitted, [
+			'export type AttributesAddress = {',
+			'export type AttributesEmpty = {',
+			'export type AttributesP =',
+			'export type AttributesPhysConn = {',
+			'export type AttributesRoot = {',
+		])
+		assert.ok(
+			positions.every((position) => position >= 0),
+			`missing a type: ${positions}`,
+		)
+		assert.deepEqual(
+			[...positions].sort((a, b) => a - b),
+			positions,
+		)
+	})
+
 	it('the attribute types map -> sorted by element', () => {
-		const positions = order(types, [
+		const positions = order(emitted, [
 			'\tAddress: AttributesAddress',
 			'\tP: AttributesP',
 			'\tRoot: AttributesRoot',
@@ -241,6 +278,86 @@ describe('emitted order and edge shapes', () => {
 				children: noChildren,
 			},
 		}
-		assert.ok(emitTypesSource({ definition: fixedEmpty }).split('\n').includes('\tx?: string'))
+		assert.ok(
+			emitTypesSource({ definition: fixedEmpty, types: {}, root: 'Root' })
+				.split('\n')
+				.includes('\tx?: string'),
+		)
+	})
+})
+
+describe('emitTypesSource - xsi:type unions', () => {
+	const DEFAULT = 'urn:default'
+	const EXT = 'urn:ext'
+	const element = (content: Partial<ElementData>): ElementData => ({
+		parents: [],
+		attributes: noChildren,
+		children: noChildren,
+		...content,
+	})
+	const onlyA: ElementData['attributes'] = { sequence: ['a'], details: { a: { required: true } } }
+	const unions: DefinitionData = {
+		Root: element({ namespace: { prefix: '', uri: DEFAULT }, attributes: onlyA }),
+		Other: element({ namespace: { prefix: 'ext', uri: EXT } }),
+		Shape: element({
+			attributes: onlyA,
+			type: `{${DEFAULT}}tShape`,
+			abstractType: true,
+			variants: [`{${DEFAULT}}tCircle`, `{${EXT}}tSquare`],
+		}),
+		Plain: element({
+			attributes: onlyA,
+			type: `{${DEFAULT}}tPlain`,
+			variants: [`{${DEFAULT}}tCircle`],
+		}),
+		// declared two ways, each with its type: either named by the own member
+		Twice: element({
+			attributes: onlyA,
+			declarations: {
+				'1': { attributes: onlyA, children: noChildren, type: `{${DEFAULT}}tOne` },
+				'2': {
+					attributes: onlyA,
+					children: noChildren,
+					type: `{${DEFAULT}}tTwo`,
+					variants: [`{${DEFAULT}}tCircle`],
+				},
+			},
+		}),
+	}
+	const unionTypes: TypesData = {
+		[`{${DEFAULT}}tCircle`]: {
+			attributes: { sequence: ['a', 'r'], details: { a: { required: true }, r: {} } },
+			children: noChildren,
+		},
+		[`{${EXT}}tSquare`]: { attributes: onlyA, children: noChildren },
+	}
+	const source = emitTypesSource({ definition: unions, types: unionTypes, root: 'Root' })
+
+	const expectedBlocks: Record<string, string> = {
+		'an abstract type -> no own member: the types it may name, nothing else':
+			'export type AttributesShape = AttributesType_tCircle | AttributesType_ExtTSquare\n',
+		'a concrete type -> its own member naming it or nothing, then the types it may name':
+			"export type AttributesPlain =\n\t| {\n\t\t\ta: string\n\t\t\t'xsi:type'?: 'tPlain'\n\t  }\n\t| AttributesType_tCircle\n",
+		'a type of another namespace -> its prefixed literal':
+			"export type AttributesType_ExtTSquare = {\n\t'xsi:type': 'ext:tSquare'\n\ta: string\n}",
+		"a tag declared several ways -> its own member names each declaration's type":
+			"\t\t\t'xsi:type'?: 'tOne' | 'tTwo'\n",
+		'an element naming no other type -> its attributes alone, as ever':
+			'export type AttributesRoot = {\n\ta: string\n}',
+	}
+	for (const [name, block] of Object.entries(expectedBlocks)) {
+		it(name, () => assert.ok(source.includes(block), `missing block:\n${block}\nin:\n${source}`))
+	}
+
+	it('a type two elements may name -> one type, written once', () => {
+		assert.equal(source.split('export type AttributesType_tCircle = {').length, 2)
+	})
+
+	it('the optional attribute names -> of every member, not only those all share', () => {
+		assert.ok(
+			source.includes(
+				'\tAttributesOf<T> extends infer Member ? (Member extends unknown ? keyof Member : never) : never,',
+			),
+		)
 	})
 })

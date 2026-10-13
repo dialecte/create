@@ -50,7 +50,7 @@ for (const fixture of FIXTURE_NAMES) {
 					root,
 					types: TYPES,
 				}),
-				'types.generated.ts': emitTypesSource({ definition: DEFINITION }),
+				'types.generated.ts': emitTypesSource({ definition: DEFINITION, types: TYPES, root }),
 			},
 		})
 

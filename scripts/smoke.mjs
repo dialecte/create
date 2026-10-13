@@ -31,6 +31,8 @@ const COMMENTED_FIXTURE = new URL('../test/fixtures/commented-namespace.xsd', im
 	.pathname
 const TWO_ROOTS_FIXTURE = new URL('../test/fixtures/two-roots.xsd', import.meta.url).pathname
 const EXTENSION_FIXTURE = new URL('../test/fixtures/extension/entry.xsd', import.meta.url).pathname
+const CORE_TEST_FIXTURE = new URL('../test/fixtures/xsd/core-test/test.xsd', import.meta.url)
+	.pathname
 const EXPECTED = ['definition.generated.ts', 'constants.generated.ts', 'types.generated.ts']
 const FIXTURES = new URL('../test/fixtures/', import.meta.url).pathname
 const COMMITTED_SCHEMAS = JSON.parse(
@@ -118,6 +120,36 @@ async function assertNoExamplePlaceholderLeft({ targetDir, packageName }) {
 			/__example[A-Za-z-]*__|__Example[A-Za-z]*__|__(end)?[iI]fExample[A-Za-z]*__/,
 		)
 		if (left) throw new Error(`${packageName}: ${left[0]} is left in ${path}`)
+	}
+}
+
+/** A flag a command does not take is refused by name, before anything is written - never ignored. */
+async function assertUnknownFlagRefused() {
+	const parent = await mkdtemp(join(tmpdir(), 'dialecte-flag-'))
+	const targetDir = join(parent, 'pkg')
+	try {
+		const refusal = await runCli([
+			'create',
+			FIXTURE,
+			'--namespace',
+			'urn:x',
+			'--out',
+			targetDir,
+		]).then(
+			() => undefined,
+			(error) => (error instanceof Error ? error.message : String(error)),
+		)
+		if (refusal === undefined || !refusal.includes('--namespace')) {
+			throw new Error(`create --namespace should be refused by name, got: ${refusal ?? 'success'}`)
+		}
+		const left = await stat(targetDir).then(
+			() => true,
+			() => false,
+		)
+		if (left) throw new Error(`a refused flag left ${targetDir} behind`)
+		console.log('A flag a command does not take is refused by name.')
+	} finally {
+		await rm(parent, { recursive: true, force: true })
 	}
 }
 
@@ -275,6 +307,11 @@ async function main() {
 					reason: 'the default namespace must be the target namespace of the schema',
 				},
 				{
+					file: 'src/v1/config/namespaces.ts',
+					excludes: '__prefixedNamespaces__',
+					reason: 'a schema of one namespace declares no other',
+				},
+				{
 					file: 'src/v1/config/hydrated.types.ts',
 					includes: 'Core.Project<Config, WidgetModules & GenericCustomModules>',
 					reason: 'a project takes the raw extension modules, which it merges itself',
@@ -365,11 +402,11 @@ async function main() {
 		await assertScaffold({
 			fixture: FIXTURE,
 			packageName: '@acme/dashed',
-			options: ['--namespace', '-urn'],
+			options: ['--core-version', '-next'],
 			expectations: [
 				{
-					file: 'src/v1/config/namespaces.ts',
-					includes: "uri: '-urn'",
+					file: 'package.json',
+					includes: '"@dialecte/core": "-next"',
 					reason: 'a value starting with a dash is still the value of its flag',
 				},
 			],
@@ -409,6 +446,18 @@ async function main() {
 					file: 'README.md',
 					excludes: 'tx.helloWorld',
 					reason: 'the readme shows no write the example does not have',
+				},
+			],
+		})
+		await assertScaffold({
+			fixture: CORE_TEST_FIXTURE,
+			packageName: '@acme/prefixed',
+			expectations: [
+				{
+					file: 'src/v1/config/namespaces.ts',
+					includes: "\text: { uri: 'http://dialecte.dev/XML/DEV-EXT', prefix: 'ext' },",
+					reason:
+						'every namespace the definition prefixes is declared with that prefix: core stores xsi:type values with it',
 				},
 			],
 		})
@@ -466,6 +515,7 @@ async function main() {
 		console.log('Scaffold checks passed: engine range, namespace, project type, quoting, root.')
 
 		await assertFailedScaffoldLeavesNothing()
+		await assertUnknownFlagRefused()
 		await assertHelpAndVersion()
 		await assertRunsThroughABinLink()
 		await assertInstalledScaffoldTypeChecks()

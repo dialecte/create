@@ -4,7 +4,7 @@ import { describe, it } from 'node:test'
 
 import { checkDerivation, describeDisagreements } from './derive-oracle.ts'
 
-import type { DefinitionData, ElementData } from '../../src/derive/derive.types.ts'
+import type { DefinitionData, ElementData, TypesData } from '../../src/derive/derive.types.ts'
 import type { Disagreement, EmittedConstants } from './derive-oracle.types.ts'
 
 function element(
@@ -30,6 +30,8 @@ function holding(params: { parents: string[]; child: string; declaration: string
 		},
 	}
 }
+
+const NO_CHILDREN = { sequence: [], details: {} }
 
 /** Root holds A, A holds B; A requires `a`. */
 const DEFINITION: DefinitionData = {
@@ -59,6 +61,7 @@ const CONSTANTS: EmittedConstants = {
 
 type OracleCase = {
 	definition?: DefinitionData
+	types?: TypesData
 	constants: EmittedConstants
 	expected: Disagreement[]
 }
@@ -129,20 +132,48 @@ const cases: Record<string, OracleCase> = {
 		},
 		expected: [{ fact: 'attributes', element: 'A', expected: ['a', 'b'], emitted: ['a'] }],
 	},
-	'an element with xsi:type variants -> xsi:type among its attributes': {
-		definition: { ...DEFINITION, B: element({ parents: ['A'], variants: ['{urn:t}tB'] }) },
+	'an element that may name a type -> xsi:type and what the type adds, beside its own': {
+		definition: { ...DEFINITION, B: element({ parents: ['A'], variants: ['tB'] }) },
+		types: { tB: { attributes: { sequence: ['w'], details: {} }, children: NO_CHILDREN } },
 		constants: CONSTANTS,
 		expected: [
-			{ fact: 'attributes', element: 'B', expected: ['xsi:type'], emitted: [] },
+			{ fact: 'attributes', element: 'B', expected: ['w', 'xsi:type'], emitted: [] },
 			{
 				fact: 'attributes-by-parent',
 				element: 'B',
 				parent: 'A',
-				expected: ['xsi:type'],
+				expected: ['w', 'xsi:type'],
 				emitted: [],
 			},
 		],
 	},
+	'an abstract type -> xsi:type and what its variants have, not its own attributes': {
+		definition: {
+			...DEFINITION,
+			A: { ...DEFINITION.A!, abstractType: true, variants: ['tA'] },
+		},
+		types: { tA: { attributes: { sequence: ['w'], details: {} }, children: NO_CHILDREN } },
+		constants: CONSTANTS,
+		expected: [
+			{ fact: 'attributes', element: 'A', expected: ['w', 'xsi:type'], emitted: ['a', 'b'] },
+			{
+				fact: 'attributes-by-parent',
+				element: 'A',
+				parent: 'Root',
+				expected: ['w', 'xsi:type'],
+				emitted: ['a', 'b'],
+			},
+		],
+	},
+	'a type in a namespace the dialecte does not declare -> no xsi:type: core keeps such a value as written':
+		{
+			definition: { ...DEFINITION, B: element({ parents: ['A'], variants: ['{urn:nowhere}tB'] }) },
+			types: {
+				'{urn:nowhere}tB': { attributes: { sequence: ['w'], details: {} }, children: NO_CHILDREN },
+			},
+			constants: CONSTANTS,
+			expected: [],
+		},
 	'a required attribute missing from REQUIRED_ATTRIBUTES -> a required disagreement': {
 		constants: { ...CONSTANTS, REQUIRED_ATTRIBUTES: { ...CONSTANTS.REQUIRED_ATTRIBUTES, A: [] } },
 		expected: [{ fact: 'required', element: 'A', expected: ['a'], emitted: [] }],
@@ -216,9 +247,11 @@ const cases: Record<string, OracleCase> = {
 }
 
 describe('checkDerivation', () => {
-	for (const [name, { definition = DEFINITION, constants, expected }] of Object.entries(cases)) {
+	for (const [name, { definition = DEFINITION, types = {}, constants, expected }] of Object.entries(
+		cases,
+	)) {
 		it(name, () => {
-			assert.deepEqual(checkDerivation({ definition, constants }), expected)
+			assert.deepEqual(checkDerivation({ definition, types, constants }), expected)
 		})
 	}
 })
@@ -233,11 +266,11 @@ const FIXTURE_NAMES = readdirSync(FIXTURES, { withFileTypes: true })
 describe('the committed dialectes agree with the oracle', () => {
 	for (const fixture of FIXTURE_NAMES) {
 		it(`${fixture} -> no disagreement`, async () => {
-			const { DEFINITION } = await import(
+			const { DEFINITION, TYPES } = await import(
 				new URL(`${fixture}/definition.generated.ts`, FIXTURES).href
 			)
 			const constants = await import(new URL(`${fixture}/constants.generated.ts`, FIXTURES).href)
-			assert.deepEqual(checkDerivation({ definition: DEFINITION, constants }), [])
+			assert.deepEqual(checkDerivation({ definition: DEFINITION, types: TYPES, constants }), [])
 		})
 	}
 })

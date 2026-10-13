@@ -2,15 +2,21 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import {
-	attributesDeclaredUnder,
 	declaredUnder,
 	elementChildren,
 	findDeclaredEdges,
+	shapeDeclaredUnder,
 } from './declared-edges.ts'
+import { xsiTypeLiterals } from './xsi-type-shapes.ts'
 
-import type { DefinitionData } from './derive.types.ts'
+import type { DefinitionData, LiteralOf, TypesData } from './derive.types.ts'
 
 const noAttributes = { sequence: [], details: {} }
+/** No type to name with xsi:type: the edges differ by their attributes alone. */
+const NO_TYPES: { types: TypesData; literalOf: LiteralOf } = {
+	types: {},
+	literalOf: () => undefined,
+}
 
 const definition: DefinitionData = {
 	Root: {
@@ -60,7 +66,7 @@ describe('declared-edges', () => {
 	})
 
 	it('findDeclaredEdges: a child declared one way -> no edge of its own', () => {
-		assert.deepEqual(findDeclaredEdges({ definition }), [])
+		assert.deepEqual(findDeclaredEdges({ definition, ...NO_TYPES }), [])
 	})
 
 	it('declaredUnder: a reference to one declaration of the child -> that declaration', () => {
@@ -109,7 +115,7 @@ describe('declared-edges', () => {
 		)
 	})
 
-	it("attributesDeclaredUnder: a referenced declaration with the tag level's attributes -> none, the by-tag type applies", () => {
+	it("shapeDeclaredUnder: a referenced declaration with the tag level's attributes -> none, the by-tag type applies", () => {
 		const sameAttributes: DefinitionData = {
 			...byReference,
 			Item: {
@@ -118,13 +124,18 @@ describe('declared-edges', () => {
 			} as DefinitionData[string],
 		}
 		assert.equal(
-			attributesDeclaredUnder({ definition: sameAttributes, parent: 'Left', child: 'Item' }),
+			shapeDeclaredUnder({
+				definition: sameAttributes,
+				...NO_TYPES,
+				parent: 'Left',
+				child: 'Item',
+			}),
 			undefined,
 		)
-		assert.deepEqual(findDeclaredEdges({ definition: sameAttributes }), [])
+		assert.deepEqual(findDeclaredEdges({ definition: sameAttributes, ...NO_TYPES }), [])
 	})
 
-	it("attributesDeclaredUnder: a referenced declaration with the tag level's attributes in another key order -> none, the same data", () => {
+	it("shapeDeclaredUnder: a referenced declaration with the tag level's attributes in another key order -> none, the same data", () => {
 		const reordered: DefinitionData = {
 			...byReference,
 			Item: {
@@ -150,12 +161,12 @@ describe('declared-edges', () => {
 			} as DefinitionData[string],
 		}
 		assert.equal(
-			attributesDeclaredUnder({ definition: reordered, parent: 'Left', child: 'Item' }),
+			shapeDeclaredUnder({ definition: reordered, ...NO_TYPES, parent: 'Left', child: 'Item' }),
 			undefined,
 		)
 	})
 
-	it('attributesDeclaredUnder: a referenced declaration differing only by its identity fields -> none, its type is the same', () => {
+	it('shapeDeclaredUnder: a referenced declaration differing only by its identity fields -> none, its type is the same', () => {
 		const identified: DefinitionData = {
 			...byReference,
 			Item: {
@@ -171,17 +182,55 @@ describe('declared-edges', () => {
 			} as DefinitionData[string],
 		}
 		assert.equal(
-			attributesDeclaredUnder({ definition: identified, parent: 'Left', child: 'Item' }),
+			shapeDeclaredUnder({ definition: identified, ...NO_TYPES, parent: 'Left', child: 'Item' }),
 			undefined,
 		)
 	})
 
 	it('findDeclaredEdges: an edge referencing one declaration of the child declares it', () => {
 		assert.deepEqual(
-			findDeclaredEdges({ definition: byReference }).map(
+			findDeclaredEdges({ definition: byReference, ...NO_TYPES }).map(
 				({ parent, child }) => `${parent}>${child}`,
 			),
 			['Left>Item'],
 		)
+	})
+
+	it('shapeDeclaredUnder: the same attributes, other types to name -> a type of its own where they differ', () => {
+		// Item under Left may name tWide, under Right no type: the tag level offers tWide
+		const item = { sequence: ['a'], details: { a: {} } }
+		const variants: DefinitionData = {
+			Left: {
+				namespace: { prefix: '', uri: 'urn:t' },
+				parents: [],
+				attributes: noAttributes,
+				children: { sequence: ['Item'], details: { Item: { declarations: { 'urn:t': ['1'] } } } },
+			},
+			Right: {
+				parents: [],
+				attributes: noAttributes,
+				children: { sequence: ['Item'], details: { Item: { declarations: { 'urn:t': ['2'] } } } },
+			},
+			Item: {
+				parents: ['Left', 'Right'],
+				attributes: item,
+				children: noAttributes,
+				variants: ['{urn:t}tWide'],
+				declarations: {
+					'1': { attributes: item, children: noAttributes, variants: ['{urn:t}tWide'] },
+					'2': { attributes: item, children: noAttributes },
+				},
+			},
+		}
+		const context = {
+			definition: variants,
+			types: { '{urn:t}tWide': { attributes: item, children: noAttributes } },
+			literalOf: xsiTypeLiterals({ definition: variants, root: 'Left' }),
+		}
+		assert.deepEqual(shapeDeclaredUnder({ ...context, parent: 'Right', child: 'Item' }), {
+			own: { attributes: item, literals: [] },
+			variants: [],
+		})
+		assert.equal(shapeDeclaredUnder({ ...context, parent: 'Left', child: 'Item' }), undefined)
 	})
 })

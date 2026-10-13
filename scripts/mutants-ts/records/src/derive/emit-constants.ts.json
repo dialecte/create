@@ -1,11 +1,11 @@
 {
 	"66cb0bb67d906dbd": {
-		"line": 75,
+		"line": 83,
 		"mutation": "ConditionalExpression: element === undefined -> false",
 		"equivalent": "The emitter iterates the definition's own keys: the element exists, the fallback is never read."
 	},
 	"97c45c15fe70f37c": {
-		"line": 75,
+		"line": 84,
 		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
 		"equivalent": "The emitter iterates the definition's own keys: the element exists, the fallback is never read."
 	}

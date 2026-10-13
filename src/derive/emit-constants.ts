@@ -1,4 +1,4 @@
-import { attributesDeclaredUnder, elementChildren, findDeclaredEdges } from './declared-edges.ts'
+import { elementChildren, findDeclaredEdges, shapeDeclaredUnder } from './declared-edges.ts'
 import { deriveGraph } from './derive-graph.ts'
 import { deriveSingletons } from './derive-singletons.ts'
 import {
@@ -9,9 +9,9 @@ import {
 	tsRecord,
 	tsStringArray,
 } from './ts-syntax.ts'
-import { typedAttributes } from './typed-attributes.ts'
+import { attributeShape, shapeKeys, xsiTypeLiterals } from './xsi-type-shapes.ts'
 
-import type { DefinitionData, TypesData } from './derive.types.ts'
+import type { DefinitionData, LiteralOf, TypesData } from './derive.types.ts'
 
 /** `constants.generated.ts`: the lookup tables a dialecte config is built from, derived from the definition. */
 export function emitConstantsSource(params: {
@@ -23,7 +23,8 @@ export function emitConstantsSource(params: {
 	const names = Object.keys(definition).sort()
 	const typeNames = deriveTypeNames(names)
 	const graph = deriveGraph({ definition })
-	const edgeTypes = findDeclaredEdges({ definition })
+	const literalOf = xsiTypeLiterals({ definition, root })
+	const edgeTypes = findDeclaredEdges({ definition, types, literalOf })
 		.map(({ parent, child }) => edgeTypeName({ typeNames, element: child, parent }))
 		.sort()
 	const imports = ['AvailableElement', 'AttributesOf', 'AttributesByParent', ...edgeTypes].join(
@@ -49,7 +50,7 @@ export function emitConstantsSource(params: {
 		'',
 		`export const SINGLETON_ELEMENTS = ${tsStringArray(deriveSingletons({ definition, root, types }))} as const`,
 		'',
-		`const ATTRIBUTES_BY_TAG = ${attributesByTag({ definition, names })} as const`,
+		`const ATTRIBUTES_BY_TAG = ${attributesByTag({ definition, types, literalOf, names })} as const`,
 		'',
 		'/**',
 		' * Attribute skeletons: one key per attribute name, typed for the type system; what an attribute',
@@ -59,7 +60,7 @@ export function emitConstantsSource(params: {
 		' */',
 		'export const ATTRIBUTES = {',
 		'\tbyTag: ATTRIBUTES_BY_TAG,',
-		`\tbyParent: ${attributesByParent({ definition, names, typeNames })} satisfies AttributesByParent,`,
+		`\tbyParent: ${attributesByParent({ definition, types, literalOf, names, typeNames })} satisfies AttributesByParent,`,
 		'} as const',
 		'',
 		`export const REQUIRED_ATTRIBUTES = ${tsRecord(requiredAttributes({ definition }))} as const satisfies Record<AvailableElement, readonly string[]>`,
@@ -67,12 +68,21 @@ export function emitConstantsSource(params: {
 	].join('\n')
 }
 
-function attributesByTag(params: { definition: DefinitionData; names: readonly string[] }): string {
-	const { definition, names } = params
+/** One skeleton per element: a key per attribute name any member of its type offers (`shapeKeys`). */
+function attributesByTag(params: {
+	definition: DefinitionData
+	types: TypesData
+	literalOf: LiteralOf
+	names: readonly string[]
+}): string {
+	const { definition, types, literalOf, names } = params
 	const lines = ['{']
 	for (const name of names) {
 		const element = definition[name]
-		const sequence = element === undefined ? [] : typedAttributes(element).sequence
+		const sequence =
+			element === undefined
+				? []
+				: shapeKeys({ shape: attributeShape({ content: element, types, literalOf }) })
 		if (sequence.length === 0) {
 			lines.push(`\t${tsKey(name)}: {} as AttributesOf<'${name}'>,`)
 			continue
@@ -88,23 +98,27 @@ function attributesByTag(params: { definition: DefinitionData; names: readonly s
 /** One row per parent, one entry per child: the by-tag object, or its own skeleton where a homonym differs. */
 function attributesByParent(params: {
 	definition: DefinitionData
+	types: TypesData
+	literalOf: LiteralOf
 	names: readonly string[]
 	typeNames: ReadonlyMap<string, string>
 }): string {
-	const { definition, names, typeNames } = params
+	const { definition, types, literalOf, names, typeNames } = params
 	const lines = ['{']
 	for (const parent of names) {
 		const children = elementChildren({ definition, parent })
 		if (children.length === 0) continue
 		lines.push(`\t\t${tsKey(parent)}: {`)
 		for (const child of children) {
-			const declared = attributesDeclaredUnder({ definition, parent, child })
+			const declared = shapeDeclaredUnder({ definition, types, literalOf, parent, child })
 			if (declared === undefined) {
 				lines.push(`\t\t\t${tsKey(child)}: ATTRIBUTES_BY_TAG${tsMember(child)},`)
 				continue
 			}
 			const typeName = edgeTypeName({ typeNames, element: child, parent })
-			lines.push(`\t\t\t${tsKey(child)}: ${skeleton(declared.sequence)} as ${typeName},`)
+			lines.push(
+				`\t\t\t${tsKey(child)}: ${skeleton(shapeKeys({ shape: declared }))} as ${typeName},`,
+			)
 		}
 		lines.push('\t\t},')
 	}

@@ -1,0 +1,22 @@
+{
+	"df29de46a4a117aa": {
+		"line": 25,
+		"mutation": "OptionalChaining: definition[root]?.namespace -> definition[root].namespace",
+		"equivalent": "The root is an element of the definition (derived, or chosen among its elements): definition[root] exists."
+	},
+	"d5968fb1d178d08b": {
+		"line": 55,
+		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
+		"equivalent": "A declaration has no declarations of its own: the placeholder joins `ways` as a string, which names no type and no variant - nothing it adds is read."
+	},
+	"d5968fb1d178d08b-1": {
+		"line": 58,
+		"mutation": "ArrayDeclaration: [] -> [\"Stryker was here\"]",
+		"equivalent": "A placeholder variant is no Clark name of TYPES: types[clark] is undefined and it is left out, as an absent list."
+	},
+	"3bcf7c19c209a800": {
+		"line": 108,
+		"mutation": "EqualityOperator: first.prefix < second.prefix -> first.prefix <= second.prefix",
+		"equivalent": "The definition gives each namespace one prefix and no two namespaces the same: prefixes are distinct, < and <= sort them the same."
+	}
+}

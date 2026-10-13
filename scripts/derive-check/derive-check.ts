@@ -58,7 +58,7 @@ async function main(): Promise<void> {
 		}
 		const constants = await import(pathToFileURL(join(folder, 'constants.generated.ts')).href)
 		// the committed constants against what the definition implies - not against what this code would write
-		const disagreements = checkDerivation({ definition: DEFINITION, constants })
+		const disagreements = checkDerivation({ definition: DEFINITION, types: TYPES, constants })
 		if (disagreements.length > 0) differing++
 		process.stdout.write(`${name} oracle: ${describeDisagreements({ disagreements })}\n`)
 		const root = rootOf({ definition: DEFINITION, committed: constants.ROOT_ELEMENT })
@@ -69,7 +69,11 @@ async function main(): Promise<void> {
 				root: root.tag,
 				types: TYPES,
 			}),
-			'types.generated.ts': emitTypesSource({ definition: DEFINITION }),
+			'types.generated.ts': emitTypesSource({
+				definition: DEFINITION,
+				types: TYPES,
+				root: root.tag,
+			}),
 		}
 		const formatted = format({
 			packageRoot: join(DIALECTE_ROOT, dialecte.packageRoot),

@@ -59,7 +59,8 @@ export type AttributesByParent = {
 
 export type RequiredAttributeNames<T extends AvailableElement> =
 	(typeof REQUIRED_ATTRIBUTES)[T][number]
+/** Every attribute name a member of the type offers, but the required ones. */
 export type OptionalAttributeNames<T extends AvailableElement> = Exclude<
-	keyof AttributesOf<T>,
+	AttributesOf<T> extends infer Member ? (Member extends unknown ? keyof Member : never) : never,
 	RequiredAttributeNames<T>
 >

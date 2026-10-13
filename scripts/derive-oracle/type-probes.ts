@@ -9,9 +9,14 @@ import { readdirSync } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { attributeNames, declarationUnder } from './derive-oracle.ts'
+import { declarationUnder, storedLiterals, variantsOf } from './derive-oracle.ts'
 
-import type { DeclarationData, DefinitionData, ElementData } from '../../src/derive/derive.types.ts'
+import type {
+	DeclarationData,
+	DefinitionData,
+	ElementData,
+	TypesData,
+} from '../../src/derive/derive.types.ts'
 import type { Compile, Compiled } from './type-probes.types.ts'
 
 const CREATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -36,8 +41,13 @@ const STRICTEST = [
 const UNKNOWN = 'dialecte-probe-unknown'
 
 /** `probes.ts` for a dialecte whose generated files sit beside it. */
-export function typeProbesSource(params: { definition: DefinitionData }): string {
-	const { definition } = params
+export function typeProbesSource(params: {
+	definition: DefinitionData
+	types: TypesData
+	root: string
+}): string {
+	const { definition, types, root } = params
+	const literalOf = storedLiterals({ definition, types, root })
 	const tags = Object.keys(definition).sort()
 	const probes = tags.flatMap((tag) => [
 		{ target: `AttributesMap[${JSON.stringify(tag)}]`, content: definition[tag] },
@@ -60,7 +70,7 @@ export function typeProbesSource(params: { definition: DefinitionData }): string
 	let index = 0
 	for (const { target, content } of probes) {
 		if (content === undefined) continue
-		for (const probe of probesOf({ content })) {
+		for (const probe of probesOf({ content, types, literalOf })) {
 			if (probe.refused) lines.push(`// @ts-expect-error ${probe.refused}`)
 			lines.push(`export const probe${index++}: ${target} = ${literal(probe.attributes)}`)
 		}
@@ -110,20 +120,55 @@ function compileWithTsc(folders: readonly string[]): Compiled {
 
 type Probe = { readonly attributes: Readonly<Record<string, string>>; readonly refused?: string }
 
-/** Accepted: the required attributes alone. Refused: one of them missing; an attribute the element lacks. */
-function probesOf(params: { content: ElementData | DeclarationData }): Probe[] {
-	const { content } = params
-	const required = Object.fromEntries(
-		content.attributes.sequence
-			.filter((name) => content.attributes.details[name]?.required === true)
-			.map((name) => [name, content.attributes.details[name]?.fixed ?? '']),
-	)
-	const [first] = Object.keys(required)
+/** One member of an attribute type: the attributes it has, the `xsi:type` it is written with (none: absent). */
+type Member = { readonly attributes: ElementData['attributes']; readonly xsiType?: string }
+
+/**
+ * Per member of the type - the element's own attributes, and where it may name a type one member per type, its
+ * `xsi:type` set: accepted, the required attributes alone; refused, one of them missing, and an attribute it lacks.
+ * Where it may name a type: refused, a type it may not name; and for an abstract type, its own attributes without one.
+ */
+function probesOf(params: {
+	content: ElementData | DeclarationData
+	types: TypesData
+	literalOf: (clark: string) => string | undefined
+}): Probe[] {
+	const { content, types, literalOf } = params
+	const variants = variantsOf({ content, literalOf }).flatMap(({ clark, literal }) => {
+		const type = types[clark]
+		return type === undefined ? [] : [{ attributes: type.attributes, xsiType: literal }]
+	})
+	const own: Member = { attributes: content.attributes }
+	if (variants.length === 0) return memberProbes({ member: own, union: false })
+	const [first] = variants
+	return [
+		...(content.abstractType
+			? [{ attributes: requiredOf(content.attributes), refused: 'an abstract type names another' }]
+			: memberProbes({ member: own, union: true })),
+		...variants.flatMap((member) => memberProbes({ member, union: true })),
+		...(first === undefined
+			? []
+			: [
+					{
+						attributes: { ...requiredOf(first.attributes), 'xsi:type': UNKNOWN },
+						refused: 'a type it may not name',
+					},
+				]),
+	]
+}
+
+function memberProbes(params: { member: Member; union: boolean }): Probe[] {
+	const { member, union } = params
+	const named: Record<string, string> =
+		member.xsiType === undefined ? {} : { 'xsi:type': member.xsiType }
+	const required: Record<string, string> = { ...requiredOf(member.attributes), ...named }
+	const [first] = Object.keys(requiredOf(member.attributes))
 	const { [first ?? '']: _missing, ...withoutFirst } = required
 	// no unknown-attribute probe where it cannot hold: an attribute wildcard (the type is closed on purpose), or no
-	// attribute at all - TypeScript's empty object type `{}` takes any object (an X3 item: refuse it at the write
-	// parameter, where `keyof` is not read)
-	const probesUnknown = !('any' in content.attributes) && attributeNames({ content }).length > 0
+	// attribute at all outside a union - TypeScript's empty object type `{}` takes any object (an X3 item: refuse it
+	// at the write parameter, where `keyof` is not read)
+	const probesUnknown =
+		!('any' in member.attributes) && (union || member.attributes.sequence.length > 0)
 	return [
 		{ attributes: required },
 		...(first === undefined ? [] : [{ attributes: withoutFirst, refused: `${first} is required` }]),
@@ -131,6 +176,15 @@ function probesOf(params: { content: ElementData | DeclarationData }): Probe[] {
 			? [{ attributes: { ...required, [UNKNOWN]: '' }, refused: 'an attribute it does not have' }]
 			: []),
 	]
+}
+
+/** The attributes required, each with a value its type takes: its fixed one, else ''. */
+function requiredOf(attributes: ElementData['attributes']): Record<string, string> {
+	return Object.fromEntries(
+		attributes.sequence
+			.filter((name) => attributes.details[name]?.required === true)
+			.map((name) => [name, attributes.details[name]?.fixed ?? '']),
+	)
 }
 
 function literal(attributes: Readonly<Record<string, string>>): string {

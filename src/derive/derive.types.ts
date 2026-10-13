@@ -26,6 +26,8 @@ export type ElementData = {
 	readonly type?: string
 	/** The types an instance may name instead of the declared one with xsi:type (Clark names, in `TYPES`). */
 	readonly variants?: readonly string[]
+	/** The declared type is abstract (every declaration's, for a tag declared several ways): an instance names another. */
+	readonly abstractType?: true
 }
 
 /** The types elements may take with xsi:type, by Clark name: what each lets an element hold. */
@@ -39,9 +41,12 @@ export type DeclarationData = {
 	readonly contentModel?: ParticleData
 	readonly type?: string
 	readonly variants?: readonly string[]
+	readonly abstractType?: true
 }
 
 export type AttributeData = {
+	/** The namespace of an attribute of another namespace than its element's, keyed `prefix:local`. */
+	readonly namespace?: NamespaceData
 	readonly required?: true
 	readonly fixed?: string
 	readonly type?: DataTypeData
@@ -82,8 +87,35 @@ export type ParticleData =
 export type DeclaredEdge = {
 	readonly parent: string
 	readonly child: string
+	readonly shape: AttributeShape
+}
+
+/**
+ * What an element's attribute type is made of. Without a type to name instead of its own, its attributes alone;
+ * otherwise a union on `xsi:type`: its own member (none when its declared type is abstract) and one per type it may
+ * name, each by the literal core stores it as.
+ */
+export type AttributeShape = {
+	readonly own?: {
+		readonly attributes: ElementData['attributes']
+		/** The literals `xsi:type` may name its own type with; empty when its type cannot be named so. */
+		readonly literals: readonly string[]
+	}
+	/** The types it may name instead, by their stored literal, in the definition's order. */
+	readonly variants: readonly VariantMember[]
+}
+
+export type VariantMember = {
+	/** How core stores `xsi:type` naming the type: `local`, or `prefix:local` outside the default namespace. */
+	readonly literal: string
+	/** The type's Clark name, its key in `TYPES`. */
+	readonly clark: string
+	/** The attributes an element taking the type has. */
 	readonly attributes: ElementData['attributes']
 }
+
+/** The stored literal of a type's Clark name; `undefined` when core keeps it as written (a namespace not declared). */
+export type LiteralOf = (clark: string) => string | undefined
 
 export type NamespaceData = { readonly prefix: string; readonly uri: string }
 
@@ -97,6 +129,13 @@ export type ExampleFacts = {
 		/** Each attribute the child requires, with a value the schema accepts. */
 		readonly requiredAttributes: readonly { readonly name: string; readonly value: string }[]
 	} | null
+}
+
+/** What generating a definition tells the scaffold: what its worked example is written with, the namespaces to declare. */
+export type GeneratedFacts = {
+	readonly example: ExampleFacts
+	/** The namespaces the definition gives a prefix, beside the default one (`prefixedNamespaces`). */
+	readonly namespaces: readonly NamespaceData[]
 }
 
 /** Element → element names, each list sorted. */

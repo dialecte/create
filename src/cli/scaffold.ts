@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { readdir, mkdir, readFile, writeFile, rm } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 
+import { tsKey } from '../derive/ts-syntax.ts'
 import { writeExample } from './example.ts'
 import { TEMPLATES_DIR } from './paths.ts'
 import { runGenerator } from './pyodide-runner.ts'
@@ -15,8 +16,6 @@ export interface ScaffoldOptions {
 	packageName: string
 	/** Version folder name, e.g. "v1". */
 	version: string
-	/** Default namespace URI, overriding the namespace of the root element the schema defines. */
-	namespaceUri?: string
 	/** Pinned @dialecte/core version. */
 	coreVersion: string
 	/** The element that starts a document, when more than one could. */
@@ -54,6 +53,28 @@ export function buildReplacements(options: ScaffoldOptions): Replacements {
 		coreVersion: options.coreVersion,
 		generateOptions: options.root === undefined ? '' : ` --root ${options.root}`,
 	}
+}
+
+/** The namespace of xsi:type and xsi:nil: the template declares it as `xsi`. */
+const XSI_NAMESPACE_URI = 'http://www.w3.org/2001/XMLSchema-instance'
+
+/**
+ * The config entries of the namespaces the definition prefixes, keyed by prefix: core stores an xsi:type value with
+ * the prefix declared for its namespace, the generated types with the definition's - the package's test checks they
+ * agree. The XSI namespace is declared already; a prefix the config uses as a key (`default`, `xsi`) takes a number.
+ */
+function namespaceEntries(namespaces: readonly { prefix: string; uri: string }[]): string {
+	const keys = new Set(['default', 'xsi'])
+	return namespaces
+		.filter(({ uri }) => uri !== XSI_NAMESPACE_URI)
+		.map(({ prefix, uri }) => {
+			let key = prefix
+			for (let suffix = 2; keys.has(key); suffix++) key = `${prefix}_${suffix}`
+			keys.add(key)
+			const quoted = (value: string) => `'${escapeForSingleQuotedString(value)}'`
+			return `\t${tsKey(key)}: { uri: ${quoted(uri)}, prefix: ${quoted(prefix)} },\n`
+		})
+		.join('')
 }
 
 /** The namespace URI lands inside a single-quoted TypeScript string: it must not end it. */
@@ -140,13 +161,15 @@ export async function scaffoldDialecte(
 
 		// Documents live in the namespace of their root element - not necessarily the entry schema's
 		// targetNamespace: an extension schema (IEC 61850-6-100 over SCL) has its own.
-		namespaceUri = options.namespaceUri ?? facts.root.namespaceUri
-		rootElement = facts.root.name
+		namespaceUri = facts.example.root.namespaceUri
+		rootElement = facts.example.root.name
 		const namespacesFile = join(targetDir, 'src', options.version, 'config', 'namespaces.ts')
 		const namespaces = await readFile(namespacesFile, 'utf8')
 		await writeFile(
 			namespacesFile,
-			namespaces.replaceAll('__namespaceUri__', escapeForSingleQuotedString(namespaceUri)),
+			namespaces
+				.replaceAll('__namespaceUri__', escapeForSingleQuotedString(namespaceUri))
+				.replace('\t// __prefixedNamespaces__\n', namespaceEntries(facts.namespaces)),
 			'utf8',
 		)
 
@@ -154,7 +177,7 @@ export async function scaffoldDialecte(
 		await writeExample({
 			exampleDir: join(targetDir, 'src', options.version, 'extensions', 'hello-world'),
 			otherFiles: [join(targetDir, 'README.md')],
-			facts,
+			facts: facts.example,
 			defaultNamespaceUri: namespaceUri,
 		})
 	} catch (error) {
