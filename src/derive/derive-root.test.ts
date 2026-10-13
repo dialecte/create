@@ -5,11 +5,12 @@ import { deriveRoot } from './derive-root.ts'
 
 import type { DefinitionData, ElementData } from './derive.types.ts'
 
-function element(parents: string[] = []): ElementData {
+function element(parents: string[] = [], global?: true): ElementData {
 	return {
 		parents,
 		attributes: { sequence: [], details: {} },
 		children: { sequence: [], details: {} },
+		...(global ? { global } : {}),
 	}
 }
 
@@ -36,14 +37,38 @@ const cases: Record<string, RootCase> = {
 		definition: { Order: element(), Invoice: element() },
 		refused: /choose one.*Invoice, Order/,
 	},
-	'a chosen element another one holds -> refused, the candidates named': {
+	'a chosen local element another one holds -> refused, the candidates named': {
 		definition: { Root: element(), Child: element(['Root']) },
 		chosen: 'Child',
 		refused: /'Child' is not a root candidate.*Root/,
 	},
-	'every element held by another -> refused': {
-		definition: { First: element(['Second']), Second: element(['First']) },
-		refused: /No root candidate/,
+	'every element held by another, none chosen -> refused, the global elements named': {
+		definition: {
+			First: element(['Second'], true),
+			Second: element(['First'], true),
+			Local: element(['First']),
+		},
+		refused: /choose one with --root among the global elements: First, Second$/,
+	},
+	'a chosen local element beside two candidates -> refused, both candidates named in order': {
+		definition: { Order: element(), Invoice: element(), Line: element(['Order']) },
+		chosen: 'Line',
+		refused: /the candidates are: Invoice, Order$/,
+	},
+	'every element held by another, globals listed out of order -> named sorted': {
+		definition: { Zeta: element(['Alpha'], true), Alpha: element(['Zeta'], true) },
+		refused: /global elements: Alpha, Zeta$/,
+	},
+	'every element held by another, a global one chosen -> the chosen one (any global element may start a document)':
+		{
+			definition: { First: element(['Second'], true), Second: element(['First'], true) },
+			chosen: 'Second',
+			expected: 'Second',
+		},
+	'a global element another one holds, chosen beside a candidate -> the chosen one': {
+		definition: { Root: element(), Child: element(['Root'], true) },
+		chosen: 'Child',
+		expected: 'Child',
 	},
 }
 

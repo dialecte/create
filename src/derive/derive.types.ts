@@ -6,6 +6,8 @@ export type DefinitionData = Readonly<Record<string, ElementData>>
 
 export type ElementData = {
 	readonly namespace?: NamespaceData
+	/** A global declaration: it may start a document. */
+	readonly global?: true
 	readonly parents: readonly string[]
 	readonly attributes: {
 		readonly sequence: readonly string[]
