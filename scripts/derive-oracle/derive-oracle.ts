@@ -214,7 +214,10 @@ function keysOf(value: object | undefined): string[] | undefined {
 	return value === undefined ? undefined : Object.keys(value).sort()
 }
 
-/** The transitive closure of a relation, each list sorted: grown until a pass adds nothing. */
+/**
+ * The transitive closure of a relation, each list sorted, as its fixed point R+ = R u R.R+: each pass adds what the
+ * direct steps of a tag reach, until a pass adds nothing.
+ */
 function transitive(params: {
 	relation: Readonly<Record<string, readonly string[]>>
 	tags: readonly string[]
@@ -224,15 +227,12 @@ function transitive(params: {
 	let grew = true
 	while (grew) {
 		grew = false
-		for (const set of reached.values()) {
-			for (const step of set) {
-				for (const next of reached.get(step) ?? []) {
-					if (!set.has(next)) {
-						set.add(next)
-						grew = true
-					}
-				}
-			}
+		for (const tag of tags) {
+			const set = reached.get(tag) ?? new Set<string>()
+			const before = set.size
+			for (const step of relation[tag] ?? [])
+				for (const next of reached.get(step) ?? []) set.add(next)
+			if (set.size > before) grew = true
 		}
 	}
 	return Object.fromEntries(tags.map((tag) => [tag, [...(reached.get(tag) ?? [])].sort()]))
@@ -244,9 +244,9 @@ function inverse(params: {
 	tags: readonly string[]
 }): Record<string, string[]> {
 	const { relation, tags } = params
-	return Object.fromEntries(
-		tags.map((tag) => [tag, tags.filter((holder) => relation[holder]?.includes(tag)).sort()]),
-	)
+	const holders = new Map(tags.map((tag) => [tag, new Set<string>()]))
+	for (const holder of tags) for (const tag of relation[holder] ?? []) holders.get(tag)?.add(holder)
+	return Object.fromEntries(tags.map((tag) => [tag, [...(holders.get(tag) ?? [])].sort()]))
 }
 
 /** A disagreement when the two lists differ, order included. */

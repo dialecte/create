@@ -63,7 +63,7 @@ jobs:
         run: python -m corpora.fetch
 
       - name: Run the corpora tier
-        run: python -m pytest tests/corpora -q
+        run: python -m pytest tests/corpora -q -n auto --dist loadgroup
         env:
           PROOF_CORPORA: '1'
           PROOF_REQUIRE: corpora

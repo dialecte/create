@@ -40,7 +40,7 @@
 		"mutants": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m mutants.run",
 		"mutants:ts": "node scripts/mutants-ts/mutants-ts.ts",
 		"corpora:fetch": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m corpora.fetch",
-		"test:corpora": "cd python && PROOF_CORPORA=1 $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m pytest tests/corpora -q",
+		"test:corpora": "cd python && PROOF_CORPORA=1 $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m pytest tests/corpora -q -n 6 --dist loadgroup",
 		"fuzz": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m proof.fuzz",
 		"prepack": "find python -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true",
 		"prepare": "husky",
@@ -53,6 +53,7 @@
 	"devDependencies": {
 		"@stryker-mutator/core": "10.0.0",
 		"@types/node": "^22.0.0",
+		"@typescript/native-preview": "7.0.0-dev.20260707.2",
 		"husky": "^9.1.7",
 		"oxlint": "^1.68.0",
 		"tsup": "^8.5.1",

@@ -9,7 +9,7 @@ import { readdirSync } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { declarationUnder, storedLiterals, variantsOf } from './derive-oracle.ts'
+import { attributeNames, declarationUnder, storedLiterals, variantsOf } from './derive-oracle.ts'
 
 import type {
 	DeclarationData,
@@ -21,6 +21,7 @@ import type { Compile, Compiled } from './type-probes.types.ts'
 
 const CREATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const TSC = join(CREATE_ROOT, 'node_modules', 'typescript', 'bin', 'tsc')
+const TSGO = join(CREATE_ROOT, 'node_modules', '.bin', 'tsgo')
 /** The strictest options a consumer may turn on, as the fixtures' type-check uses. */
 const STRICTEST = [
 	'--noEmit',
@@ -101,19 +102,34 @@ export function typeCheck(params: { folders: readonly string[]; compile?: Compil
 	return failing.length > 0 ? [...failing].sort() : [...folders].sort()
 }
 
-/** `tsc` with the heap large schemas need; a run it does not finish (a signal, an abort) is a crash. */
-function compileWithTsc(folders: readonly string[]): Compiled {
+/** `tsc` with the heap large schemas need: the compiler a dialecte's consumers build with. */
+export function compileWithTsc(folders: readonly string[]): Compiled {
+	return compileWith({ command: ['node', '--max-old-space-size=4096', TSC], folders })
+}
+
+/**
+ * `tsgo`, TypeScript's native compiler (preview): the same verdicts as `tsc` on the corpus, several times faster - what
+ * the corpus and fuzz tiers check with. `--ignoreConfig`: the files are named, no `tsconfig.json` is read.
+ */
+export function compileWithTsgo(folders: readonly string[]): Compiled {
+	return compileWith({ command: [TSGO, '--ignoreConfig'], folders })
+}
+
+/** One compiler run over every `.ts` file of the folders; a run it does not finish (a signal, an abort) is a crash. */
+function compileWith(params: { command: readonly string[]; folders: readonly string[] }): Compiled {
+	const { command, folders } = params
+	const [program = 'node', ...args] = command
 	const files = folders.flatMap((folder) =>
 		readdirSync(folder)
 			.filter((file) => file.endsWith('.ts'))
 			.map((file) => join(folder, file)),
 	)
-	const run = spawnSync('node', ['--max-old-space-size=4096', TSC, ...STRICTEST, ...files], {
+	const run = spawnSync(program, [...args, ...STRICTEST, ...files], {
 		encoding: 'utf-8',
 		maxBuffer: 256 * 1024 * 1024,
 	})
 	if (run.status === 0) return { outcome: 'passed', output: run.stdout }
-	// tsc reports diagnostics with 1 or 2; anything else did not finish
+	// both report diagnostics with 1 or 2; anything else did not finish
 	if (run.status === 1 || run.status === 2) return { outcome: 'failed', output: run.stdout }
 	return { outcome: 'crashed', output: run.stdout ?? '' }
 }
@@ -139,13 +155,14 @@ function probesOf(params: {
 		return type === undefined ? [] : [{ attributes: type.attributes, xsiType: literal }]
 	})
 	const own: Member = { attributes: content.attributes }
-	if (variants.length === 0) return memberProbes({ member: own, union: false })
+	if (variants.length === 0) return memberProbes({ member: own, unionKeys: [] })
+	const unionKeys = attributeNames({ content, types, literalOf })
 	const [first] = variants
 	return [
 		...(content.abstractType
 			? [{ attributes: requiredOf(content.attributes), refused: 'an abstract type names another' }]
-			: memberProbes({ member: own, union: true })),
-		...variants.flatMap((member) => memberProbes({ member, union: true })),
+			: memberProbes({ member: own, unionKeys })),
+		...variants.flatMap((member) => memberProbes({ member, unionKeys })),
 		...(first === undefined
 			? []
 			: [
@@ -157,8 +174,13 @@ function probesOf(params: {
 	]
 }
 
-function memberProbes(params: { member: Member; union: boolean }): Probe[] {
-	const { member, union } = params
+/**
+ * A member's probes; in a union (`unionKeys`, every key of it), also an attribute only another member has, refused by
+ * type - every member lists the union's keys, those it lacks as `?: undefined`.
+ */
+function memberProbes(params: { member: Member; unionKeys: readonly string[] }): Probe[] {
+	const { member, unionKeys } = params
+	const union = unionKeys.length > 0
 	const named: Record<string, string> =
 		member.xsiType === undefined ? {} : { 'xsi:type': member.xsiType }
 	const required: Record<string, string> = { ...requiredOf(member.attributes), ...named }
@@ -167,13 +189,19 @@ function memberProbes(params: { member: Member; union: boolean }): Probe[] {
 	// no unknown-attribute probe where it cannot hold: an attribute wildcard (the type is closed on purpose), or no
 	// attribute at all outside a union - TypeScript's empty object type `{}` takes any object (an X3 item: refuse it
 	// at the write parameter, where `keyof` is not read)
-	const probesUnknown =
-		!('any' in member.attributes) && (union || member.attributes.sequence.length > 0)
+	const closed = !('any' in member.attributes)
+	const probesUnknown = closed && (union || member.attributes.sequence.length > 0)
+	const foreign = unionKeys.find(
+		(key) => key !== 'xsi:type' && !member.attributes.sequence.includes(key),
+	)
 	return [
 		{ attributes: required },
 		...(first === undefined ? [] : [{ attributes: withoutFirst, refused: `${first} is required` }]),
 		...(probesUnknown
 			? [{ attributes: { ...required, [UNKNOWN]: '' }, refused: 'an attribute it does not have' }]
+			: []),
+		...(closed && foreign !== undefined
+			? [{ attributes: { ...required, [foreign]: '' }, refused: 'an attribute of another type' }]
 			: []),
 	]
 }

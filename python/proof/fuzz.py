@@ -13,12 +13,14 @@ libraries side against the generator**; where the libraries disagree with each o
 particles removed while it still fails - and written to `--out`, to become a named test.
 """
 import argparse
+import os
 import random
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -401,8 +403,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--seed', default='0')
     parser.add_argument('--count', type=int, default=200)
     parser.add_argument('--out', type=Path, default=Path(__file__).resolve().parents[1] / '.tmp' / 'fuzz')
+    parser.add_argument('--workers', type=int, default=WORKERS, help='draws judged at once, each in its own process')
     arguments = parser.parse_args(argv)
-    report = run(seed=arguments.seed, count=arguments.count, out=arguments.out)
+    report = run(seed=arguments.seed, count=arguments.count, out=arguments.out, workers=arguments.workers)
     print(
         f'{report["drawn"]} drawn, {report["loaded"]} loaded by both libraries, {report["typed"]} type-checked with their '
         f'probes, {len(report["hangs"])} hanging a library, '
@@ -415,44 +418,79 @@ def main(argv: list[str] | None = None) -> int:
     return 1 if report['failing'] else 0
 
 
-def run(*, seed: str, count: int, out: Path) -> dict:
+# draws are independent (each seeded by its index): judged in parallel, merged in index order - a run is reproducible
+WORKERS = min(6, os.cpu_count() or 1)
+
+
+@dataclass
+class _Judged:
+    """What one draw gave: whether it hung or loaded, its findings, and the folder its probes were written to."""
+
+    name: str
+    draw: Draw
+    hangs: bool = False
+    loaded: bool = False
+    findings: tuple[str, ...] = ()
+    disputed: tuple[str, ...] = ()
+    probed: Path | None = None
+
+
+def run(*, seed: str, count: int, out: Path, workers: int = WORKERS) -> dict:
     report: dict = {'drawn': 0, 'loaded': 0, 'typed': 0, 'hangs': [], 'failing': {}, 'disputed': {}}
     scratch = Path(tempfile.mkdtemp(prefix='dialecte-fuzz-'))
-    # each judged draw's generated files and type probes, type-checked together once the draws are judged
-    probed: dict[Path, tuple[str, Draw]] = {}
     try:
-        for index in range(count):
-            rng = random.Random(f'{seed}:{index}')
-            draw = draw_schema(rng)
+        jobs = [(seed, index, scratch, out) for index in range(count)]
+        if workers > 1:
+            with ProcessPoolExecutor(max_workers=workers) as pool:
+                judged = list(pool.map(_judge_draw, jobs))
+        else:
+            judged = [_judge_draw(job) for job in jobs]
+        # each judged draw's generated files and type probes, type-checked together once the draws are judged
+        probed: dict[Path, _Judged] = {}
+        for outcome in judged:
             report['drawn'] += 1
-            entry = write(draw, scratch / f'{seed}-{index}')
-            loaded = loads(entry)
-            if loaded == 'hangs':
-                report['hangs'].append(f'{seed}-{index}')
-                write(draw, out / f'{seed}-{index}-libxml2-hangs')
-            if loaded != 'loaded':
+            if outcome.hangs:
+                report['hangs'].append(outcome.name)
+            if not outcome.loaded:
                 continue
             report['loaded'] += 1
-            findings, disputed = judge(entry, draw)
-            name = f'{seed}-{index}'
-            if findings:
-                shrunk = shrink(draw, findings[0], scratch)
-                write(shrunk, out / name)
-                report['failing'][name] = findings
-            if disputed:
-                write(draw, out / f'{name}-disputed')
-                report['disputed'][name] = disputed
-            folder = scratch / 'probed' / name
-            if not findings and corpus.write_probed(CorpusSchema(id=name, entry=entry), folder):
-                probed[folder] = (name, draw)
+            if outcome.findings:
+                report['failing'][outcome.name] = list(outcome.findings)
+            if outcome.disputed:
+                report['disputed'][outcome.name] = list(outcome.disputed)
+            if outcome.probed is not None:
+                probed[outcome.probed] = outcome
         report['typed'] = len(probed)
         for folder in corpus.failing_types(list(probed)):
-            name, draw = probed[folder]
-            write(draw, out / name)
-            report['failing'][name] = ['types/probes']
+            outcome = probed[folder]
+            write(outcome.draw, out / outcome.name)
+            report['failing'][outcome.name] = ['types/probes']
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
     return report
+
+
+def _judge_draw(job: tuple[str, int, Path, Path]) -> _Judged:
+    """One draw, written, loaded by both libraries, judged and - with no finding - written with its type probes."""
+    seed, index, scratch, out = job
+    name = f'{seed}-{index}'
+    draw = draw_schema(random.Random(f'{seed}:{index}'))
+    entry = write(draw, scratch / name)
+    loaded = loads(entry)
+    if loaded == 'hangs':
+        write(draw, out / f'{name}-libxml2-hangs')
+    if loaded != 'loaded':
+        return _Judged(name=name, draw=draw, hangs=loaded == 'hangs')
+    findings, disputed = judge(entry, draw)
+    if findings:
+        write(shrink(draw, findings[0], scratch), out / name)
+    if disputed:
+        write(draw, out / f'{name}-disputed')
+    folder = scratch / 'probed' / name
+    probed = folder if not findings and corpus.write_probed(CorpusSchema(id=name, entry=entry), folder) else None
+    return _Judged(
+        name=name, draw=draw, loaded=True, findings=tuple(findings), disputed=tuple(disputed), probed=probed,
+    )
 
 
 if __name__ == '__main__':

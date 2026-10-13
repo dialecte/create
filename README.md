@@ -10,7 +10,8 @@ with their facets, identity constraints and the types an element may take with `
 the constants and types are derived from it in TypeScript. An element that may take another type has a union of
 attribute types on `xsi:type`: its own attributes (none for an abstract type), and one `AttributesType_<type>` per
 type it may take, each written with the value core stores (`local`, or `prefix:local` outside the default
-namespace). A scaffolded package checks that its `namespaces` config gives each namespace the definition's prefix.
+namespace). The union is exclusive: every member lists every attribute of the union, those it lacks as optional
+`undefined`, so `keyof` reaches every attribute and naming a type rules out another type's. A scaffolded package checks that its `namespaces` config gives each namespace the definition's prefix.
 
 ## Quick start
 
@@ -134,9 +135,11 @@ The TypeScript side - the constants and types `src/derive` writes from a definit
 as the inverse of children, closures by fixed point, attribute keys per element and per parent, required
 attributes), and per element a type probe checks that each member of the generated attribute type accepts the
 required attributes alone and refuses one missing or an unknown key - and, where it may take another type, that a type
-it may not take is refused, and an abstract type without one - all under `tsc --strict`. It runs on the committed fixtures
-(`test:ts`), on the sibling dialectes (`derive:check`), on every generated schema (`npm run fuzz`) and on every
-corpus schema (`npm run test:corpora`). `npm run mutants:ts [-- <file> ...]` is the TypeScript twin of the mutation
+it may not take is refused, an attribute of another type too, and an abstract type without one - under the strictest
+options. It runs on the committed fixtures (`test:ts`, with `tsc`: what a consumer builds with), on the sibling
+dialectes (`derive:check`), on every generated schema (`npm run fuzz`) and on every corpus schema (`npm run
+test:corpora`), those two with `tsgo` - TypeScript's native compiler, the same verdicts several times faster
+(`node scripts/derive-oracle/type-check.ts --tsc <folder>` judges with `tsc`). `npm run mutants:ts [-- <file> ...]` is the TypeScript twin of the mutation
 gate (StrykerJS over `node --test`), its record in `scripts/mutants-ts/records/`.
 
 `npm run corpora:fetch` downloads the third-party corpora the licence review admitted (plan 10b of the
@@ -145,7 +148,9 @@ every schema-tier check on every schema they hold - the generator reads it, its 
 constructs are classified, its patterns, identity paths, `xsi:type` variants and attribute wildcards agree with
 libxml2, and the facts the documents declare are kept. A disagreement a reviewed reason explains is listed in
 `python/corpora/known-exceptions.json`; a listed one that stops occurring fails too. `npm run fuzz -- --seed S
---count N` judges generated schemas the same way, a fixed range of them with every `npm run test:py`.
+--count N` judges generated schemas the same way, a fixed range of them with every `npm run test:py`. Both run in
+parallel: the corpus tier on six processes (pytest-xdist, every check of a schema in one, so it reads the schema once),
+the fuzz draws on six too (`--workers`), merged in order - a run reads as a serial one would.
 
 A construct of XSD the generator has never been shown to read fails the suite: every construct a
 schema writes is classified in `python/proof/constructs.json` as handled, excluded with the reason, or

@@ -6,7 +6,7 @@ import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import { emittedFiles } from './check-emitted.ts'
-import { typeCheck, typeProbesSource } from './type-probes.ts'
+import { compileWithTsc, compileWithTsgo, typeCheck, typeProbesSource } from './type-probes.ts'
 
 import type { DefinitionData, TypesData } from '../../src/derive/derive.types.ts'
 import type { Compiled } from './type-probes.types.ts'
@@ -87,12 +87,19 @@ describe('type probes', () => {
 	const unionTampers: Record<string, (types: string) => string> = {
 		'an abstract type given a member of its own -> the probe fails': (types) =>
 			types.replace(
-				'export type AttributesDD_1 =\n',
-				'export type AttributesDD_1 =\n\t| { aDD_1: string }\n',
+				'export type AttributesDD_1 = Exclusive<\n',
+				'export type AttributesDD_1 = Exclusive<\n\t| { aDD_1: string }\n',
 			),
 		'a type of another namespace named by its local name (the old hint) -> the probe fails': (
 			types,
 		) => types.replace("'xsi:type': 'ext:tDD_1A'", "'xsi:type': 'tDD_1A'"),
+		'a union not exclusive (a member open to the attributes of another type) -> the probe fails': (
+			types,
+		) =>
+			types.replace(
+				'export type AttributesDD_2 = Exclusive<',
+				'type Plain<Members> = Members\nexport type AttributesDD_2 = Plain<',
+			),
 		'an own member open to any xsi:type -> the probe fails': (types) =>
 			types.replace("'xsi:type'?: 'tDD_2'", "'xsi:type'?: string"),
 	}
@@ -112,6 +119,24 @@ describe('type probes', () => {
 			}
 		})
 	}
+
+	it('tsgo -> the verdicts of tsc: a fixture passes, a tampered one fails', async () => {
+		const sound = probed({ fixture: 'torture' })
+		const broken = probed({
+			fixture: 'core-test',
+			tamper: (types) => types.replace("'xsi:type'?: 'tDD_2'", "'xsi:type'?: string"),
+		})
+		try {
+			writeFileSync(join(sound, 'probes.ts'), await fixtureProbes('torture'))
+			writeFileSync(join(broken, 'probes.ts'), await fixtureProbes('core-test'))
+			for (const compile of [compileWithTsc, compileWithTsgo]) {
+				assert.deepEqual(typeCheck({ folders: [sound, broken], compile }), [broken], compile.name)
+			}
+		} finally {
+			rmSync(sound, { recursive: true, force: true })
+			rmSync(broken, { recursive: true, force: true })
+		}
+	})
 
 	it('folders whose names prefix one another -> only the failing one', async () => {
 		const root = mkdtempSync(join(tmpdir(), 'probes-prefix-'))

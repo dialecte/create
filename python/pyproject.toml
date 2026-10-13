@@ -6,7 +6,7 @@ requires-python = ">=3.12"
 dependencies = ["xmlschema>=4.3.1"]
 
 [project.optional-dependencies]
-dev = ["pytest>=9.0.2", "lxml>=6.0"]
+dev = ["pytest>=9.0.2", "pytest-xdist>=3.8.0", "lxml>=6.0"]
 
 [project.scripts]
 dialecte-generate = "generate.__main__:main"

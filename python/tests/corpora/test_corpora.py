@@ -66,27 +66,13 @@ def test_the_emitted_constants_agree_with_the_definition(schema: CorpusSchema) -
     _expect('derivation', schema, corpus.derivation(schema))
 
 
-# the emitted files and their type probes of every corpus schema, type-checked twenty folders per tsc run
-TYPE_CHECK_CHUNK = 20
-
-
-@pytest.fixture(scope='session')
-def failing_types(tmp_path_factory: pytest.TempPathFactory) -> set[str]:
-    root = tmp_path_factory.mktemp('typed')
-    folders: dict[Path, str] = {}
-    for index, schema in enumerate(SCHEMAS):
-        loaded = not (isinstance(schema.validator, Exception) and isinstance(schema.library, Exception))
-        if loaded and corpus.write_probed(schema, root / str(index)):
-            folders[root / str(index)] = schema.id
-    listed = list(folders)
-    chunks = [listed[start:start + TYPE_CHECK_CHUNK] for start in range(0, len(listed), TYPE_CHECK_CHUNK)]
-    return {folders[folder] for chunk in chunks for folder in corpus.failing_types(chunk)}
-
-
 @pytest.mark.parametrize('schema', SCHEMAS, ids=[schema.id for schema in SCHEMAS])
-def test_the_emitted_types_type_check_with_their_probes(schema: CorpusSchema, failing_types: set[str]) -> None:
+def test_the_emitted_types_type_check_with_their_probes(schema: CorpusSchema, tmp_path: Path) -> None:
+    # the schema's emitted files and their type probes, judged on their own: schemas run in parallel (xdist)
     _loaded_by_both(schema)
-    _expect('types', schema, ['probes'] if schema.id in failing_types else [])
+    folder = tmp_path / 'typed'
+    failing = corpus.failing_types([folder]) if corpus.write_probed(schema, folder) else []
+    _expect('types', schema, ['probes'] if failing else [])
 
 
 @pytest.mark.parametrize('schema', SCHEMAS, ids=[schema.id for schema in SCHEMAS])
