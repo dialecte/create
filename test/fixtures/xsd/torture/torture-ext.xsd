@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- The second namespace of the torture schema: a global attribute the sidecar maps, an orphan the sidecar attaches,
-     a base type whose wildcard is relative to this document, and a homonym of a torture tag in this namespace. -->
+     a base type whose wildcard is relative to this document, a homonym of a torture tag in this namespace, and an
+     xsi:type variant of a torture type sharing a torture type's local name. -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:x="urn:dialecte:torture-ext"
-	targetNamespace="urn:dialecte:torture-ext" elementFormDefault="qualified">
+	xmlns:t="urn:dialecte:torture" targetNamespace="urn:dialecte:torture-ext" elementFormDefault="qualified">
+
+	<xs:import namespace="urn:dialecte:torture" schemaLocation="torture.xsd"/>
 
 	<xs:attribute name="stamp" type="xs:dateTime"/>
 
@@ -23,5 +26,14 @@
 			<xs:element name="Item" type="xs:string" minOccurs="0"/>
 		</xs:sequence>
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
+	</xs:complexType>
+
+	<!-- B8: a variant of t:tFigure named like t:tRound, its attribute in this namespace -->
+	<xs:complexType name="tRound">
+		<xs:complexContent>
+			<xs:extension base="t:tFigure">
+				<xs:attribute name="diameter" type="xs:double" form="qualified"/>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 </xs:schema>

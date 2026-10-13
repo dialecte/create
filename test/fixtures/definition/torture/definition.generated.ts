@@ -43,6 +43,7 @@ export const DEFINITION = {
 		type: '{http://www.w3.org/2001/XMLSchema}anyType',
 		variants: [
 			'{urn:dialecte:torture-ext}tExtBase',
+			'{urn:dialecte:torture-ext}tRound',
 			'{urn:dialecte:torture}tAngular',
 			'{urn:dialecte:torture}tBag',
 			'{urn:dialecte:torture}tBoundedMeasure',
@@ -725,7 +726,11 @@ export const DEFINITION = {
 			details: {},
 		},
 		type: '{urn:dialecte:torture}tFigure',
-		variants: ['{urn:dialecte:torture}tAngular', '{urn:dialecte:torture}tRound'],
+		variants: [
+			'{urn:dialecte:torture-ext}tRound',
+			'{urn:dialecte:torture}tAngular',
+			'{urn:dialecte:torture}tRound',
+		],
 		abstractType: true,
 	},
 	Flag: {
@@ -775,8 +780,12 @@ export const DEFINITION = {
 			details: {},
 		},
 		children: {
-			sequence: ['Vehicle', 'Figure', 'Value'],
-			details: {},
+			sequence: ['Vehicle', 'Figure', 'Value', 'Mount'],
+			details: {
+				Mount: {
+					declarations: { 'urn:dialecte:torture': ['1'] },
+				},
+			},
 		},
 		contentModel: {
 			kind: 'sequence',
@@ -786,6 +795,7 @@ export const DEFINITION = {
 				{ kind: 'element', name: 'Vehicle' },
 				{ kind: 'element', name: 'Figure' },
 				{ kind: 'element', name: 'Value' },
+				{ kind: 'element', name: 'Mount', maxOccurs: 1, declaration: '1' },
 			],
 		},
 		type: '{urn:dialecte:torture}tGarage',
@@ -890,8 +900,12 @@ export const DEFINITION = {
 			details: {},
 		},
 		children: {
-			sequence: ['Shelf', 'Rack', 'Crate', 'Extended'],
-			details: {},
+			sequence: ['Shelf', 'Rack', 'Crate', 'Extended', 'Mount'],
+			details: {
+				Mount: {
+					declarations: { 'urn:dialecte:torture': ['2'] },
+				},
+			},
 		},
 		contentModel: {
 			kind: 'sequence',
@@ -902,6 +916,7 @@ export const DEFINITION = {
 				{ kind: 'element', name: 'Rack', maxOccurs: 1 },
 				{ kind: 'element', name: 'Crate', maxOccurs: 1 },
 				{ kind: 'element', name: 'Extended', maxOccurs: 1 },
+				{ kind: 'element', name: 'Mount', maxOccurs: 1, declaration: '2' },
 			],
 		},
 		type: '{urn:dialecte:torture}tHomonyms',
@@ -1275,7 +1290,7 @@ export const DEFINITION = {
 	Load: {
 		tag: 'Load',
 		namespace: { prefix: '', uri: 'urn:dialecte:torture' },
-		parents: ['Ride', 'Vehicle'],
+		parents: ['Mount', 'Ride', 'Vehicle'],
 		attributes: {
 			sequence: ['unit'],
 			details: {
@@ -1353,7 +1368,7 @@ export const DEFINITION = {
 	May: {
 		tag: 'May',
 		namespace: { prefix: '', uri: 'urn:dialecte:torture' },
-		parents: ['Anything'],
+		parents: [],
 		attributes: {
 			sequence: ['n'],
 			details: {
@@ -1434,10 +1449,77 @@ export const DEFINITION = {
 		},
 		type: '{urn:dialecte:torture}tMeasures',
 	},
+	Mount: {
+		tag: 'Mount',
+		namespace: { prefix: '', uri: 'urn:dialecte:torture' },
+		parents: ['Garage', 'Homonyms'],
+		attributes: {
+			sequence: ['label', 'seats'],
+			details: {
+				label: {},
+				seats: {
+					type: { builtin: 'int' },
+				},
+			},
+		},
+		children: {
+			sequence: ['Plate', 'Trunk', 'Load'],
+			details: {},
+		},
+		declarations: {
+			'1': {
+				namespace: { prefix: '', uri: 'urn:dialecte:torture' },
+				attributes: {
+					sequence: ['label'],
+					details: {
+						label: {},
+					},
+				},
+				children: {
+					sequence: [],
+					details: {},
+				},
+				type: '{urn:dialecte:torture}tFigure',
+				variants: [
+					'{urn:dialecte:torture-ext}tRound',
+					'{urn:dialecte:torture}tAngular',
+					'{urn:dialecte:torture}tRound',
+				],
+				abstractType: true,
+			},
+			'2': {
+				namespace: { prefix: '', uri: 'urn:dialecte:torture' },
+				attributes: {
+					sequence: ['seats'],
+					details: {
+						seats: {
+							type: { builtin: 'int' },
+						},
+					},
+				},
+				children: {
+					sequence: ['Plate', 'Trunk', 'Load'],
+					details: {},
+				},
+				contentModel: {
+					kind: 'sequence',
+					minOccurs: 1,
+					maxOccurs: 1,
+					particles: [{ kind: 'element', name: 'Plate', minOccurs: 1, maxOccurs: 1 }],
+				},
+				type: '{urn:dialecte:torture}tVehicle',
+				variants: [
+					'{urn:dialecte:torture}tCar',
+					'{urn:dialecte:torture}tCompactCar',
+					'{urn:dialecte:torture}tTruck',
+				],
+			},
+		},
+	},
 	Must: {
 		tag: 'Must',
 		namespace: { prefix: '', uri: 'urn:dialecte:torture' },
-		parents: ['Anything', 'Restricted'],
+		parents: ['Restricted'],
 		attributes: {
 			sequence: ['n'],
 			details: {
@@ -1679,7 +1761,7 @@ export const DEFINITION = {
 	Plate: {
 		tag: 'Plate',
 		namespace: { prefix: '', uri: 'urn:dialecte:torture' },
-		parents: ['Anything', 'Ride', 'Vehicle'],
+		parents: ['Mount', 'Ride', 'Vehicle'],
 		attributes: {
 			sequence: [],
 			details: {},
@@ -2140,7 +2222,7 @@ export const DEFINITION = {
 	Trunk: {
 		tag: 'Trunk',
 		namespace: { prefix: '', uri: 'urn:dialecte:torture' },
-		parents: ['Ride', 'Vehicle'],
+		parents: ['Mount', 'Ride', 'Vehicle'],
 		attributes: {
 			sequence: ['n'],
 			details: {
@@ -2295,11 +2377,28 @@ export const TYPES = {
 			particles: [{ kind: 'element', name: 'Item', maxOccurs: 1, declaration: '4' }],
 		},
 	},
+	'{urn:dialecte:torture-ext}tRound': {
+		attributes: {
+			sequence: ['label', 'x:diameter'],
+			details: {
+				label: {},
+				'x:diameter': {
+					namespace: { prefix: 'x', uri: 'urn:dialecte:torture-ext' },
+					type: { builtin: 'double' },
+				},
+			},
+		},
+		children: {
+			sequence: [],
+			details: {},
+		},
+	},
 	'{urn:dialecte:torture}tAngular': {
 		attributes: {
 			sequence: ['corners', 'label'],
 			details: {
 				corners: {
+					required: true,
 					type: { builtin: 'int' },
 				},
 				label: {},
@@ -2796,8 +2895,12 @@ export const TYPES = {
 			details: {},
 		},
 		children: {
-			sequence: ['Vehicle', 'Figure', 'Value'],
-			details: {},
+			sequence: ['Vehicle', 'Figure', 'Value', 'Mount'],
+			details: {
+				Mount: {
+					declarations: { 'urn:dialecte:torture': ['1'] },
+				},
+			},
 		},
 		contentModel: {
 			kind: 'sequence',
@@ -2807,6 +2910,7 @@ export const TYPES = {
 				{ kind: 'element', name: 'Vehicle' },
 				{ kind: 'element', name: 'Figure' },
 				{ kind: 'element', name: 'Value' },
+				{ kind: 'element', name: 'Mount', maxOccurs: 1, declaration: '1' },
 			],
 		},
 	},
@@ -2843,8 +2947,12 @@ export const TYPES = {
 			details: {},
 		},
 		children: {
-			sequence: ['Shelf', 'Rack', 'Crate', 'Extended'],
-			details: {},
+			sequence: ['Shelf', 'Rack', 'Crate', 'Extended', 'Mount'],
+			details: {
+				Mount: {
+					declarations: { 'urn:dialecte:torture': ['2'] },
+				},
+			},
 		},
 		contentModel: {
 			kind: 'sequence',
@@ -2855,6 +2963,7 @@ export const TYPES = {
 				{ kind: 'element', name: 'Rack', maxOccurs: 1 },
 				{ kind: 'element', name: 'Crate', maxOccurs: 1 },
 				{ kind: 'element', name: 'Extended', maxOccurs: 1 },
+				{ kind: 'element', name: 'Mount', maxOccurs: 1, declaration: '2' },
 			],
 		},
 	},

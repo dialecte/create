@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- A tag declared four ways and a nested homonym, identity constraints, mixed content, nil, an unqualified local,
+<!-- A tag declared four ways and a nested homonym, a tag declared two ways naming an unprefixed variant, identity constraints, mixed content, nil, an unqualified local,
      a recursive element. -->
 <Torture xmlns="urn:dialecte:torture" xmlns:x="urn:dialecte:torture-ext"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1">
@@ -20,6 +20,7 @@
 			<x:Item>ext</x:Item>
 			<Extra/>
 		</Extended>
+		<Mount xsi:type="tCar"><Plate>GH-1</Plate></Mount>
 	</Homonyms>
 	<Text>
 		<Para xml:lang="en" note="n">Some <Em>mixed</Em> text</Para>

@@ -337,7 +337,8 @@
 	</xs:complexType>
 
 	<!-- B8: xsi:type - variants, a restriction step the element blocks, an abstract type that must be named, a
-	     simple union typed element -->
+	     variant adding a required attribute, one in the other namespace sharing a local name (x:tRound), a simple
+	     union typed element, a tag declared two ways with variants each (Mount) -->
 	<xs:complexType name="tVehicle">
 		<xs:sequence>
 			<xs:element name="Plate" type="xs:token"/>
@@ -397,7 +398,7 @@
 	<xs:complexType name="tAngular">
 		<xs:complexContent>
 			<xs:extension base="tFigure">
-				<xs:attribute name="corners" type="xs:int"/>
+				<xs:attribute name="corners" type="xs:int" use="required"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -407,6 +408,7 @@
 			<xs:element name="Vehicle" type="tVehicle" block="restriction" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="Figure" type="tFigure" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="Value" type="tCodeOrNumber" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="Mount" type="tFigure" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
 
@@ -486,6 +488,7 @@
 				</xs:complexType>
 			</xs:element>
 			<xs:element name="Extended" type="tExtended" minOccurs="0"/>
+			<xs:element name="Mount" type="tVehicle" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
 

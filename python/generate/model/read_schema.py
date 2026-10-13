@@ -129,8 +129,6 @@ class _Reader:
     # the global elements naming each head (Clark name) in their substitutionGroup, read from the documents: the
     # schema library forgets the affiliation of a member whose head blocks substitution
     _members_of: dict[str, list[XsdElement]] | None = None
-    # the elements of anyType through whose variants a declaration is reached: its parents when it has no other
-    through_any_type: dict[int, set[str]] = field(default_factory=dict)
 
     def key_of(self, element: XsdElement) -> int:
         return self.keys.setdefault(id(element), len(self.keys))
@@ -152,8 +150,8 @@ class _Reader:
             self.content_models[identity] = content_model
             held = [(child, element.local_name) for child in declarations]
             # what the element may hold with xsi:type naming another type is walked too; an element of anyType holds
-            # any element already, so its variants give it no child of their own - only a parent to a declaration
-            # nothing else holds
+            # any element already - a wildcard both ways: its variants give it no child, and it is no parent of what
+            # they hold (a declaration only they reach has no parent, like one only a wildcard admits)
             variants = [] if element.abstract else self._variants_of(element)
             of_any_type = element.type.name == ANY_TYPE
             for variant in variants:
@@ -161,8 +159,6 @@ class _Reader:
                     self.type_contents[id(variant)] = self._content_of(variant, owner=variant.name)
                     self.variant_types[id(variant)] = variant
                 for child in self.type_contents[id(variant)][1]:
-                    if of_any_type:
-                        self.through_any_type.setdefault(id(child), set()).add(element.local_name)
                     held.append((child, None if of_any_type else element.local_name))
             self.variants[identity] = variants
             pending.extend(reversed(held))
@@ -249,7 +245,7 @@ class _Reader:
                 type_key=self.type_keys.setdefault(id(element.type), len(self.type_keys)),
                 element=element,
                 content_model=self.content_models[identity],
-                parent_names=sorted_names(self.parents[identity] or self.through_any_type.get(identity, ())),
+                parent_names=sorted_names(self.parents[identity]),
                 variants=tuple(variant.name for variant in self.variants[identity]),
             )
             for identity, element in self.found.items()

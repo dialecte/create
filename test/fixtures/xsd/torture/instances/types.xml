@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- A substitution group with a member of a member, a head blocking extension, xsi:type variants of complex and simple types, an abstract type
-     named. -->
-<Torture xmlns="urn:dialecte:torture" xmlns:t="urn:dialecte:torture"
+     named, a variant of the other namespace with its qualified attribute, a tag declared two ways naming a variant. -->
+<Torture xmlns="urn:dialecte:torture" xmlns:t="urn:dialecte:torture" xmlns:e="urn:dialecte:torture-ext"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1">
 	<Shapes>
 		<Circle radius="1.5" color="red"/>
@@ -16,7 +16,9 @@
 		<Vehicle xsi:type="t:tTruck"><Plate>EF-789</Plate><Load unit="t">7</Load></Vehicle>
 		<Figure xsi:type="t:tRound" radius="2"/>
 		<Figure xsi:type="t:tAngular" corners="4" label="square"/>
+		<Figure xsi:type="e:tRound" e:diameter="3"/>
 		<Value>42</Value>
 		<Value xsi:type="t:tCodeStrict">AB1</Value>
+		<Mount xsi:type="t:tAngular" corners="3"/>
 	</Garage>
 </Torture>

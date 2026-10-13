@@ -11,6 +11,7 @@ export type AttributesA = {
 export type AttributesAnything = {
 	'xsi:type'?:
 		| 'tExtBase'
+		| 'tRound'
 		| 'tAngular'
 		| 'tBag'
 		| 'tBoundedMeasure'
@@ -125,7 +126,7 @@ export type AttributesExtras = {}
 
 export type AttributesFigure = {
 	label?: string
-	'xsi:type'?: 'tAngular' | 'tRound' | (string & {})
+	'xsi:type'?: 'tRound' | 'tAngular' | 'tRound' | (string & {})
 }
 
 export type AttributesFlag = {}
@@ -220,6 +221,22 @@ export type AttributesMeasure = {
 }
 
 export type AttributesMeasures = {}
+
+export type AttributesMount = {
+	label?: string
+	seats?: string
+	'xsi:type'?: 'tRound' | 'tAngular' | 'tRound' | 'tCar' | 'tCompactCar' | 'tTruck' | (string & {})
+}
+
+export type AttributesMountInGarage = {
+	label?: string
+	'xsi:type'?: 'tRound' | 'tAngular' | 'tRound' | (string & {})
+}
+
+export type AttributesMountInHomonyms = {
+	seats?: string
+	'xsi:type'?: 'tCar' | 'tCompactCar' | 'tTruck' | (string & {})
+}
 
 export type AttributesMust = {
 	n?: string
@@ -395,6 +412,7 @@ export type AttributesMap = {
 	Maybe: AttributesMaybe
 	Measure: AttributesMeasure
 	Measures: AttributesMeasures
+	Mount: AttributesMount
 	Must: AttributesMust
 	New: AttributesNew
 	Node: AttributesNode
@@ -475,6 +493,7 @@ export type AttributesByParent = {
 		Vehicle: AttributesVehicle
 		Figure: AttributesFigure
 		Value: AttributesValue
+		Mount: AttributesMountInGarage
 	}
 	Group: {
 		Entry: AttributesEntry
@@ -487,6 +506,7 @@ export type AttributesByParent = {
 		Rack: AttributesRack
 		Crate: AttributesCrate
 		Extended: AttributesExtended
+		Mount: AttributesMountInHomonyms
 	}
 	Item: {
 		Tag: AttributesTag
@@ -508,6 +528,11 @@ export type AttributesByParent = {
 		Measure: AttributesMeasure
 		Ranged: AttributesRanged
 		Bounded: AttributesBounded
+	}
+	Mount: {
+		Plate: AttributesPlate
+		Trunk: AttributesTrunk
+		Load: AttributesLoad
 	}
 	Node: {
 		Node: AttributesNode

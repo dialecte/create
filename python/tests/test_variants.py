@@ -154,10 +154,13 @@ def test_an_element_of_any_type_lists_no_built_in_type_in_a_schema_importing_the
     assert pick(data, 'Any.variants') == [f'{{{TARGET}}}tBase']
 
 
-def test_a_child_only_an_element_of_any_type_reaches_through_a_variant_keeps_it_as_parent(definition_of) -> None:
+def test_a_child_only_an_element_of_any_type_reaches_through_a_variant_has_no_parent(definition_of) -> None:
+    # an element of anyType is a wildcard both ways: what it holds through a variant is no child of it, so it is no
+    # parent either - the parent and child tables agree, as for any element a wildcard admits
     more = '<xs:complexType name="tHolder"><xs:sequence><xs:element name="Only" type="xs:string"/></xs:sequence></xs:complexType>'
     data = definition_of(holding('<xs:element name="Any"/>', more=more))
-    assert pick(data, 'Only.parents') == ['Any']
+    assert pick(data, 'Only.parents') == []
+    assert 'Only' not in pick(data, 'Any.children.sequence')
 
 
 @pytest.mark.parametrize(
