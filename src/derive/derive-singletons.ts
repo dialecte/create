@@ -1,12 +1,10 @@
-import { declaredUnder } from './declared-edges.ts'
-
 import type { DeclarationData, DefinitionData, ParticleData, TypesData } from './derive.types.ts'
 
 /**
  * The elements a document holds at most once: the root, and every element that occurs at most once
  * under each of its parents when those parents are themselves singletons. How often a child occurs
- * under a parent is read from the content models that apply there - the one declared under each
- * grandparent (or the tag level's), and each `xsi:type` variant's - never from a flat child table,
+ * under a parent is read from the content models that apply there - each way the parent is
+ * declared, and each `xsi:type` variant's - never from a flat child table,
  * which cannot see a repeating group. A child none of them names (admitted by a wildcard) may occur
  * any number of times. A root that can nest in itself makes nothing a singleton.
  */
@@ -43,27 +41,21 @@ export function deriveSingletons(params: {
 		return named ? most : Number.POSITIVE_INFINITY
 	}
 
-	/** Every content model `parent` may hold: each way it is declared, or as declared under each of its parents, and per variant. */
+	/** Every content model `parent` may hold: each way it is declared, and per variant. */
 	function contentModelsOf(parent: string): Set<ParticleData | undefined> {
 		const element = definition[parent]
 		if (element === undefined) return new Set([undefined])
 		const models = new Set<ParticleData | undefined>()
-		// a tag declared several ways: each of its declarations; otherwise as declared under each parent
+		// a tag declared several ways: each of its declarations; otherwise its one declaration
 		if (element.declarations !== undefined) {
 			for (const declared of Object.values(element.declarations)) models.add(modelOf(declared))
-		} else if (element.parents.length === 0) models.add(modelOf(element))
+		} else models.add(modelOf(element))
 		// each type an instance may name instead, with xsi:type
 		const variants = [
 			...(element.variants ?? []),
 			...Object.values(element.declarations ?? {}).flatMap((declared) => declared.variants ?? []),
 		]
 		for (const variant of variants) models.add(types[variant] ? modelOf(types[variant]) : undefined)
-		for (const grandparent of element.parents) {
-			if (element.declarations === undefined) {
-				const declared = declaredUnder({ definition, parent: grandparent, child: parent })
-				models.add(modelOf(declared ?? element))
-			}
-		}
 		return models
 	}
 

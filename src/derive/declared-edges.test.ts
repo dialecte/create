@@ -124,6 +124,37 @@ describe('declared-edges', () => {
 		assert.deepEqual(findDeclaredEdges({ definition: sameAttributes }), [])
 	})
 
+	it("attributesDeclaredUnder: a referenced declaration with the tag level's attributes in another key order -> none, the same data", () => {
+		const reordered: DefinitionData = {
+			...byReference,
+			Item: {
+				...byReference.Item,
+				attributes: {
+					sequence: ['b'],
+					details: {
+						b: { required: true, type: { builtin: 'token', facets: { enumeration: ['x'] } } },
+					},
+				},
+				declarations: {
+					'1': { attributes: { sequence: ['a'], details: {} }, children: noAttributes },
+					'2': {
+						attributes: {
+							details: {
+								b: { type: { facets: { enumeration: ['x'] }, builtin: 'token' }, required: true },
+							},
+							sequence: ['b'],
+						},
+						children: noAttributes,
+					},
+				},
+			} as DefinitionData[string],
+		}
+		assert.equal(
+			attributesDeclaredUnder({ definition: reordered, parent: 'Left', child: 'Item' }),
+			undefined,
+		)
+	})
+
 	it('attributesDeclaredUnder: a referenced declaration differing only by its identity fields -> none, its type is the same', () => {
 		const identified: DefinitionData = {
 			...byReference,

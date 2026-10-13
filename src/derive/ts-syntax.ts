@@ -22,7 +22,7 @@ export function tsMember(name: string): string {
 }
 
 export function tsStringArray(items: readonly string[]): string {
-	return items.length === 0 ? '[]' : `[${items.map(tsString).join(', ')}]`
+	return `[${items.map(tsString).join(', ')}]`
 }
 
 /** A `Record<string, readonly string[]>` literal, keys sorted. */

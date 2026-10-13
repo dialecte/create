@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { attributesDeclaredUnder } from './declared-edges.ts'
-import { typedAttributes } from './typed-attributes.ts'
+import { enumerated, typedAttributes } from './typed-attributes.ts'
 
-import type { DefinitionData, ElementData } from './derive.types.ts'
+import type { DataTypeData, DefinitionData, ElementData } from './derive.types.ts'
 
 const nothing = { sequence: [], details: {} }
 const versioned = (fixed: string) => ({ sequence: ['version'], details: { version: { fixed } } })
@@ -56,4 +56,51 @@ describe('typedAttributes', () => {
 		)
 		assert.equal(attributesDeclaredUnder({ definition, parent: 'Left', child: 'Item' }), undefined)
 	})
+
+	it('a tag level whose attribute is typed, declarations enumerating it -> its own type, not hints', () => {
+		const enumerating = (values: string[]) => ({
+			sequence: ['mode'],
+			details: { mode: { type: { builtin: 'token', facets: { enumeration: values } } } },
+		})
+		const tag: ElementData = {
+			parents: [],
+			attributes: { sequence: ['mode'], details: { mode: { type: { builtin: 'token' } } } },
+			children: nothing,
+			declarations: {
+				'1': { attributes: enumerating(['a']), children: nothing },
+				'2': { attributes: enumerating(['b']), children: nothing },
+			},
+		}
+		assert.deepEqual(typedAttributes(tag).details.mode, { type: { builtin: 'token' } })
+	})
+})
+
+describe('enumerated', () => {
+	const cases: Record<string, { datatype: DataTypeData | undefined; expected: string[] }> = {
+		'no datatype -> none': { datatype: undefined, expected: [] },
+		'an empty enumeration -> none': {
+			datatype: { builtin: 'token', facets: { enumeration: [] } },
+			expected: [],
+		},
+		'a NOTATION enumeration -> none, its values are qualified names': {
+			datatype: { builtin: 'NOTATION', facets: { enumeration: ['{urn:t}gif'] } },
+			expected: [],
+		},
+		'a union whose members enumerate nothing -> none': {
+			datatype: { union: [{ builtin: 'string' }, { builtin: 'token' }] },
+			expected: [],
+		},
+		"a union -> its members' values, once each": {
+			datatype: {
+				union: [
+					{ builtin: 'token', facets: { enumeration: ['a', 'b'] } },
+					{ builtin: 'token', facets: { enumeration: ['b', 'c'] } },
+				],
+			},
+			expected: ['a', 'b', 'c'],
+		},
+	}
+	for (const [name, { datatype, expected }] of Object.entries(cases)) {
+		it(name, () => assert.deepEqual(enumerated(datatype), expected))
+	}
 })

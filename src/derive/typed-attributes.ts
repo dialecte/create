@@ -13,8 +13,8 @@ const XSI_TYPE = 'xsi:type'
  */
 export function typedAttributes(content: ElementData | DeclarationData): ElementData['attributes'] {
 	const declarations = 'declarations' in content ? Object.values(content.declarations ?? {}) : []
-	const own =
-		declarations.length > 0 ? withDeclaredValues({ content, declarations }) : content.attributes
+	// the values its declarations accept, as hints - none to add for a tag declared one way
+	const own = withDeclaredValues({ content, declarations })
 	const variants = [
 		...new Set([
 			...(content.variants ?? []),
@@ -36,11 +36,10 @@ export function typedAttributes(content: ElementData | DeclarationData): Element
  * The values a datatype enumerates: its own enumeration, else those its union members enumerate (hints - the type
  * stays open). A qualified name's values are written `{uri}local`, never what a document holds: none.
  */
-export function enumerated(datatype: DataTypeData | undefined): readonly string[] | undefined {
-	if (datatype === undefined || holdsQualifiedNames(datatype)) return undefined
+export function enumerated(datatype: DataTypeData | undefined): readonly string[] {
+	if (datatype === undefined || holdsQualifiedNames(datatype)) return []
 	if (datatype.facets?.enumeration !== undefined) return datatype.facets.enumeration
-	const members = (datatype.union ?? []).flatMap((member) => enumerated(member) ?? [])
-	return members.length > 0 ? [...new Set(members)] : undefined
+	return [...new Set((datatype.union ?? []).flatMap(enumerated))]
 }
 
 /** Whether the datatype's values are, or hold, qualified names: their written form depends on prefixes. */
@@ -75,7 +74,7 @@ function acceptedValues(params: {
 	const values = declarations.flatMap((declaration) => {
 		const attribute = declaration.attributes.details[name]
 		if (attribute === undefined) return []
-		return attribute.fixed !== undefined ? [attribute.fixed] : (enumerated(attribute.type) ?? [])
+		return attribute.fixed !== undefined ? [attribute.fixed] : enumerated(attribute.type)
 	})
 	return [...new Set(values)]
 }

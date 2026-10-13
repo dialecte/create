@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 
 import { exampleFacts } from './example-facts.ts'
 
-import type { DefinitionData, ElementData } from './derive.types.ts'
+import type { DataTypeData, DefinitionData, ElementData, ExampleFacts } from './derive.types.ts'
 
 const target = { prefix: '', uri: 'urn:t' }
 const other = { prefix: 'o', uri: 'urn:o' }
@@ -138,5 +138,121 @@ describe('exampleFacts', () => {
 			namespaceUri: 'urn:o',
 			requiredAttributes: [{ name: 'b', value: 'hello-world' }],
 		})
+	})
+})
+
+describe('exampleFacts - values and shapes', () => {
+	/** The facts of a root holding one child that requires attribute `a` of `type`. */
+	function requiring(type: DataTypeData | undefined): ExampleFacts {
+		return exampleFacts({
+			definition: {
+				Root: element({
+					children: { sequence: ['Child'], details: {} },
+					contentModel: { kind: 'element', name: 'Child' },
+				}),
+				Child: element({
+					parents: ['Root'],
+					attributes: {
+						sequence: ['a'],
+						details: { a: { required: true, ...(type ? { type } : {}) } },
+					},
+				}),
+			},
+			root: 'Root',
+		})
+	}
+
+	// a value each built-in type accepts (python/tests/test_example_samples.py checks each against libxml2)
+	const SAMPLES: Record<string, string> = {
+		boolean: 'true',
+		decimal: '1',
+		float: '1',
+		double: '1',
+		integer: '1',
+		long: '1',
+		int: '1',
+		short: '1',
+		byte: '1',
+		nonNegativeInteger: '1',
+		positiveInteger: '1',
+		unsignedLong: '1',
+		unsignedInt: '1',
+		unsignedShort: '1',
+		unsignedByte: '1',
+		nonPositiveInteger: '0',
+		negativeInteger: '-1',
+		dateTime: '2000-01-01T00:00:00',
+		date: '2000-01-01',
+		time: '00:00:00',
+		duration: 'P1D',
+		gYear: '2000',
+		gYearMonth: '2000-01',
+		gMonth: '--01',
+		gMonthDay: '--01-01',
+		gDay: '---01',
+		anyURI: 'urn:example',
+		hexBinary: '00',
+		base64Binary: 'AA==',
+		language: 'en',
+	}
+	for (const [builtin, sample] of Object.entries(SAMPLES)) {
+		it(`a required ${builtin} -> ${sample}`, () => {
+			assert.deepEqual(requiring({ builtin }).child?.requiredAttributes, [
+				{ name: 'a', value: sample },
+			])
+		})
+	}
+
+	it('a union none of whose members has a sample -> the placeholder', () => {
+		const facts = requiring({ union: [{ builtin: 'string' }, { builtin: 'token' }] })
+		assert.deepEqual(facts.child?.requiredAttributes, [{ name: 'a', value: 'hello-world' }])
+	})
+
+	it('a root and a child in no namespace -> an empty namespace each', () => {
+		const facts = exampleFacts({
+			definition: {
+				Root: {
+					parents: [],
+					attributes: nothing,
+					children: { sequence: ['Child'], details: {} },
+					contentModel: { kind: 'element', name: 'Child' },
+				},
+				Child: { parents: ['Root'], attributes: nothing, children: nothing },
+			},
+			root: 'Root',
+		})
+		assert.deepEqual(facts, {
+			root: { name: 'Root', namespaceUri: '' },
+			child: { name: 'Child', namespaceUri: '', requiredAttributes: [] },
+		})
+	})
+
+	it('a content model opening with a wildcard, the element inside a nested group -> that element', () => {
+		const facts = exampleFacts({
+			definition: {
+				Root: element({
+					children: { sequence: ['Child'], any: true, details: {} },
+					contentModel: {
+						kind: 'sequence',
+						particles: [
+							{ kind: 'any' },
+							{ kind: 'choice', particles: [{ kind: 'element', name: 'Child' }] },
+						],
+					},
+				}),
+				Child: element({ parents: ['Root'] }),
+			},
+			root: 'Root',
+		})
+		assert.equal(facts.child?.name, 'Child')
+	})
+})
+
+describe('exampleFacts - its input', () => {
+	it('a root the definition does not declare -> refused, named', () => {
+		assert.throws(
+			() => exampleFacts({ definition: {}, root: 'Missing' }),
+			/'Missing' is no element of the definition/,
+		)
 	})
 })

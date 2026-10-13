@@ -4,6 +4,7 @@ import type {
 	AttributeData,
 	DataTypeData,
 	DefinitionData,
+	ElementData,
 	ExampleFacts,
 	ParticleData,
 } from './derive.types.ts'
@@ -20,17 +21,21 @@ const PLACEHOLDER_VALUE = 'hello-world'
 export function exampleFacts(params: { definition: DefinitionData; root: string }): ExampleFacts {
 	const { definition, root } = params
 	const rootElement = definition[root]
-	const rootFacts = { name: root, namespaceUri: rootElement?.namespace?.uri ?? '' }
+	if (rootElement === undefined) throw new Error(`'${root}' is no element of the definition`)
+	const rootFacts = { name: root, namespaceUri: rootElement.namespace?.uri ?? '' }
 	// a child the root's own content model holds: not one only a type it may take with xsi:type holds
-	const childName = elementNames(rootElement?.contentModel).find((name) => name in definition)
-	if (childName === undefined) return { root: rootFacts, child: null }
+	const found = elementNames(rootElement.contentModel)
+		.map((name) => [name, definition[name]] as const)
+		.find((entry): entry is readonly [string, ElementData] => entry[1] !== undefined)
+	if (found === undefined) return { root: rootFacts, child: null }
+	const [childName, child] = found
 
 	// as the root holds it: a child declared several ways, its first namespace there and the declaration held in it
-	const child = definition[childName]
-	const [held] = Object.entries(rootElement?.children.details[childName]?.declarations ?? {})
-	const declared = held ? child?.declarations?.[held[1][0] ?? ''] : undefined
-	const namespaceUri = held?.[0] ?? child?.namespace?.uri ?? ''
-	const attributes = (declared ?? child)?.attributes ?? { sequence: [], details: {} }
+	const [held] = Object.entries(rootElement.children.details[childName]?.declarations ?? {})
+	const declarationId = held?.[1][0]
+	const declared = declarationId === undefined ? undefined : child.declarations?.[declarationId]
+	const namespaceUri = held?.[0] ?? child.namespace?.uri ?? ''
+	const { attributes } = declared ?? child
 	return {
 		root: rootFacts,
 		child: {
@@ -57,7 +62,7 @@ function elementNames(particle: ParticleData | undefined): string[] {
 function acceptedValue(attribute: AttributeData): string {
 	return (
 		attribute.fixed ??
-		enumerated(attribute.type)?.[0] ??
+		enumerated(attribute.type)[0] ??
 		sampleOf(attribute.type) ??
 		PLACEHOLDER_VALUE
 	)

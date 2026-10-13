@@ -176,3 +176,71 @@ describe('emitTypesSource - values typed by their datatype', () => {
 		it(name, () => assert.ok(source.split('\n').includes(line), `missing line: ${line}`))
 	}
 })
+
+describe('emitted order and edge shapes', () => {
+	// `definition` lists Root, PhysConn, Address, Empty, P: each table must come out sorted whatever that order
+	const constants = emitConstantsSource({ definition, root: 'Root', types: {} }).split('\n')
+	const types = emitTypesSource({ definition }).split('\n')
+	const order = (lines: string[], wanted: string[]) => wanted.map((line) => lines.indexOf(line))
+
+	it('the attribute skeletons by tag -> sorted by element', () => {
+		const positions = order(constants, [
+			"\tAddress: {} as AttributesOf<'Address'>,",
+			"\tEmpty: {} as AttributesOf<'Empty'>,",
+			"\tPhysConn: {} as AttributesOf<'PhysConn'>,",
+		])
+		assert.ok(
+			positions.every((position) => position >= 0),
+			`missing a skeleton: ${positions}`,
+		)
+		assert.deepEqual(
+			[...positions].sort((a, b) => a - b),
+			positions,
+		)
+	})
+
+	it('the attribute types map -> sorted by element', () => {
+		const positions = order(types, [
+			'\tAddress: AttributesAddress',
+			'\tP: AttributesP',
+			'\tRoot: AttributesRoot',
+		])
+		assert.ok(
+			positions.every((position) => position >= 0),
+			`missing an entry: ${positions}`,
+		)
+		assert.deepEqual(
+			[...positions].sort((a, b) => a - b),
+			positions,
+		)
+	})
+
+	it('a homonym declared without attributes under a parent -> an empty skeleton there', () => {
+		const bare: DefinitionData = {
+			Root: {
+				parents: [],
+				attributes: noChildren,
+				children: { sequence: ['P'], details: { P: { declarations: { '': ['1'] } } } },
+			},
+			P: {
+				parents: ['Root'],
+				attributes: { sequence: ['x'], details: { x: {} } },
+				children: noChildren,
+				declarations: { '1': { attributes: noChildren, children: noChildren } },
+			},
+		}
+		const lines = emitConstantsSource({ definition: bare, root: 'Root', types: {} }).split('\n')
+		assert.ok(lines.includes('\t\t\tP: {} as AttributesPInRoot,'), lines.join('\n'))
+	})
+
+	it("an attribute fixed to '' -> a string, not an empty literal", () => {
+		const fixedEmpty: DefinitionData = {
+			Root: {
+				parents: [],
+				attributes: { sequence: ['x'], details: { x: { fixed: '' } } },
+				children: noChildren,
+			},
+		}
+		assert.ok(emitTypesSource({ definition: fixedEmpty }).split('\n').includes('\tx?: string'))
+	})
+})

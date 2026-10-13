@@ -30,11 +30,8 @@ function mapElements(params: {
 	read: (element: DefinitionData[string], tag: string) => string[]
 }): ElementGraph {
 	const { definition, read } = params
-	return Object.fromEntries(
-		Object.keys(definition)
-			.sort()
-			.map((tag) => [tag, read(definition[tag], tag)]),
-	)
+	// in the definition's order: the emitter writes every table with its keys sorted (tsRecord)
+	return Object.fromEntries(Object.keys(definition).map((tag) => [tag, read(definition[tag], tag)]))
 }
 
 /** Every element reachable from `start` through `graph`, `start` itself excluded unless a cycle leads back. */

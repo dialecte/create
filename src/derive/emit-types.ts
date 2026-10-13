@@ -107,7 +107,7 @@ function attributeType(params: {
 function valueType(params: { attribute: AttributeData }): string {
 	const { attribute } = params
 	const enumeration = enumerated(attribute.type)
-	if (enumeration !== undefined && enumeration.length > 0) {
+	if (enumeration.length > 0) {
 		return `${enumeration.map(tsString).join(' | ')} | (string & {})`
 	}
 	if (attribute.fixed !== undefined && attribute.fixed !== '') return tsString(attribute.fixed)

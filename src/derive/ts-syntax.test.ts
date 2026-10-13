@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { deriveTypeNames, tsKey, tsMember, tsRecord, tsString } from './ts-syntax.ts'
+import {
+	deriveTypeNames,
+	edgeTypeName,
+	tsKey,
+	tsMember,
+	tsRecord,
+	tsString,
+	tsStringArray,
+} from './ts-syntax.ts'
 
 describe('ts-syntax', () => {
 	const literals: Record<string, [string, string]> = {
@@ -50,5 +58,48 @@ describe('ts-syntax', () => {
 			'boolean-value': 'BooleanValue',
 			'boolean.value': 'BooleanValue_2',
 		})
+	})
+
+	it('tsRecord: no key -> an empty object literal', () => {
+		assert.equal(tsRecord({}), '{}')
+	})
+
+	it('tsStringArray: no item -> an empty array literal', () => {
+		assert.equal(tsStringArray([]), '[]')
+	})
+
+	const typeNameCases: Record<string, { names: string[]; expected: Record<string, string> }> = {
+		'a PascalCase name an identifier already takes -> numbered': {
+			names: ['BooleanValue', 'boolean-value'],
+			expected: { BooleanValue: 'BooleanValue', 'boolean-value': 'BooleanValue_2' },
+		},
+		'three names to one PascalCase -> numbered upwards': {
+			names: ['a-b', 'a.b', 'a:b'],
+			expected: { 'a-b': 'AB', 'a.b': 'AB_2', 'a:b': 'AB_3' },
+		},
+		'a leading separator -> no empty part': { names: ['-a'], expected: { '-a': 'A' } },
+		'no letter nor digit -> an underscore': { names: ['-'], expected: { '-': '_' } },
+		'a digit inside the name -> no underscore prefix': {
+			names: ['v2-x'],
+			expected: { 'v2-x': 'V2X' },
+		},
+	}
+	for (const [name, { names, expected }] of Object.entries(typeNameCases)) {
+		it(`deriveTypeNames: ${name}`, () => {
+			assert.deepEqual(Object.fromEntries(deriveTypeNames(names)), expected)
+		})
+	}
+
+	it('edgeTypeName: the type names of the element and its parent', () => {
+		const typeNames = deriveTypeNames(['bay', 'p-q'])
+		assert.equal(edgeTypeName({ typeNames, element: 'p-q', parent: 'bay' }), 'AttributesPQInbay')
+	})
+
+	it('edgeTypeName: a parent without a type name -> its PascalCase', () => {
+		const typeNames = deriveTypeNames(['p-q'])
+		assert.equal(
+			edgeTypeName({ typeNames, element: 'p-q', parent: 'my-parent' }),
+			'AttributesPQInMyParent',
+		)
 	})
 })

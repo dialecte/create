@@ -48,6 +48,44 @@ type SingletonCase = {
 }
 
 const cases: Record<string, SingletonCase> = {
+	'a child a parent lists that no content model of the parent names (no wildcard) -> not a singleton':
+		{
+			// Orphan reaches Root only through a sidecar mapping: Root's model never names it
+			definition: {
+				Root: element({ contentModel: sequence(once('A')) }),
+				A: element({ parents: ['Root'] }),
+				Orphan: element({ parents: ['Root'] }),
+			},
+			root: 'Root',
+			expected: ['A', 'Root'],
+		},
+	'a root whose ancestors cycle without reaching it -> it does not nest in itself, singletons stand':
+		{
+			definition: {
+				Root: { ...element({ parents: ['X'], contentModel: sequence(once('A')) }) },
+				A: element({ parents: ['Root'] }),
+				X: element({ parents: ['Y'], contentModel: sequence(once('Root')) }),
+				Y: element({ parents: ['X'], contentModel: sequence(once('X')) }),
+			},
+			root: 'Root',
+			expected: ['A', 'Root'],
+		},
+	'an unbounded child in a prohibited group -> occurs never, a singleton': {
+		definition: {
+			Root: element({
+				contentModel: sequence(once('A'), {
+					kind: 'sequence',
+					minOccurs: 0,
+					maxOccurs: 0,
+					particles: [{ kind: 'element', name: 'B' }],
+				}),
+			}),
+			A: element({ parents: ['Root'] }),
+			B: element({ parents: ['Root'] }),
+		},
+		root: 'Root',
+		expected: ['A', 'B', 'Root'],
+	},
 	'a child at most once under a root -> both are singletons': {
 		definition: {
 			Root: element({
