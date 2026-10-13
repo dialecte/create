@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Each declaration names its declared type in `type` (its Clark name) when the type is named: an instance may name that type with `xsi:type` too, besides its `variants`.
 
+### Changed
+
+- `--root` takes any global element of the schema, also one another element holds: a schema whose every element is held by another (FHIR) can now be generated. The automatic choice is unchanged.
+
+### Fixed
+
+- An element reached only through a type an element of `xs:anyType` may take no longer lists that element as its parent: such an element admits any content, so the parent and child tables now agree (it held no child either).
+
 ## [0.1.0] - 2026-10-12
 
 ### Changed
