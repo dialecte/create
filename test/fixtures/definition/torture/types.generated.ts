@@ -4,289 +4,1139 @@ import type { ELEMENT_NAMES, REQUIRED_ATTRIBUTES } from './constants.generated'
 
 export type AvailableElement = (typeof ELEMENT_NAMES)[number]
 
-/**
- * A union on xsi:type whose every member lists every key of the union - one it does not have as `?: undefined` - so
- * `keyof` reaches each member's attributes and naming a type rules out the other types'.
- */
-type Exclusive<Members, Keys extends PropertyKey = AllKeys<Members>> = Members extends unknown
-	? Flat<Members & { [K in Exclude<Keys, keyof Members>]?: undefined }>
-	: never
-type AllKeys<Members> = Members extends unknown ? keyof Members : never
-/** One object type per member, not an intersection: what TypeScript picks a member of a large union by. */
-type Flat<Intersection> = { [K in keyof Intersection]: Intersection[K] }
-
-export type AttributesType_tAngular = {
-	'xsi:type': 'tAngular'
-	corners: string
-	label?: string
-}
-
-export type AttributesType_tBag = {
-	'xsi:type': 'tBag'
-}
-
-export type AttributesType_tBoundedMeasure = {
-	'xsi:type': 'tBoundedMeasure'
-	min?: string
-	unit: string
-}
-
-export type AttributesType_tCar = {
-	'xsi:type': 'tCar'
-	seats?: string
-}
-
-export type AttributesType_tChoices = {
-	'xsi:type': 'tChoices'
-}
-
-export type AttributesType_tCircle = {
-	'xsi:type': 'tCircle'
-	color?: 'red' | 'green' | 'blue' | (string & {})
-	radius: string
-}
-
-export type AttributesType_tCode = {
-	'xsi:type': 'tCode'
-}
-
-export type AttributesType_tCodeOrNumber = {
-	'xsi:type': 'tCodeOrNumber'
-}
-
-export type AttributesType_tCodeOrNumberEnum = {
-	'xsi:type': 'tCodeOrNumberEnum'
-}
-
-export type AttributesType_tCodeStrict = {
-	'xsi:type': 'tCodeStrict'
-}
-
-export type AttributesType_tCodes = {
-	'xsi:type': 'tCodes'
-}
-
-export type AttributesType_tColors = {
-	'xsi:type': 'tColors'
-}
-
-export type AttributesType_tCompactCar = {
-	'xsi:type': 'tCompactCar'
-	seats?: string
-}
-
-export type AttributesType_tEmpty = {
-	'xsi:type': 'tEmpty'
-	n?: string
-}
-
-export type AttributesType_tEntry = {
-	'xsi:type': 'tEntry'
-	id: string
-	kind: string
-}
-
-export type AttributesType_tExtended = {
-	'xsi:type': 'tExtended'
-}
-
-export type AttributesType_tExtras = {
-	'xsi:type': 'tExtras'
-}
-
-export type AttributesType_tFewCodes = {
-	'xsi:type': 'tFewCodes'
-}
-
-export type AttributesType_tFull = {
-	'xsi:type': 'tFull'
-	dropped?: string
-	kept?: string
-}
-
-export type AttributesType_tGadget = {
-	'xsi:type': 'tGadget'
-	model?: string
-}
-
-export type AttributesType_tGadgetLite = {
-	'xsi:type': 'tGadgetLite'
-	model?: string
-}
-
-export type AttributesType_tGadgetPlus = {
-	'xsi:type': 'tGadgetPlus'
-	extra?: string
-	model?: string
-}
-
-export type AttributesType_tGarage = {
-	'xsi:type': 'tGarage'
-}
-
-export type AttributesType_tHammer = {
-	'xsi:type': 'tHammer'
-	weight?: string
-}
-
-export type AttributesType_tHomonyms = {
-	'xsi:type': 'tHomonyms'
-}
-
-export type AttributesType_tItem = {
-	'xsi:type': 'tItem'
-	name: string
-	qty?: string
-}
-
-export type AttributesType_tKeys = {
-	'xsi:type': 'tKeys'
-}
-
-export type AttributesType_tLegacy = {
-	'xsi:type': 'tLegacy'
-}
-
-export type AttributesType_tLevel = {
-	'xsi:type': 'tLevel'
-}
-
-export type AttributesType_tMallet = {
-	'xsi:type': 'tMallet'
-}
-
-export type AttributesType_tMeasure = {
-	'xsi:type': 'tMeasure'
-	unit: string
-}
-
-export type AttributesType_tMeasures = {
-	'xsi:type': 'tMeasures'
-}
-
-export type AttributesType_tOpen = {
-	'xsi:type': 'tOpen'
-}
-
-export type AttributesType_tRangedMeasure = {
-	'xsi:type': 'tRangedMeasure'
-	min?: string
-	unit: string
-}
-
-export type AttributesType_tRestricted = {
-	'xsi:type': 'tRestricted'
-	kept?: string
-}
-
-export type AttributesType_tRound = {
-	'xsi:type': 'tRound'
-	label?: string
-	radius?: string
-}
-
-export type AttributesType_tShape = {
-	'xsi:type': 'tShape'
-	color?: 'red' | 'green' | 'blue' | (string & {})
-}
-
-export type AttributesType_tShapes = {
-	'xsi:type': 'tShapes'
-}
-
-export type AttributesType_tSquare = {
-	'xsi:type': 'tSquare'
-	color?: 'red' | 'green' | 'blue' | (string & {})
-	side: string
-}
-
-export type AttributesType_tText = {
-	'xsi:type': 'tText'
-}
-
-export type AttributesType_tTool = {
-	'xsi:type': 'tTool'
-}
-
-export type AttributesType_tTruck = {
-	'xsi:type': 'tTruck'
-	seats?: string
-}
-
-export type AttributesType_tVehicle = {
-	'xsi:type': 'tVehicle'
-	seats?: string
-}
-
-export type AttributesType_tWarm = {
-	'xsi:type': 'tWarm'
-}
-
-export type AttributesType_XTExtBase = {
-	'xsi:type': 'x:tExtBase'
-}
-
-export type AttributesType_XTRound = {
-	'xsi:type': 'x:tRound'
-	label?: string
-	'x:diameter'?: string
-}
-
 export type AttributesA = {
 	n?: string
 }
 
-export type AttributesAnything = Exclusive<
-	| {
-			'xsi:type'?: never
-	  }
-	| AttributesType_XTExtBase
-	| AttributesType_XTRound
-	| AttributesType_tAngular
-	| AttributesType_tBag
-	| AttributesType_tBoundedMeasure
-	| AttributesType_tCar
-	| AttributesType_tChoices
-	| AttributesType_tCircle
-	| AttributesType_tCode
-	| AttributesType_tCodeOrNumber
-	| AttributesType_tCodeOrNumberEnum
-	| AttributesType_tCodeStrict
-	| AttributesType_tCodes
-	| AttributesType_tColors
-	| AttributesType_tCompactCar
-	| AttributesType_tEmpty
-	| AttributesType_tEntry
-	| AttributesType_tExtended
-	| AttributesType_tExtras
-	| AttributesType_tFewCodes
-	| AttributesType_tFull
-	| AttributesType_tGadget
-	| AttributesType_tGadgetLite
-	| AttributesType_tGadgetPlus
-	| AttributesType_tGarage
-	| AttributesType_tHammer
-	| AttributesType_tHomonyms
-	| AttributesType_tItem
-	| AttributesType_tKeys
-	| AttributesType_tLegacy
-	| AttributesType_tLevel
-	| AttributesType_tMallet
-	| AttributesType_tMeasure
-	| AttributesType_tMeasures
-	| AttributesType_tOpen
-	| AttributesType_tRangedMeasure
-	| AttributesType_tRestricted
-	| AttributesType_tRound
-	| AttributesType_tShape
-	| AttributesType_tShapes
-	| AttributesType_tSquare
-	| AttributesType_tText
-	| AttributesType_tTool
-	| AttributesType_tTruck
-	| AttributesType_tVehicle
-	| AttributesType_tWarm
->
+export type AttributesAnything =
+	| AttributesAnything_Own
+	| AttributesAnything_XTExtBase
+	| AttributesAnything_XTRound
+	| AttributesAnything_tAngular
+	| AttributesAnything_tBag
+	| AttributesAnything_tBoundedMeasure
+	| AttributesAnything_tCar
+	| AttributesAnything_tChoices
+	| AttributesAnything_tCircle
+	| AttributesAnything_tCode
+	| AttributesAnything_tCodeOrNumber
+	| AttributesAnything_tCodeOrNumberEnum
+	| AttributesAnything_tCodeStrict
+	| AttributesAnything_tCodes
+	| AttributesAnything_tColors
+	| AttributesAnything_tCompactCar
+	| AttributesAnything_tEmpty
+	| AttributesAnything_tEntry
+	| AttributesAnything_tExtended
+	| AttributesAnything_tExtras
+	| AttributesAnything_tFewCodes
+	| AttributesAnything_tFull
+	| AttributesAnything_tGadget
+	| AttributesAnything_tGadgetLite
+	| AttributesAnything_tGadgetPlus
+	| AttributesAnything_tGarage
+	| AttributesAnything_tHammer
+	| AttributesAnything_tHomonyms
+	| AttributesAnything_tItem
+	| AttributesAnything_tKeys
+	| AttributesAnything_tLegacy
+	| AttributesAnything_tLevel
+	| AttributesAnything_tMallet
+	| AttributesAnything_tMeasure
+	| AttributesAnything_tMeasures
+	| AttributesAnything_tOpen
+	| AttributesAnything_tRangedMeasure
+	| AttributesAnything_tRestricted
+	| AttributesAnything_tRound
+	| AttributesAnything_tShape
+	| AttributesAnything_tShapes
+	| AttributesAnything_tSquare
+	| AttributesAnything_tText
+	| AttributesAnything_tTool
+	| AttributesAnything_tTruck
+	| AttributesAnything_tVehicle
+	| AttributesAnything_tWarm
+
+export type AttributesAnything_Own = {
+	'xsi:type'?: never
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_XTExtBase = {
+	'xsi:type': 'x:tExtBase'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_XTRound = {
+	'xsi:type': 'x:tRound'
+	label?: string
+	'x:diameter'?: string
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tAngular = {
+	'xsi:type': 'tAngular'
+	corners: string
+	label?: string
+	'x:diameter'?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tBag = {
+	'xsi:type': 'tBag'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tBoundedMeasure = {
+	'xsi:type': 'tBoundedMeasure'
+	min?: string
+	unit: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tCar = {
+	'xsi:type': 'tCar'
+	seats?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tChoices = {
+	'xsi:type': 'tChoices'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tCircle = {
+	'xsi:type': 'tCircle'
+	color?: 'red' | 'green' | 'blue' | (string & {})
+	radius: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tCode = {
+	'xsi:type': 'tCode'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tCodeOrNumber = {
+	'xsi:type': 'tCodeOrNumber'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tCodeOrNumberEnum = {
+	'xsi:type': 'tCodeOrNumberEnum'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tCodes = {
+	'xsi:type': 'tCodes'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tColors = {
+	'xsi:type': 'tColors'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tCompactCar = {
+	'xsi:type': 'tCompactCar'
+	seats?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tEmpty = {
+	'xsi:type': 'tEmpty'
+	n?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tEntry = {
+	'xsi:type': 'tEntry'
+	id: string
+	kind: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tExtended = {
+	'xsi:type': 'tExtended'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tExtras = {
+	'xsi:type': 'tExtras'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tFewCodes = {
+	'xsi:type': 'tFewCodes'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tFull = {
+	'xsi:type': 'tFull'
+	dropped?: string
+	kept?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tGadget = {
+	'xsi:type': 'tGadget'
+	model?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tGadgetLite = {
+	'xsi:type': 'tGadgetLite'
+	model?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tGadgetPlus = {
+	'xsi:type': 'tGadgetPlus'
+	extra?: string
+	model?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tGarage = {
+	'xsi:type': 'tGarage'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tHammer = {
+	'xsi:type': 'tHammer'
+	weight?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tHomonyms = {
+	'xsi:type': 'tHomonyms'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tItem = {
+	'xsi:type': 'tItem'
+	name: string
+	qty?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tKeys = {
+	'xsi:type': 'tKeys'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tLegacy = {
+	'xsi:type': 'tLegacy'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tLevel = {
+	'xsi:type': 'tLevel'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tMallet = {
+	'xsi:type': 'tMallet'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tMeasure = {
+	'xsi:type': 'tMeasure'
+	unit: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tMeasures = {
+	'xsi:type': 'tMeasures'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tOpen = {
+	'xsi:type': 'tOpen'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tRangedMeasure = {
+	'xsi:type': 'tRangedMeasure'
+	min?: string
+	unit: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tRestricted = {
+	'xsi:type': 'tRestricted'
+	kept?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tRound = {
+	'xsi:type': 'tRound'
+	label?: string
+	radius?: string
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tShape = {
+	'xsi:type': 'tShape'
+	color?: 'red' | 'green' | 'blue' | (string & {})
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tShapes = {
+	'xsi:type': 'tShapes'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tSquare = {
+	'xsi:type': 'tSquare'
+	color?: 'red' | 'green' | 'blue' | (string & {})
+	side: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+}
+
+export type AttributesAnything_tText = {
+	'xsi:type': 'tText'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tTool = {
+	'xsi:type': 'tTool'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tTruck = {
+	'xsi:type': 'tTruck'
+	seats?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tVehicle = {
+	'xsi:type': 'tVehicle'
+	seats?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
+
+export type AttributesAnything_tWarm = {
+	'xsi:type': 'tWarm'
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	min?: undefined
+	unit?: undefined
+	seats?: undefined
+	color?: undefined
+	radius?: undefined
+	n?: undefined
+	id?: undefined
+	kind?: undefined
+	dropped?: undefined
+	kept?: undefined
+	model?: undefined
+	extra?: undefined
+	weight?: undefined
+	name?: undefined
+	qty?: undefined
+	side?: undefined
+}
 
 export type AttributesB = {
 	n?: string
@@ -334,16 +1184,49 @@ export type AttributesDown = {
 	n?: string
 }
 
-export type AttributesEm = Exclusive<
-	| {
-			'xsi:type'?: never
-	  }
-	| AttributesType_tCode
-	| AttributesType_tCodeStrict
-	| AttributesType_tColors
-	| AttributesType_tEntry
-	| AttributesType_tWarm
->
+export type AttributesEm =
+	| AttributesEm_Own
+	| AttributesEm_tCode
+	| AttributesEm_tCodeStrict
+	| AttributesEm_tColors
+	| AttributesEm_tEntry
+	| AttributesEm_tWarm
+
+export type AttributesEm_Own = {
+	'xsi:type'?: never
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesEm_tCode = {
+	'xsi:type': 'tCode'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesEm_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesEm_tColors = {
+	'xsi:type': 'tColors'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesEm_tEntry = {
+	'xsi:type': 'tEntry'
+	id: string
+	kind: string
+}
+
+export type AttributesEm_tWarm = {
+	'xsi:type': 'tWarm'
+	id?: undefined
+	kind?: undefined
+}
 
 export type AttributesEmpty = {}
 
@@ -360,32 +1243,94 @@ export type AttributesExtra = {
 
 export type AttributesExtras = {}
 
-export type AttributesFigure = Exclusive<
-	AttributesType_XTRound | AttributesType_tAngular | AttributesType_tRound
->
+export type AttributesFigure =
+	| AttributesFigure_XTRound
+	| AttributesFigure_tAngular
+	| AttributesFigure_tRound
+
+export type AttributesFigure_XTRound = {
+	'xsi:type': 'x:tRound'
+	label?: string
+	'x:diameter'?: string
+	corners?: undefined
+	radius?: undefined
+}
+
+export type AttributesFigure_tAngular = {
+	'xsi:type': 'tAngular'
+	corners: string
+	label?: string
+	'x:diameter'?: undefined
+	radius?: undefined
+}
+
+export type AttributesFigure_tRound = {
+	'xsi:type': 'tRound'
+	label?: string
+	radius?: string
+	'x:diameter'?: undefined
+	corners?: undefined
+}
 
 export type AttributesFlag = {}
 
-export type AttributesGadget = Exclusive<
-	| {
-			model?: string
-			'xsi:type'?: 'tGadget'
-	  }
-	| AttributesType_tGadgetLite
->
+export type AttributesGadget = AttributesGadget_Own | AttributesGadget_tGadgetLite
+
+export type AttributesGadget_Own = {
+	'xsi:type'?: 'tGadget'
+	model?: string
+}
+
+export type AttributesGadget_tGadgetLite = {
+	'xsi:type': 'tGadgetLite'
+	model?: string
+}
 
 export type AttributesGarage = {}
 
-export type AttributesGreeting = Exclusive<
-	| {
-			'xsi:type'?: never
-	  }
-	| AttributesType_tCode
-	| AttributesType_tCodeStrict
-	| AttributesType_tColors
-	| AttributesType_tEntry
-	| AttributesType_tWarm
->
+export type AttributesGreeting =
+	| AttributesGreeting_Own
+	| AttributesGreeting_tCode
+	| AttributesGreeting_tCodeStrict
+	| AttributesGreeting_tColors
+	| AttributesGreeting_tEntry
+	| AttributesGreeting_tWarm
+
+export type AttributesGreeting_Own = {
+	'xsi:type'?: never
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesGreeting_tCode = {
+	'xsi:type': 'tCode'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesGreeting_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesGreeting_tColors = {
+	'xsi:type': 'tColors'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesGreeting_tEntry = {
+	'xsi:type': 'tEntry'
+	id: string
+	kind: string
+}
+
+export type AttributesGreeting_tWarm = {
+	'xsi:type': 'tWarm'
+	id?: undefined
+	kind?: undefined
+}
 
 export type AttributesGroup = {}
 
@@ -399,45 +1344,154 @@ export type AttributesHandle = {
 
 export type AttributesHomonyms = {}
 
-export type AttributesItem = Exclusive<
-	| {
-			name?: string
-			qty?: string
-			'xsi:type'?: 'tItem'
-	  }
-	| AttributesType_tCode
-	| AttributesType_tCodeStrict
-	| AttributesType_tColors
-	| AttributesType_tEntry
-	| AttributesType_tWarm
->
+export type AttributesItem =
+	| AttributesItem_Own
+	| AttributesItem_tCode
+	| AttributesItem_tCodeStrict
+	| AttributesItem_tColors
+	| AttributesItem_tEntry
+	| AttributesItem_tWarm
+
+export type AttributesItem_Own = {
+	'xsi:type'?: 'tItem'
+	name?: string
+	qty?: string
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItem_tCode = {
+	'xsi:type': 'tCode'
+	name?: undefined
+	qty?: undefined
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItem_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+	name?: undefined
+	qty?: undefined
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItem_tColors = {
+	'xsi:type': 'tColors'
+	name?: undefined
+	qty?: undefined
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItem_tEntry = {
+	'xsi:type': 'tEntry'
+	id: string
+	kind: string
+	name?: undefined
+	qty?: undefined
+}
+
+export type AttributesItem_tWarm = {
+	'xsi:type': 'tWarm'
+	name?: undefined
+	qty?: undefined
+	id?: undefined
+	kind?: undefined
+}
 
 export type AttributesItemInCrate = {
 	name: string
 	qty?: string
 }
 
-export type AttributesItemInExtended = Exclusive<
-	| {
-			'xsi:type'?: never
-	  }
-	| AttributesType_tCode
-	| AttributesType_tCodeStrict
-	| AttributesType_tColors
-	| AttributesType_tEntry
-	| AttributesType_tWarm
->
+export type AttributesItemInExtended =
+	| AttributesItemInExtended_Own
+	| AttributesItemInExtended_tCode
+	| AttributesItemInExtended_tCodeStrict
+	| AttributesItemInExtended_tColors
+	| AttributesItemInExtended_tEntry
+	| AttributesItemInExtended_tWarm
 
-export type AttributesItemInRack = Exclusive<
-	| {
-			'xsi:type'?: never
-	  }
-	| AttributesType_tCode
-	| AttributesType_tCodeStrict
-	| AttributesType_tColors
-	| AttributesType_tEntry
-	| AttributesType_tWarm
->
+export type AttributesItemInExtended_Own = {
+	'xsi:type'?: never
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItemInExtended_tCode = {
+	'xsi:type': 'tCode'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItemInExtended_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItemInExtended_tColors = {
+	'xsi:type': 'tColors'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItemInExtended_tEntry = {
+	'xsi:type': 'tEntry'
+	id: string
+	kind: string
+}
+
+export type AttributesItemInExtended_tWarm = {
+	'xsi:type': 'tWarm'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItemInRack =
+	| AttributesItemInRack_Own
+	| AttributesItemInRack_tCode
+	| AttributesItemInRack_tCodeStrict
+	| AttributesItemInRack_tColors
+	| AttributesItemInRack_tEntry
+	| AttributesItemInRack_tWarm
+
+export type AttributesItemInRack_Own = {
+	'xsi:type'?: never
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItemInRack_tCode = {
+	'xsi:type': 'tCode'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItemInRack_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItemInRack_tColors = {
+	'xsi:type': 'tColors'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesItemInRack_tEntry = {
+	'xsi:type': 'tEntry'
+	id: string
+	kind: string
+}
+
+export type AttributesItemInRack_tWarm = {
+	'xsi:type': 'tWarm'
+	id?: undefined
+	kind?: undefined
+}
 
 export type AttributesItemInShelf = {
 	name: string
@@ -459,14 +1513,28 @@ export type AttributesLid = {
 	size?: string
 }
 
-export type AttributesLoad = Exclusive<
-	| {
-			unit: string
-			'xsi:type'?: 'tMeasure'
-	  }
-	| AttributesType_tBoundedMeasure
-	| AttributesType_tRangedMeasure
->
+export type AttributesLoad =
+	| AttributesLoad_Own
+	| AttributesLoad_tBoundedMeasure
+	| AttributesLoad_tRangedMeasure
+
+export type AttributesLoad_Own = {
+	'xsi:type'?: 'tMeasure'
+	unit: string
+	min?: undefined
+}
+
+export type AttributesLoad_tBoundedMeasure = {
+	'xsi:type': 'tBoundedMeasure'
+	min?: string
+	unit: string
+}
+
+export type AttributesLoad_tRangedMeasure = {
+	'xsi:type': 'tRangedMeasure'
+	min?: string
+	unit: string
+}
 
 export type AttributesLoose = {
 	plain?: string
@@ -481,66 +1549,215 @@ export type AttributesMay = {
 	n?: string
 }
 
-export type AttributesMaybe = Exclusive<
-	| {
-			'xsi:type'?: never
-	  }
-	| AttributesType_tLevel
->
+export type AttributesMaybe = AttributesMaybe_Own | AttributesMaybe_tLevel
 
-export type AttributesMeasure = Exclusive<
-	| {
-			unit: string
-			'xsi:type'?: 'tMeasure'
-	  }
-	| AttributesType_tBoundedMeasure
-	| AttributesType_tRangedMeasure
->
+export type AttributesMaybe_Own = {
+	'xsi:type'?: never
+}
+
+export type AttributesMaybe_tLevel = {
+	'xsi:type': 'tLevel'
+}
+
+export type AttributesMeasure =
+	| AttributesMeasure_Own
+	| AttributesMeasure_tBoundedMeasure
+	| AttributesMeasure_tRangedMeasure
+
+export type AttributesMeasure_Own = {
+	'xsi:type'?: 'tMeasure'
+	unit: string
+	min?: undefined
+}
+
+export type AttributesMeasure_tBoundedMeasure = {
+	'xsi:type': 'tBoundedMeasure'
+	min?: string
+	unit: string
+}
+
+export type AttributesMeasure_tRangedMeasure = {
+	'xsi:type': 'tRangedMeasure'
+	min?: string
+	unit: string
+}
 
 export type AttributesMeasures = {}
 
-export type AttributesMount = Exclusive<
-	| {
-			label?: string
-			seats?: string
-			'xsi:type'?: 'tVehicle'
-	  }
-	| AttributesType_XTRound
-	| AttributesType_tAngular
-	| AttributesType_tRound
-	| AttributesType_tCar
-	| AttributesType_tCompactCar
-	| AttributesType_tTruck
->
+export type AttributesMount =
+	| AttributesMount_Own
+	| AttributesMount_XTRound
+	| AttributesMount_tAngular
+	| AttributesMount_tRound
+	| AttributesMount_tCar
+	| AttributesMount_tCompactCar
+	| AttributesMount_tTruck
 
-export type AttributesMountInGarage = Exclusive<
-	AttributesType_XTRound | AttributesType_tAngular | AttributesType_tRound
->
+export type AttributesMount_Own = {
+	'xsi:type'?: 'tVehicle'
+	label?: string
+	seats?: string
+	'x:diameter'?: undefined
+	corners?: undefined
+	radius?: undefined
+}
 
-export type AttributesMountInHomonyms = Exclusive<
-	| {
-			seats?: string
-			'xsi:type'?: 'tVehicle'
-	  }
-	| AttributesType_tCar
-	| AttributesType_tCompactCar
-	| AttributesType_tTruck
->
+export type AttributesMount_XTRound = {
+	'xsi:type': 'x:tRound'
+	label?: string
+	'x:diameter'?: string
+	seats?: undefined
+	corners?: undefined
+	radius?: undefined
+}
+
+export type AttributesMount_tAngular = {
+	'xsi:type': 'tAngular'
+	corners: string
+	label?: string
+	seats?: undefined
+	'x:diameter'?: undefined
+	radius?: undefined
+}
+
+export type AttributesMount_tRound = {
+	'xsi:type': 'tRound'
+	label?: string
+	radius?: string
+	seats?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+}
+
+export type AttributesMount_tCar = {
+	'xsi:type': 'tCar'
+	seats?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	radius?: undefined
+}
+
+export type AttributesMount_tCompactCar = {
+	'xsi:type': 'tCompactCar'
+	seats?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	radius?: undefined
+}
+
+export type AttributesMount_tTruck = {
+	'xsi:type': 'tTruck'
+	seats?: string
+	label?: undefined
+	'x:diameter'?: undefined
+	corners?: undefined
+	radius?: undefined
+}
+
+export type AttributesMountInGarage =
+	| AttributesMountInGarage_XTRound
+	| AttributesMountInGarage_tAngular
+	| AttributesMountInGarage_tRound
+
+export type AttributesMountInGarage_XTRound = {
+	'xsi:type': 'x:tRound'
+	label?: string
+	'x:diameter'?: string
+	corners?: undefined
+	radius?: undefined
+}
+
+export type AttributesMountInGarage_tAngular = {
+	'xsi:type': 'tAngular'
+	corners: string
+	label?: string
+	'x:diameter'?: undefined
+	radius?: undefined
+}
+
+export type AttributesMountInGarage_tRound = {
+	'xsi:type': 'tRound'
+	label?: string
+	radius?: string
+	'x:diameter'?: undefined
+	corners?: undefined
+}
+
+export type AttributesMountInHomonyms =
+	| AttributesMountInHomonyms_Own
+	| AttributesMountInHomonyms_tCar
+	| AttributesMountInHomonyms_tCompactCar
+	| AttributesMountInHomonyms_tTruck
+
+export type AttributesMountInHomonyms_Own = {
+	'xsi:type'?: 'tVehicle'
+	seats?: string
+}
+
+export type AttributesMountInHomonyms_tCar = {
+	'xsi:type': 'tCar'
+	seats?: string
+}
+
+export type AttributesMountInHomonyms_tCompactCar = {
+	'xsi:type': 'tCompactCar'
+	seats?: string
+}
+
+export type AttributesMountInHomonyms_tTruck = {
+	'xsi:type': 'tTruck'
+	seats?: string
+}
 
 export type AttributesMust = {
 	n?: string
 }
 
-export type AttributesNew = Exclusive<
-	| {
-			'xsi:type'?: never
-	  }
-	| AttributesType_tCode
-	| AttributesType_tCodeStrict
-	| AttributesType_tColors
-	| AttributesType_tEntry
-	| AttributesType_tWarm
->
+export type AttributesNew =
+	| AttributesNew_Own
+	| AttributesNew_tCode
+	| AttributesNew_tCodeStrict
+	| AttributesNew_tColors
+	| AttributesNew_tEntry
+	| AttributesNew_tWarm
+
+export type AttributesNew_Own = {
+	'xsi:type'?: never
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesNew_tCode = {
+	'xsi:type': 'tCode'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesNew_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesNew_tColors = {
+	'xsi:type': 'tColors'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesNew_tEntry = {
+	'xsi:type': 'tEntry'
+	id: string
+	kind: string
+}
+
+export type AttributesNew_tWarm = {
+	'xsi:type': 'tWarm'
+	id?: undefined
+	kind?: undefined
+}
 
 export type AttributesNode = {
 	name: string
@@ -548,16 +1765,49 @@ export type AttributesNode = {
 
 export type AttributesNote = {}
 
-export type AttributesOld = Exclusive<
-	| {
-			'xsi:type'?: never
-	  }
-	| AttributesType_tCode
-	| AttributesType_tCodeStrict
-	| AttributesType_tColors
-	| AttributesType_tEntry
-	| AttributesType_tWarm
->
+export type AttributesOld =
+	| AttributesOld_Own
+	| AttributesOld_tCode
+	| AttributesOld_tCodeStrict
+	| AttributesOld_tColors
+	| AttributesOld_tEntry
+	| AttributesOld_tWarm
+
+export type AttributesOld_Own = {
+	'xsi:type'?: never
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesOld_tCode = {
+	'xsi:type': 'tCode'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesOld_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesOld_tColors = {
+	'xsi:type': 'tColors'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesOld_tEntry = {
+	'xsi:type': 'tEntry'
+	id: string
+	kind: string
+}
+
+export type AttributesOld_tWarm = {
+	'xsi:type': 'tWarm'
+	id?: undefined
+	kind?: undefined
+}
 
 export type AttributesOne = {
 	n?: string
@@ -572,38 +1822,109 @@ export type AttributesPara = {
 	'xml:lang'?: string
 }
 
-export type AttributesPlain = Exclusive<
-	| {
-			'xsi:type'?: never
-	  }
-	| AttributesType_tCode
-	| AttributesType_tCodeStrict
-	| AttributesType_tColors
-	| AttributesType_tEntry
-	| AttributesType_tWarm
->
+export type AttributesPlain =
+	| AttributesPlain_Own
+	| AttributesPlain_tCode
+	| AttributesPlain_tCodeStrict
+	| AttributesPlain_tColors
+	| AttributesPlain_tEntry
+	| AttributesPlain_tWarm
 
-export type AttributesPlate = Exclusive<
-	| {
-			'xsi:type'?: never
-	  }
-	| AttributesType_tCode
-	| AttributesType_tCodeStrict
-	| AttributesType_tColors
-	| AttributesType_tEntry
-	| AttributesType_tWarm
->
+export type AttributesPlain_Own = {
+	'xsi:type'?: never
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesPlain_tCode = {
+	'xsi:type': 'tCode'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesPlain_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesPlain_tColors = {
+	'xsi:type': 'tColors'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesPlain_tEntry = {
+	'xsi:type': 'tEntry'
+	id: string
+	kind: string
+}
+
+export type AttributesPlain_tWarm = {
+	'xsi:type': 'tWarm'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesPlate =
+	| AttributesPlate_Own
+	| AttributesPlate_tCode
+	| AttributesPlate_tCodeStrict
+	| AttributesPlate_tColors
+	| AttributesPlate_tEntry
+	| AttributesPlate_tWarm
+
+export type AttributesPlate_Own = {
+	'xsi:type'?: never
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesPlate_tCode = {
+	'xsi:type': 'tCode'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesPlate_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesPlate_tColors = {
+	'xsi:type': 'tColors'
+	id?: undefined
+	kind?: undefined
+}
+
+export type AttributesPlate_tEntry = {
+	'xsi:type': 'tEntry'
+	id: string
+	kind: string
+}
+
+export type AttributesPlate_tWarm = {
+	'xsi:type': 'tWarm'
+	id?: undefined
+	kind?: undefined
+}
 
 export type AttributesRack = {}
 
-export type AttributesRanged = Exclusive<
-	| {
-			min?: string
-			unit: string
-			'xsi:type'?: 'tRangedMeasure'
-	  }
-	| AttributesType_tBoundedMeasure
->
+export type AttributesRanged = AttributesRanged_Own | AttributesRanged_tBoundedMeasure
+
+export type AttributesRanged_Own = {
+	'xsi:type'?: 'tRangedMeasure'
+	min?: string
+	unit: string
+}
+
+export type AttributesRanged_tBoundedMeasure = {
+	'xsi:type': 'tBoundedMeasure'
+	min?: string
+	unit: string
+}
 
 export type AttributesRef = {
 	target?: string
@@ -618,14 +1939,22 @@ export type AttributesRich = {
 	n?: string
 }
 
-export type AttributesRide = Exclusive<
-	| {
-			seats?: string
-			'xsi:type'?: 'tVehicle'
-	  }
-	| AttributesType_tCar
-	| AttributesType_tTruck
->
+export type AttributesRide = AttributesRide_Own | AttributesRide_tCar | AttributesRide_tTruck
+
+export type AttributesRide_Own = {
+	'xsi:type'?: 'tVehicle'
+	seats?: string
+}
+
+export type AttributesRide_tCar = {
+	'xsi:type': 'tCar'
+	seats?: string
+}
+
+export type AttributesRide_tTruck = {
+	'xsi:type': 'tTruck'
+	seats?: string
+}
 
 export type AttributesRight = {
 	n?: string
@@ -655,12 +1984,15 @@ export type AttributesThree = {
 	n?: string
 }
 
-export type AttributesTool = Exclusive<
-	| {
-			'xsi:type'?: 'tTool'
-	  }
-	| AttributesType_tMallet
->
+export type AttributesTool = AttributesTool_Own | AttributesTool_tMallet
+
+export type AttributesTool_Own = {
+	'xsi:type'?: 'tTool'
+}
+
+export type AttributesTool_tMallet = {
+	'xsi:type': 'tMallet'
+}
 
 export type AttributesTorture = {
 	id?: string
@@ -683,35 +2015,96 @@ export type AttributesUp = {
 	n?: string
 }
 
-export type AttributesValue = Exclusive<
-	| {
-			'xsi:type'?: 'tCodeOrNumber'
-	  }
-	| AttributesType_tCode
-	| AttributesType_tCodeOrNumberEnum
-	| AttributesType_tCodeStrict
-	| AttributesType_tLevel
->
+export type AttributesValue =
+	| AttributesValue_Own
+	| AttributesValue_tCode
+	| AttributesValue_tCodeOrNumberEnum
+	| AttributesValue_tCodeStrict
+	| AttributesValue_tLevel
 
-export type AttributesVehicle = Exclusive<
-	| {
-			seats?: string
-			'xsi:type'?: 'tVehicle'
-	  }
-	| AttributesType_tCar
-	| AttributesType_tTruck
->
+export type AttributesValue_Own = {
+	'xsi:type'?: 'tCodeOrNumber'
+}
 
-export type Attributesbare = Exclusive<
-	| {
-			'xsi:type'?: never
-	  }
-	| AttributesType_tCode
-	| AttributesType_tCodeStrict
-	| AttributesType_tColors
-	| AttributesType_tEntry
-	| AttributesType_tWarm
->
+export type AttributesValue_tCode = {
+	'xsi:type': 'tCode'
+}
+
+export type AttributesValue_tCodeOrNumberEnum = {
+	'xsi:type': 'tCodeOrNumberEnum'
+}
+
+export type AttributesValue_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+}
+
+export type AttributesValue_tLevel = {
+	'xsi:type': 'tLevel'
+}
+
+export type AttributesVehicle =
+	| AttributesVehicle_Own
+	| AttributesVehicle_tCar
+	| AttributesVehicle_tTruck
+
+export type AttributesVehicle_Own = {
+	'xsi:type'?: 'tVehicle'
+	seats?: string
+}
+
+export type AttributesVehicle_tCar = {
+	'xsi:type': 'tCar'
+	seats?: string
+}
+
+export type AttributesVehicle_tTruck = {
+	'xsi:type': 'tTruck'
+	seats?: string
+}
+
+export type Attributesbare =
+	| Attributesbare_Own
+	| Attributesbare_tCode
+	| Attributesbare_tCodeStrict
+	| Attributesbare_tColors
+	| Attributesbare_tEntry
+	| Attributesbare_tWarm
+
+export type Attributesbare_Own = {
+	'xsi:type'?: never
+	id?: undefined
+	kind?: undefined
+}
+
+export type Attributesbare_tCode = {
+	'xsi:type': 'tCode'
+	id?: undefined
+	kind?: undefined
+}
+
+export type Attributesbare_tCodeStrict = {
+	'xsi:type': 'tCodeStrict'
+	id?: undefined
+	kind?: undefined
+}
+
+export type Attributesbare_tColors = {
+	'xsi:type': 'tColors'
+	id?: undefined
+	kind?: undefined
+}
+
+export type Attributesbare_tEntry = {
+	'xsi:type': 'tEntry'
+	id: string
+	kind: string
+}
+
+export type Attributesbare_tWarm = {
+	'xsi:type': 'tWarm'
+	id?: undefined
+	kind?: undefined
+}
 
 export type AttributesMap = {
 	A: AttributesA

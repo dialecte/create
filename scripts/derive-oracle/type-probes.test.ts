@@ -87,19 +87,15 @@ describe('type probes', () => {
 	const unionTampers: Record<string, (types: string) => string> = {
 		'an abstract type given a member of its own -> the probe fails': (types) =>
 			types.replace(
-				'export type AttributesDD_1 = Exclusive<\n',
-				'export type AttributesDD_1 = Exclusive<\n\t| { aDD_1: string }\n',
+				'export type AttributesDD_1 =\n',
+				'export type AttributesDD_1 =\n\t| { aDD_1: string }\n',
 			),
 		'a type of another namespace named by its local name (the old hint) -> the probe fails': (
 			types,
 		) => types.replace("'xsi:type': 'ext:tDD_1A'", "'xsi:type': 'tDD_1A'"),
 		'a union not exclusive (a member open to the attributes of another type) -> the probe fails': (
 			types,
-		) =>
-			types.replace(
-				'export type AttributesDD_2 = Exclusive<',
-				'type Plain<Members> = Members\nexport type AttributesDD_2 = Plain<',
-			),
+		) => types.replace("\t'ext:cDD_2'?: string\n\tdDD_2?: undefined\n", "\t'ext:cDD_2'?: string\n"),
 		'an own member open to any xsi:type -> the probe fails': (types) =>
 			types.replace("'xsi:type'?: 'tDD_2'", "'xsi:type'?: string"),
 	}

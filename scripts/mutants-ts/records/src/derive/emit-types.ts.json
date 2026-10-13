@@ -4,14 +4,14 @@
 		"mutation": "EqualityOperator: first < second -> first <= second",
 		"equivalent": "Element names are keys of the definition, never equal: < and <= sort them the same."
 	},
-	"e99705af4a0a7a89": {
-		"line": 62,
-		"mutation": "EqualityOperator: first.literal < second.literal -> first.literal <= second.literal",
-		"equivalent": "Two variants never share a literal (the map is keyed by it): < and <= order them the same."
-	},
 	"952d7f3845a0b874": {
-		"line": 77,
+		"line": 63,
 		"mutation": "EqualityOperator: first.parent < second.parent -> first.parent <= second.parent",
 		"equivalent": "Two declared edges of one child never share a parent: < and <= sort them the same."
+	},
+	"b20561c183401388": {
+		"line": 129,
+		"mutation": "ConditionalExpression: shape.own !== undefined -> true",
+		"equivalent": "attributeShape gives an own member whenever no variant is left: no variant and no own member never happens."
 	}
 }
