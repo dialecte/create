@@ -9,9 +9,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 MANIFEST = HERE / 'manifest.json'
+EXCEPTIONS = HERE / 'known-exceptions.json'
 OVERRIDES = HERE / 'overrides'
 CREATE_ROOT = HERE.parents[1]
-# fields without which a source is not fetched: its licence was reviewed (plan 10b, licence table)
+# fields without which a source is not fetched: they record that its licence was reviewed
 REQUIRED_FIELDS = ('license', 'terms', 'verdict')
 
 # W3C infrastructure schemas the licence review excluded: never fetched, our own declarations stand for them
@@ -40,6 +41,11 @@ class Source:
 
     def instance_paths(self) -> list[Path]:
         return _matching(self.root, self.instances)
+
+
+def known_exceptions() -> dict[str, dict]:
+    """The reviewed disagreements, by id: `<check>/<schema or pair id>/...` -> {reason, detail, since}."""
+    return json.loads(EXCEPTIONS.read_text(encoding='utf-8'))
 
 
 def read_manifest() -> dict:

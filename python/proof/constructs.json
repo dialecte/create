@@ -1,5 +1,5 @@
 {
-	"$comment": "Every construct of XSD 1.0 and how the generator treats it. handled: what reads it, through the schema library - the instance oracle proves the fact it writes. excluded: why, and what it changes in an instance (nothing, or what another handled fact already says). xsd-1.1: refused by the XSD 1.0 schema library at load, with every attribute of an element listed there. A construct in none of the three fails the proof (python/proof/constructs.py). Rows are added in review, never by a run.",
+	"$comment": "Every construct of XSD 1.0 and how the generator treats it. handled: what reads it, through the schema library - the instance oracle proves the fact it writes. excluded: why, and what it changes in an instance (nothing, or what another handled fact already says). xsd-1.1: refused by the XSD 1.0 schema library at load, with every attribute of an element listed there; or a conditional inclusion (`*@vc:`) the library applies and libxml2 ignores, so the two do not read the same schema. A construct in none of the three fails the proof (python/proof/constructs.py). Rows are added in review, never by a run.",
 	"handled": {
 		"schema": "model/read_schema.py - the schema loaded through the library, every global of its maps walked",
 		"schema@targetNamespace": "model/read_schema.py - the namespace of every global, written on each element and particle",
@@ -424,6 +424,12 @@
 		"key@ref",
 		"keyref@ref",
 		"selector@xpathDefaultNamespace",
-		"field@xpathDefaultNamespace"
+		"field@xpathDefaultNamespace",
+		"*@vc:minVersion",
+		"*@vc:maxVersion",
+		"*@vc:typeAvailable",
+		"*@vc:typeUnavailable",
+		"*@vc:facetAvailable",
+		"*@vc:facetUnavailable"
 	]
 }

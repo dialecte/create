@@ -1,4 +1,9 @@
 {
+	"constructs/xmlschema-tests/issues/issue_349/issue_349.xsd/xsd-1.1/schema@vc:minVersion": {
+		"reason": "xsd-1.1:conditional-inclusion",
+		"detail": "the schema says vc:minVersion=\"1.1\": the schema library, an XSD 1.0 processor applying conditional inclusion, leaves the whole schema out (no element generated); libxml2 ignores the versioning attribute and reads it",
+		"since": "2026-10-14"
+	},
 	"generation/libxml2-tests/anyAttr-derive-errors1_0.xsd/refused/XMLSchemaParseError": {
 		"reason": "generator:xmlschema-refuses-a-schema-libxml2-loads",
 		"detail": "the schema library calls the union of ##other and a list of namespaces not expressible; XSD 1.0 expresses it (the generator reads schemas through the library)",
@@ -16,7 +21,7 @@
 	},
 	"generation/ogc-citygml-2.0/schemas.opengis.net/citygml/profiles/base/2.0/CityGML.xsd/refused/XMLSchemaParseError": {
 		"reason": "generator:xmlschema-refuses-a-schema-libxml2-loads",
-		"detail": "the library calls a derived group an illegal restriction (plan 10b census); libxml2 loads CityGML",
+		"detail": "the library calls a derived group an illegal restriction; libxml2 loads CityGML",
 		"since": "2026-10-09"
 	},
 	"generation/xhtml-1.1/www.w3.org/MarkUp/SCHEMA/xhtml11.xsd/libxml2-refuses": {
@@ -34,44 +39,64 @@
 		"detail": "libxml2 calls a model with two maxOccurs=\"0\" particles of one name non deterministic; the library (issue 306) accepts it: a legality dispute; the libxml2-judged checks cannot run",
 		"since": "2026-10-09"
 	},
+	"instances/libxml2-tests/anyAttr-processContents-err1_0.xsd/anyAttr-processContents-err1_0.xml/unmutated/unpredictable/strict-attribute-wildcard": {
+		"reason": "generator:no-global-attribute-declarations",
+		"detail": "a strict attribute wildcard assesses an attribute by its global declaration; the definition writes none (only the attributes each element declares), so the instance is not predicted. Lifted by a global attribute table in the definition",
+		"since": "2026-10-14"
+	},
+	"instances/libxml2-tests/anyAttr-processContents1_0.xsd/anyAttr-processContents1_0.xml/unmutated/unpredictable/strict-attribute-wildcard": {
+		"reason": "generator:no-global-attribute-declarations",
+		"detail": "a strict attribute wildcard assesses an attribute by its global declaration; the definition writes none (only the attributes each element declares), so the instance is not predicted. Lifted by a global attribute table in the definition",
+		"since": "2026-10-14"
+	},
+	"instances/xmlschema-tests/issues/issue_349/issue_349.xml/unmutated/ours=content/libxml2=valid/xmlschema-invalid": {
+		"reason": "xsd-1.1:conditional-inclusion",
+		"detail": "as constructs/xmlschema-tests/issues/issue_349/issue_349.xsd: the schema says vc:minVersion=\"1.1\", the library leaves it out (no root declaration), libxml2 reads it",
+		"since": "2026-10-14"
+	},
 	"patterns/fhir-r5/fhir-all.xsd/disagrees/([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?/'+a+++n+9+J='": {
 		"reason": "libxml2:counter-inside-alternation",
-		"detail": "libxml2 accepts a base64 value no branch matches (a counter inside an alternation, plan 10 B7); node and elementpath refuse it",
+		"detail": "libxml2 accepts a base64 value no branch matches (a counter inside an alternation); node and elementpath refuse it",
 		"since": "2026-10-09"
 	},
 	"patterns/fhir-r5/fhir-all.xsd/disagrees/([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?/'IPDm+O++q+='": {
 		"reason": "libxml2:counter-inside-alternation",
-		"detail": "libxml2 accepts a base64 value no branch matches (a counter inside an alternation, plan 10 B7); node and elementpath refuse it",
+		"detail": "libxml2 accepts a base64 value no branch matches (a counter inside an alternation); node and elementpath refuse it",
 		"since": "2026-10-09"
 	},
 	"patterns/xmlschema-tests/issues/issue_045/issue_045.xsd/disagrees/[ '\\(\\)\\+-:=\\?A-Za-z]*/'-'": {
 		"reason": "libxml2:escaped-range-start",
-		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :, plan 10 B7 decision); libxml2 and elementpath read the dash as a character",
+		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :); libxml2 and elementpath read the dash as a character",
 		"since": "2026-10-09"
 	},
 	"patterns/xmlschema-tests/issues/issue_045/issue_045.xsd/disagrees/[ '\\(\\)\\+-:=\\?A-Za-z]*/'.'": {
 		"reason": "libxml2:escaped-range-start",
-		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :, plan 10 B7 decision); libxml2 and elementpath read the dash as a character",
+		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :); libxml2 and elementpath read the dash as a character",
 		"since": "2026-10-09"
 	},
 	"patterns/xmlschema-tests/issues/issue_045/issue_045.xsd/disagrees/[ '\\(\\)\\+-:=\\?A-Za-z]*/'0'": {
 		"reason": "libxml2:escaped-range-start",
-		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :, plan 10 B7 decision); libxml2 and elementpath read the dash as a character",
+		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :); libxml2 and elementpath read the dash as a character",
 		"since": "2026-10-09"
 	},
 	"patterns/xmlschema-tests/issues/issue_045/issue_045.xsd/disagrees/[ '\\(\\)\\+-:=\\?A-Za-z]*/'3=='": {
 		"reason": "libxml2:escaped-range-start",
-		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :, plan 10 B7 decision); libxml2 and elementpath read the dash as a character",
+		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :); libxml2 and elementpath read the dash as a character",
 		"since": "2026-10-09"
 	},
 	"patterns/xmlschema-tests/issues/issue_045/issue_045.xsd/disagrees/[ '\\(\\)\\+-:=\\?A-Za-z]*/'9'": {
 		"reason": "libxml2:escaped-range-start",
-		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :, plan 10 B7 decision); libxml2 and elementpath read the dash as a character",
+		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :); libxml2 and elementpath read the dash as a character",
 		"since": "2026-10-09"
 	},
 	"patterns/xmlschema-tests/issues/issue_045/issue_045.xsd/disagrees/[ '\\(\\)\\+-:=\\?A-Za-z]*/'==6'": {
 		"reason": "libxml2:escaped-range-start",
-		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :, plan 10 B7 decision); libxml2 and elementpath read the dash as a character",
+		"detail": "the XSD 1.0 grammar lets an escaped character start a range (\\+-: is + to :); libxml2 and elementpath read the dash as a character",
 		"since": "2026-10-09"
+	},
+	"preserved-sets/xmlschema-tests/issues/issue_349/issue_349.xsd/dropped/global/test": {
+		"reason": "xsd-1.1:conditional-inclusion",
+		"detail": "as constructs/xmlschema-tests/issues/issue_349/issue_349.xsd: the global test is left out with the schema",
+		"since": "2026-10-14"
 	}
 }

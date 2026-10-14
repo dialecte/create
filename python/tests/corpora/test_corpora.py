@@ -1,14 +1,13 @@
 """Every check of the schema tier on every corpus schema: its disagreements are exactly those
 `corpora/known-exceptions.json` lists for it - a new one fails, and so does a listed one that no longer occurs."""
-import json
 from pathlib import Path
 
 import pytest
 
-from corpora.sources import sources
-from corpora.suites import schema_cases
+from corpora.sources import known_exceptions
 from proof import corpus
 from proof.corpus import CorpusSchema
+from proof.pairs import corpus_schemas, instance_pairs
 from tests.test_patterns import (
     KNOWN_LIBXML2_FAULTS,
     elementpath_sides_with,
@@ -18,20 +17,10 @@ from tests.test_patterns import (
     unicode_versions_differ,
 )
 
-EXCEPTIONS: dict[str, dict] = json.loads((Path(corpus.__file__).parents[1] / 'corpora' / 'known-exceptions.json').read_text())
+EXCEPTIONS = known_exceptions()
 
 
-def _schemas() -> list[CorpusSchema]:
-    found = []
-    for source in sources():
-        if source.suite:
-            found += [CorpusSchema(id=case.id, entry=case.entry, locations={**source.locations, **case.locations}, suite=True) for case in schema_cases(source)]
-        else:
-            found += [CorpusSchema(id=f'{source.id}/{entry.relative_to(source.root).as_posix()}', entry=entry, locations=source.locations) for entry in source.entry_paths()]
-    return found
-
-
-SCHEMAS = _schemas()
+SCHEMAS = corpus_schemas()
 pytestmark = pytest.mark.corpora
 
 
@@ -112,7 +101,7 @@ def test_the_definition_keeps_the_sets_the_documents_declare(schema: CorpusSchem
 
 
 def test_every_listed_exception_names_a_schema_and_a_reviewed_reason() -> None:
-    known = {schema.id for schema in SCHEMAS}
+    known = {schema.id for schema in SCHEMAS} | {pair.id for pair in instance_pairs()}
     for key, entry in EXCEPTIONS.items():
         check, _, rest = key.partition('/')
         assert any(rest.startswith(schema_id + '/') for schema_id in known), key

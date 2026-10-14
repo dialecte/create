@@ -1,6 +1,6 @@
 """The schema-level oracles, for any schema the proof reads - a corpus entry, a suite schema, a generated one: each
 check returns the disagreements it finds, as stable ids, never a bare boolean; `known-exceptions.json` lists the
-ones a reviewed reason explains (plan 10c, P1).
+ones a reviewed reason explains.
 
 The judges: libxml2 (lxml) for what an instance may hold, our own parsers and the construct table for the rest.
 Remote locations a document names are read from the local copies `locations` maps them to, by the generator
@@ -52,6 +52,8 @@ class CorpusSchema:
     locations: Mapping[str, Path] = field(default_factory=dict)
     # a regression suite's schema: one both libraries refuse is a legality case, out of scope
     suite: bool = False
+    # the overrides its suite case gives (beside the source's): with the entry, what tells two cases apart
+    case_locations: Mapping[str, Path] = field(default_factory=dict)
 
     @cached_property
     def generated(self) -> Generated | Exception:
@@ -82,6 +84,22 @@ class CorpusSchema:
     @cached_property
     def documents(self) -> list[Path]:
         return documents_of(self.entry, locations=self.locations)
+
+    @cached_property
+    def memberless_abstract_heads(self) -> frozenset[tuple[str, str]]:
+        """The abstract global elements no global element of the documents names as its substitution group head, as
+        (namespace, name), read from the documents, not through a schema library (the generator reads through one)."""
+        abstract, heads = set(), set()
+        for document in self.documents:
+            schema = etree.parse(str(document)).getroot()
+            namespace = schema.get('targetNamespace', '')
+            for element in schema.iterchildren(f'{{{XS}}}element'):
+                if element.get('abstract') in ('true', '1'):
+                    abstract.add((namespace, element.get('name')))
+                for head in (element.get('substitutionGroup') or '').split():
+                    prefix, _, local = head.rpartition(':')
+                    heads.add((element.nsmap.get(prefix or None) or '', local))
+        return frozenset(abstract - heads)
 
 
 # --- the checks ------------------------------------------------------------------------------------------------
@@ -218,7 +236,7 @@ def patterns(texts: set[str], *, judge: Any) -> list[str]:
 def variants(schema: CorpusSchema) -> list[str]:
     """For a seeded sample of global elements, every named type of the schema named with xsi:type: libxml2 admits it
     exactly when the definition lists it among the declaration's variants (the declared type itself aside). Built-in
-    types are not probed: the generator leaves them to core by design (plan 10 B8), which knows their hierarchy."""
+    types are not probed: the generator leaves them to core by design, which knows their hierarchy."""
     generated, validator = schema.generated, schema.validator
     if isinstance(generated, Exception) or isinstance(validator, Exception):
         return []
@@ -269,7 +287,7 @@ def preserved_sets(schema: CorpusSchema) -> list[str]:
     """A first, coarse inventory diff by local name - what it covers, no more: nothing invented (tags, attribute
     names, constraint names, enumeration values anywhere in the definition) and nothing dropped (global elements,
     constraints declared on them). It does not see a fact dropped from one declaration while kept elsewhere (an
-    attribute, a facet, nillable, a wildcard, a local element): the keyed inventory plan 10c names is still to build.
+    attribute, a facet, nillable, a wildcard, a local element): a keyed inventory, per declaration, is still to build.
     Named types, groups and particle counts are inlined by design."""
     generated = schema.generated
     if isinstance(generated, Exception):
@@ -419,5 +437,3 @@ def _walk(*values: Any):
             pending.extend(value.values())
         elif isinstance(value, list):
             pending.extend(value)
-
-

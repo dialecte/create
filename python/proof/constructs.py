@@ -4,8 +4,8 @@ change in an instance: nothing), or XSD 1.1 (refused). A construct in none of th
 was never shown to read it, so the proof fails rather than let it pass silently.
 
 A construct is an element of the XML Schema namespace (`element`), one of its attributes (`element@attribute`,
-`element@xml:lang` for the XML namespace, `element@{foreign}` for any other namespace). The content of `appinfo` and
-`documentation` is free text, not schema: it is not walked.
+`element@xml:lang` for the XML namespace, `element@vc:minVersion` for the XSD versioning namespace, `element@{foreign}`
+for any other namespace). The content of `appinfo` and `documentation` is free text, not schema: it is not walked.
 """
 import json
 from collections.abc import Mapping
@@ -18,6 +18,8 @@ from lxml import etree
 
 XS = 'http://www.w3.org/2001/XMLSchema'
 XML = 'http://www.w3.org/XML/1998/namespace'
+# XSD 1.1 conditional inclusion: the schema library, an XSD 1.0 processor aware of it, drops what libxml2 keeps
+VERSIONING = 'http://www.w3.org/2007/XMLSchema-versioning'
 TABLE = Path(__file__).with_name('constructs.json')
 # the elements whose schemaLocation brings in another document of the schema
 _REFERENCING = {'include', 'import', 'redefine', 'override'}
@@ -42,7 +44,9 @@ class Classification:
         return construct in self.excluded or ('@' in construct and '*@' + construct.split('@', 1)[1] in self.excluded)
 
     def _xsd11(self, construct: str) -> bool:
-        return construct in self.xsd11 or construct.split('@', 1)[0] in self.xsd11
+        """Listed, an attribute of a listed element, or an attribute listed for every schema element (`*@vc:minVersion`)."""
+        element, _, attribute = construct.partition('@')
+        return construct in self.xsd11 or element in self.xsd11 or (attribute != '' and '*@' + attribute in self.xsd11)
 
 
 def read_table(path: Path = TABLE) -> Classification:
@@ -105,6 +109,8 @@ def _walk(element: etree._Element, constructs: set[str]) -> None:
             constructs.add(f'{name.localname}@{qualified.localname}')
         elif qualified.namespace == XML:
             constructs.add(f'{name.localname}@xml:{qualified.localname}')
+        elif qualified.namespace == VERSIONING:
+            constructs.add(f'{name.localname}@vc:{qualified.localname}')
         else:
             constructs.add(f'{name.localname}@{{foreign}}')
     if name.localname in _FREE_CONTENT:
