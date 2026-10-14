@@ -16,8 +16,10 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     # every check of a schema in one process: it reads and generates the schema once (`--dist loadgroup`)
     for item in items:
         schema = getattr(getattr(item, 'callspec', None), 'params', {}).get('schema')
-        if schema is not None:
-            item.add_marker(pytest.mark.xdist_group(schema.id))
+        # with nothing fetched, pytest stands a placeholder without an id in for the empty parameter set
+        schema_id = getattr(schema, 'id', None)
+        if schema_id is not None:
+            item.add_marker(pytest.mark.xdist_group(schema_id))
     if _asked() and sources():
         return
     if _asked() and 'corpora' in os.environ.get('PROOF_REQUIRE', '').split(','):
