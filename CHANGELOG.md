@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-14
+
 ### Added
 
 - Each declaration names its declared type in `type` (its Clark name) when the type is named: an instance may name that type with `xsi:type` too, besides its `variants`.
@@ -19,17 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OptionalAttributeNames` lists the attributes of every member of a union, not only those all members share.
 - A scaffolded package declares in its `namespaces` config every namespace the definition gives a prefix, and a test checks the config still agrees with the definition (default namespace, prefixes): core stores `xsi:type` values with the config's prefixes, the types with the definition's.
 - `--root` takes any global element of the schema, also one another element holds: a schema whose every element is held by another (FHIR) can now be generated. The automatic choice is unchanged.
-
-### Fixed
-
-- A scaffolded package whose schema writes its default namespace with a prefix (PLC's `ppx`) no longer declares that namespace a second time under the prefix, and its namespaces test leaves the default namespace out.
-- Two types sharing a local name in two namespaces no longer get the same `xsi:type` value in the types (`'tA'` twice): the one outside the default namespace is `'prefix:tA'`.
-- An element reached only through a type an element of `xs:anyType` may take no longer lists that element as its parent: such an element admits any content, so the parent and child tables now agree (it held no child either).
-
-## [0.1.0] - 2026-10-12
-
-### Changed
-
 - **Breaking:** The generator is rebuilt: it reads any XSD 1.0 schema and writes the definition `@dialecte/core` 0.6 reads, so regenerate your dialecte.
 - **Breaking:** A tag declared several ways keeps each declaration, attributes and text carry their facets in their datatype, and identity constraints sit on the declaration that declares them.
 - The generated `TYPES` lists the types an element may take with `xsi:type`, and the generated attribute types offer `xsi:type` where an element may name one.
@@ -38,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A scaffolded package whose schema writes its default namespace with a prefix (PLC's `ppx`) no longer declares that namespace a second time under the prefix, and its namespaces test leaves the default namespace out.
+- Two types sharing a local name in two namespaces no longer get the same `xsi:type` value in the types (`'tA'` twice): the one outside the default namespace is `'prefix:tA'`.
+- An element reached only through a type an element of `xs:anyType` may take no longer lists that element as its parent: such an element admits any content, so the parent and child tables now agree (it held no child either).
 - A substitution group member whose type derives by a method its head, or a type on the way, blocks no longer stands for the head; if that leaves several possible roots, choose one with `--root`.
 - The members of a member that blocks substitution stand for the head again.
 - An element of `anyType` no longer offers `xs:anySimpleType` and `xs:anyAtomicType` as `xsi:type` types in a schema that imports the XML namespace.
