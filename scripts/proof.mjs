@@ -10,9 +10,11 @@
  * iec      local: the five dialectes' committed constants and types derive byte-identical from their committed
  *          definitions (the sibling repositories beside create, or in $DIALECTE_ROOT)
  * corpora  the sources the licence review admitted (python/corpora/manifest.json, fetched by
- *          `npm run corpora:fetch` into .corpora/): every schema-tier check on every schema, a few minutes
+ *          `npm run corpora:fetch` into .corpora/): every schema-tier check on every schema, and the instance tier
+ *          (every labelled instance, then sampled structural edits of it, predicted from the definition and judged
+ *          by libxml2; PROOF_FULL=1 runs every edit), a few minutes
  *
- * The mutation gate is its own command (`npm run mutants`): minutes, not seconds, run before a generator lot is
+ * The mutation gate is its own command (`npm run mutants`): minutes, not seconds, run before a generator change is
  * committed. Exit 1 on any failure or on a required tier skipped.
  */
 import { spawnSync } from 'node:child_process'
@@ -63,7 +65,7 @@ const STEPS = [
 	},
 	{
 		tier: 'corpora',
-		name: 'admitted corpora, every schema-tier check',
+		name: 'admitted corpora, schema and instance tiers',
 		script: 'test:corpora',
 		absent: () =>
 			existsSync(join(CORPORA_ROOT, 'manifest.lock.json'))
