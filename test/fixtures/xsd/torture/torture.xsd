@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 	The torture schema: every XSD 1.0 feature the generator reads, at least once, several of them together, in two
-	namespaces and none. Each section of the root names the feature it holds and the plan-10 lot that owns it.
+	namespaces and none. Each section of the root names the feature it holds.
 	Committed with its generated files (test/fixtures/definition/torture) and valid instances (instances/), checked
 	against libxml2 by the generator's tests.
 -->
@@ -23,7 +23,7 @@
 		</xs:complexType>
 	</xs:redefine>
 
-	<!-- B2: attributes - required, fixed, default, ID, an attribute group, the XML namespace, a mapped global
+	<!-- attributes - required, fixed, default, ID, an attribute group, the XML namespace, a mapped global
 	     (attribute-mapping.json) admitted by the wildcard -->
 	<xs:attributeGroup name="agCommon">
 		<xs:attribute name="note" type="xs:string"/>
@@ -78,7 +78,7 @@
 		</xs:complexType>
 	</xs:element>
 
-	<!-- B3: nested choices and sequences, an empty element, a simple-typed element -->
+	<!-- nested choices and sequences, an empty element, a simple-typed element -->
 	<xs:complexType name="tChoices">
 		<xs:choice maxOccurs="3">
 			<xs:element name="Plain" type="xs:string"/>
@@ -97,7 +97,7 @@
 		<xs:attribute name="n" type="xs:int"/>
 	</xs:complexType>
 
-	<!-- B3: a repeating sequence group, through a named group -->
+	<!-- a repeating sequence group, through a named group -->
 	<xs:group name="gPair">
 		<xs:sequence>
 			<xs:element name="A" type="tEmpty"/>
@@ -105,7 +105,7 @@
 		</xs:sequence>
 	</xs:group>
 
-	<!-- B3: all -->
+	<!-- all -->
 	<xs:complexType name="tBag">
 		<xs:all>
 			<xs:element name="One" type="tEmpty" minOccurs="0"/>
@@ -114,7 +114,7 @@
 		</xs:all>
 	</xs:complexType>
 
-	<!-- B6: an extension chain over simple content, then a restriction of it -->
+	<!-- an extension chain over simple content, then a restriction of it -->
 	<xs:complexType name="tMeasure">
 		<xs:simpleContent>
 			<xs:extension base="xs:decimal">
@@ -148,7 +148,7 @@
 		</xs:sequence>
 	</xs:complexType>
 
-	<!-- B2 / B3: a restriction of a complex type - an optional child left out, an attribute prohibited -->
+	<!-- a restriction of a complex type - an optional child left out, an attribute prohibited -->
 	<xs:complexType name="tFull">
 		<xs:sequence>
 			<xs:element name="Must" type="tEmpty"/>
@@ -169,7 +169,7 @@
 		</xs:complexContent>
 	</xs:complexType>
 
-	<!-- B6 / B7: values - patterns on two levels, a derived enumeration, a union and a restriction of it, a list and a
+	<!-- values - patterns on two levels, a derived enumeration, a union and a restriction of it, a list and a
 	     restriction of it, ranges, digits, white space, name classes and class subtraction in patterns -->
 	<xs:simpleType name="tCode">
 		<xs:restriction base="xs:token">
@@ -278,7 +278,7 @@
 		</xs:complexType>
 	</xs:element>
 
-	<!-- B3 / B8: a substitution group - an abstract head, members, a member of a member naming no type -->
+	<!-- a substitution group - an abstract head, members, a member of a member naming no type -->
 	<xs:complexType name="tShape">
 		<xs:attribute name="color" type="tColors"/>
 	</xs:complexType>
@@ -336,7 +336,7 @@
 		</xs:sequence>
 	</xs:complexType>
 
-	<!-- B8: xsi:type - variants, a restriction step the element blocks, an abstract type that must be named, a
+	<!-- xsi:type - variants, a restriction step the element blocks, an abstract type that must be named, a
 	     variant adding a required attribute, one in the other namespace sharing a local name (x:tRound), a simple
 	     union typed element, a tag declared two ways with variants each (Mount) -->
 	<xs:complexType name="tVehicle">
@@ -412,7 +412,7 @@
 		</xs:sequence>
 	</xs:complexType>
 
-	<!-- B4 / B5: a tag declared several ways - by type, by fixed text, by identity constraints, by namespace -, and a
+	<!-- a tag declared several ways - by type, by fixed text, by identity constraints, by namespace -, and a
 	     nested homonym (Lid, declared two ways inside the two ways of Box) -->
 	<xs:complexType name="tItem">
 		<xs:sequence>
@@ -492,7 +492,7 @@
 		</xs:sequence>
 	</xs:complexType>
 
-	<!-- B3: element wildcards of each kind, an attribute wildcard of each kind, the orphan of parent-mapping.json -->
+	<!-- element wildcards of each kind, an attribute wildcard of each kind, the orphan of parent-mapping.json -->
 	<xs:complexType name="tOpen">
 		<xs:sequence>
 			<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
@@ -507,7 +507,7 @@
 		<xs:anyAttribute namespace="##local urn:dialecte:torture-ext" processContents="strict"/>
 	</xs:complexType>
 
-	<!-- B3 / B4: text - mixed content, anyType, an empty element, default text, nillable, an unqualified local, a
+	<!-- text - mixed content, anyType, an empty element, default text, nillable, an unqualified local, a
 	     recursive element -->
 	<xs:complexType name="tText">
 		<xs:sequence>
@@ -539,7 +539,7 @@
 		</xs:complexType>
 	</xs:element>
 
-	<!-- B5: identity constraints - a key with a deep prefixed selector, a unique over a union selector with an
+	<!-- identity constraints - a key with a deep prefixed selector, a unique over a union selector with an
 	     attribute and a value field, a keyref, a unique on another namespace's element -->
 	<xs:complexType name="tEntry">
 		<xs:simpleContent>

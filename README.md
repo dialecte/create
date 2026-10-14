@@ -142,8 +142,7 @@ test:corpora`), those two with `tsgo` - TypeScript's native compiler, the same v
 (`node scripts/derive-oracle/type-check.ts --tsc <folder>` judges with `tsc`). `npm run mutants:ts [-- <file> ...]` is the TypeScript twin of the mutation
 gate (StrykerJS over `node --test`), its record in `scripts/mutants-ts/records/`.
 
-`npm run corpora:fetch` downloads the third-party corpora the licence review admitted (plan 10b of the
-validation plans), each pinned by sha256, into `.corpora/` (never committed); `npm run test:corpora` then runs
+`npm run corpora:fetch` downloads the third-party corpora the licence review admitted, each pinned by sha256, into `.corpora/` (never committed); `npm run test:corpora` then runs
 every schema-tier check on every schema they hold - the generator reads it, its definition reads back, its
 constructs are classified, its patterns, identity paths, `xsi:type` variants and attribute wildcards agree with
 libxml2, and the facts the documents declare are kept. A disagreement a reviewed reason explains is listed in

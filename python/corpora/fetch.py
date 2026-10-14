@@ -2,7 +2,7 @@
 
     python -m corpora.fetch [source ...] [--pin]
 
-Only sources the licence review admitted are in the manifest (plan 10b); an entry without its licence, terms and
+Only sources the licence review admitted are in the manifest; an entry without its licence, terms and
 verdict is refused. Three kinds of source:
 - `archive`: a .zip or .tar.gz, sha256-pinned, of which only the `keep` paths are written (`strip` removed first);
 - `files`: single files, each pinned by its own sha256, written at its path;

@@ -28,7 +28,7 @@
 		<xs:anyAttribute namespace="##other" processContents="lax"/>
 	</xs:complexType>
 
-	<!-- B8: a variant of t:tFigure named like t:tRound, its attribute in this namespace -->
+	<!-- a variant of t:tFigure named like t:tRound, its attribute in this namespace -->
 	<xs:complexType name="tRound">
 		<xs:complexContent>
 			<xs:extension base="t:tFigure">

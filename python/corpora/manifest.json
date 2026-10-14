@@ -1,5 +1,5 @@
 {
-	"$comment": "Corpora admitted by the licence review (plan 10b, licence table): fetched by `python -m corpora.fetch`, cached, never committed. A source needs license, terms and verdict; sha256 values are pinned by --pin and reviewed. verdict full = mutated copies allowed; schemas-only = never mutated.",
+	"$comment": "Corpora admitted by the licence review: fetched by `python -m corpora.fetch`, cached, never committed. A source needs license, terms and verdict; sha256 values are pinned by --pin and reviewed. verdict full = mutated copies allowed; schemas-only = never mutated.",
 	"sources": [
 		{
 			"id": "libxml2-tests",
@@ -345,7 +345,7 @@
 			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
 			"terms": "https://www.fpml.org/license/license.html",
 			"verdict": "full",
-			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"note": "only files whose header says they are subject to the FpML public license",
 			"fetch": {
 				"kind": "archive",
 				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/confirmation-5-13_xml.zip",
@@ -374,7 +374,7 @@
 			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
 			"terms": "https://www.fpml.org/license/license.html",
 			"verdict": "full",
-			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"note": "only files whose header says they are subject to the FpML public license",
 			"fetch": {
 				"kind": "archive",
 				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/reporting-5-13_xml.zip",
@@ -403,7 +403,7 @@
 			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
 			"terms": "https://www.fpml.org/license/license.html",
 			"verdict": "full",
-			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"note": "only files whose header says they are subject to the FpML public license",
 			"fetch": {
 				"kind": "archive",
 				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/recordkeeping-5-13_xml.zip",
@@ -432,7 +432,7 @@
 			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
 			"terms": "https://www.fpml.org/license/license.html",
 			"verdict": "full",
-			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"note": "only files whose header says they are subject to the FpML public license",
 			"fetch": {
 				"kind": "archive",
 				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/transparency-5-13_xml.zip",
@@ -461,7 +461,7 @@
 			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
 			"terms": "https://www.fpml.org/license/license.html",
 			"verdict": "full",
-			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"note": "only files whose header says they are subject to the FpML public license",
 			"fetch": {
 				"kind": "archive",
 				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/pretrade-5-13_xml.zip",
@@ -490,7 +490,7 @@
 			"license": "FpML Public License 3.0 (ISDA); xmldsig-core-schema.xsd: W3C Software License",
 			"terms": "https://www.fpml.org/license/license.html",
 			"verdict": "full",
-			"note": "only files whose header says they are subject to the FpML public license (plan 10b)",
+			"note": "only files whose header says they are subject to the FpML public license",
 			"fetch": {
 				"kind": "archive",
 				"url": "https://www.fpml.org/spec/fpml-5-13-8-rec-2/xml/legal-5-13_xml.zip",
@@ -519,7 +519,7 @@
 			"license": "OASIS IPR Policy copyright notice (RF on Limited Terms)",
 			"terms": "https://www.oasis-open.org/policies-guidelines/ipr/",
 			"verdict": "full",
-			"decision": "kept by the user on 2026-10-09 although its schemas import ETSI XAdES copies carrying no licence (plan 10b)",
+			"decision": "kept by the user on 2026-10-09 although its schemas import ETSI XAdES copies carrying no licence",
 			"fetch": {
 				"kind": "archive",
 				"url": "https://docs.oasis-open.org/ubl/os-UBL-2.4/UBL-2.4.zip",
@@ -539,7 +539,7 @@
 			"license": "OGC Document Notice; ISO 19139 (imported): ISO terms",
 			"terms": "https://www.ogc.org/legal/",
 			"verdict": "schemas-only",
-			"decision": "kept by the user on 2026-10-09 although the OGC notice grants no derivatives and the closure reaches ISO 19139 (plan 10b)",
+			"decision": "kept by the user on 2026-10-09 although the OGC notice grants no derivatives and the closure reaches ISO 19139",
 			"fetch": {
 				"kind": "crawl",
 				"start": ["https://schemas.opengis.net/gml/3.2.1/gml.xsd"],

@@ -1,4 +1,4 @@
-"""Generated schemas, judged differentially (plan 10c, P7, first version: the schema tier).
+"""Generated schemas, judged differentially (the schema-tier oracles, a first version).
 
     python -m proof.fuzz [--seed S] [--count N] [--out DIR]
 
@@ -9,7 +9,7 @@ unions and facets on several levels, identity constraints, nillable and fixed va
 and the schema library both load it (the draw rate is reported). Then the schema-tier oracles of `proof.corpus`
 run, plus substitution membership through a holder element per head. A disagreement **fails only when both
 libraries side against the generator**; where the libraries disagree with each other the case is kept for review
-(each has its own faults - plan 10 and 10c list them) without failing. A failing case is shrunk - components and
+(each has its own faults) without failing. A failing case is shrunk - components and
 particles removed while it still fails - and written to `--out`, to become a named test.
 """
 import argparse
@@ -223,7 +223,7 @@ def judge(entry: Path, draw: Draw) -> tuple[list[str], list[str]]:
 
 def _specification_agrees_with_libxml2(schema: CorpusSchema, draw: Draw, item: str) -> bool:
     """Substitution Group OK (Transitive), written here on its own (a third voter: both libraries have faults on
-    blocked derivations, plan 10c P0): the member stands for the holder's head when the head does not block
+    blocked derivations): the member stands for the holder's head when the head does not block
     substitution and the member's type derives from the head's by no method the head, the head's type or a type
     between them blocks (a member naming no type has its head's type)."""
     library = schema.library
