@@ -7,6 +7,8 @@ import type * as Core from '@dialecte/core'
  *
  * `findDescendants` answers with the records of a subtree grouped by tag name. It knows from the
  * definition which tag names can occur under an element, so no tree is walked by hand.
+ *
+ * @intent count what a document is made of, example of a read extension
  */
 export async function sayHello(query: Core.Query<Config>): Promise<HelloWorldGreeting> {
 	const root = await query.getRoot()

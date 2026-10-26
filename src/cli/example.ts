@@ -1,11 +1,9 @@
 import { readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import type { ExampleFacts } from './pyodide-runner.ts'
+import { keepConditionalBlocks } from './keep-conditional-blocks.ts'
 
-// Lines between these markers exist only when the root allows a child; both lines are dropped.
-const IF_CHILD = '__ifExampleChild__'
-const END_IF_CHILD = '__endIfExampleChild__'
+import type { ExampleFacts } from './pyodide-runner.ts'
 
 /**
  * Write the worked example with the names of the schema it was generated from, so a reader opens
@@ -32,7 +30,7 @@ export async function writeExample(params: {
 		.map((entry) => join(entry.parentPath, entry.name))
 	for (const file of [...files, ...otherFiles]) {
 		const raw = await readFile(file, 'utf8')
-		const kept = keepConditionalBlocks({ text: raw, hasChild: facts.child !== null })
+		const kept = keepConditionalBlocks({ text: raw, hasChild: facts.child !== null, source: file })
 		await writeFile(file, replaceAll({ text: kept, replacements }), 'utf8')
 		const renamed = replaceAll({ text: file, replacements })
 		if (renamed !== file) await rename(file, renamed)
@@ -73,18 +71,6 @@ function buildExampleReplacements(params: {
 		'__example-child__': kebabCase(child.name),
 		__exampleChild__: child.name,
 	}
-}
-
-function keepConditionalBlocks(params: { text: string; hasChild: boolean }): string {
-	const { text, hasChild } = params
-	const kept: string[] = []
-	let inBlock = false
-	for (const line of text.split('\n')) {
-		if (line.includes(IF_CHILD)) inBlock = true
-		else if (line.includes(END_IF_CHILD)) inBlock = false
-		else if (!inBlock || hasChild) kept.push(line)
-	}
-	return kept.join('\n')
 }
 
 function replaceAll(params: { text: string; replacements: Record<string, string> }): string {
