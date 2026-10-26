@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A generated dialecte ships its own agent skill, `skills/dialecte-<id>/SKILL.md`, with the verb map and hook list generated from its source (`npm run skills:generate`) and an API index of its verbs by intent (`references/api.md`); `npm run skills:check` verifies them. The hello-world example carries `@intent` tags.
+- Agent skill `dialecte-create` ships with the package, in `skills/`: scaffolding and regenerating a dialecte, the generator's gates, the type-performance commands.
+
 ## [0.1.0] - 2026-10-14
 
 ### Added
