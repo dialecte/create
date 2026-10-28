@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- A scaffolded package's `npm run check` type-checks its Vite and Vitest configs too (`type-check:node`): an error in them no longer goes unseen.
+
+### Fixed
+
+- A scaffolded package's Vite config no longer reads `import.meta.env`, which a config file never has (it runs in Node): its build had no source maps, whatever the mode. It now emits them when `NODE_ENV` is `development` (`NODE_ENV=development npm run build`); a plain build stays without, as before.
+
 ## [0.1.0] - 2026-10-14
 
 ### Added

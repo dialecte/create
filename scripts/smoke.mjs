@@ -259,6 +259,7 @@ async function assertInstalledScaffoldTypeChecks() {
 		run('npm', ['install', '--no-audit', '--no-fund'], targetDir)
 		run('npm', ['run', 'type-check'], targetDir)
 		run('npm', ['run', 'type-check:test'], targetDir)
+		run('npm', ['run', 'type-check:node'], targetDir)
 		console.log(`Installed scaffold type-checks (engine: ${core || 'default range'}).`)
 	} finally {
 		await rm(parent, { recursive: true, force: true })
@@ -300,6 +301,26 @@ async function main() {
 					file: 'package.json',
 					includes: '"type-check": "tsc -p tsconfig.build.json --noEmit"',
 					reason: 'the root tsconfig only references the others, so checking it checks nothing',
+				},
+				{
+					file: 'package.json',
+					includes: '"type-check:node": "tsc -p tsconfig.node.json --noEmit"',
+					reason: 'the Vite and Vitest configs run in Node and are type-checked on their own',
+				},
+				{
+					file: 'package.json',
+					includes: '"check": "run-p type-check type-check:test type-check:node ',
+					reason: 'check type-checks the Node configs too, or an error there goes unseen',
+				},
+				{
+					file: 'vite.config.ts',
+					includes: "sourcemap: process.env.NODE_ENV === 'development',",
+					reason: 'a Vite config runs in Node, where import.meta.env is undefined',
+				},
+				{
+					file: 'vite.config.ts',
+					excludes: 'vite/client',
+					reason: 'the client types would declare import.meta.env in a file that runs in Node',
 				},
 				{
 					file: 'src/v1/config/namespaces.ts',
