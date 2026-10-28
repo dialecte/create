@@ -65,5 +65,47 @@
 	},
 	"engines": {
 		"node": ">=20"
+	},
+	"dialecte": {
+		"gate": {
+			"fast": [
+				{
+					"name": "check",
+					"run": "npm run check"
+				},
+				{
+					"name": "skills",
+					"run": "npm run skills:check"
+				},
+				{
+					"name": "tests-ts",
+					"run": "npm run test:ts",
+					"counts": "tests"
+				}
+			],
+			"full": [
+				{
+					"name": "check",
+					"run": "npm run check"
+				},
+				{
+					"name": "skills",
+					"run": "npm run skills:check"
+				},
+				{
+					"name": "build",
+					"run": "npm run build"
+				},
+				{
+					"name": "tests-ts",
+					"run": "nice -n 10 npm run test:ts",
+					"counts": "tests"
+				},
+				{
+					"name": "tests-py",
+					"run": "nice -n 10 npm run test:py"
+				}
+			]
+		}
 	}
 }
