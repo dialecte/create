@@ -9,6 +9,8 @@ import type * as Core from '@dialecte/core'
  * `ensureChild` checks what you write against the definition as you type: `tagName` must be a
  * child the __exampleRoot__ allows, and `attributes` is mandatory exactly when that child requires
  * one - each value here is one the schema accepts.
+ *
+ * @intent add a __exampleChild__ once (get or create), example of a write extension
  */
 export async function ensure__ExampleChild__(tx: Core.Transaction<Config>) {
 	// a read inside a transaction sees what the transaction has staged so far

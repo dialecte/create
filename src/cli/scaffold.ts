@@ -99,7 +99,9 @@ function applyReplacements(text: string, r: Replacements): string {
 
 function applyPathReplacements(path: string, r: Replacements): string {
 	// Only directory/file name placeholders are meaningful in paths.
-	const replaced = path.replaceAll('__version__', r.version)
+	const replaced = path
+		.replaceAll('__version__', r.version)
+		.replaceAll('__dialecteId__', r.dialecteId)
 	// `_gitignore` is shipped to avoid the template's own ignore being applied; emit as `.gitignore`.
 	return replaced.replace(/(^|\/)_gitignore$/, '$1.gitignore')
 }
@@ -180,7 +182,11 @@ export async function scaffoldDialecte(
 		// the example names real elements: they are known now that the schema has been read
 		await writeExample({
 			exampleDir: join(targetDir, 'src', options.version, 'extensions', 'hello-world'),
-			otherFiles: [join(targetDir, 'README.md')],
+			otherFiles: [
+				join(targetDir, 'README.md'),
+				join(targetDir, 'skills', `dialecte-${replacements.dialecteId}`, 'SKILL.md'),
+				join(targetDir, 'skills', `dialecte-${replacements.dialecteId}`, 'references', 'api.md'),
+			],
 			facts: facts.example,
 			defaultNamespaceUri: namespaceUri,
 		})

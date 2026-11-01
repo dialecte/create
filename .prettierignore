@@ -1,0 +1,3 @@
+# The template API index keeps __placeholder__ tokens in table cells the formatter would turn into bold text;
+# a scaffolded package formats it once the names are real.
+templates/dialecte/skills/dialecte-__dialecteId__/references/api.md

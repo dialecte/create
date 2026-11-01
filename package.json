@@ -12,6 +12,8 @@
 	},
 	"files": [
 		"dist",
+		"skills",
+		"!skills/*/evals",
 		"templates",
 		"vendor",
 		"python/generate",
@@ -30,6 +32,8 @@
 		"format:check": "oxfmt --check",
 		"format:fix": "oxfmt",
 		"check": "npm run type-check && npm run lint:check && npm run format:check",
+		"skills:generate": "dialecte skills generate",
+		"skills:check": "dialecte skills check",
 		"test:ts": "node scripts/test-runner/run-tests.ts all",
 		"derive:check": "node scripts/derive-check/derive-check.ts",
 		"definition:diff": "node scripts/definition-diff/definition-diff.ts",
@@ -61,5 +65,47 @@
 	},
 	"engines": {
 		"node": ">=20"
+	},
+	"dialecte": {
+		"gate": {
+			"fast": [
+				{
+					"name": "check",
+					"run": "npm run check"
+				},
+				{
+					"name": "skills",
+					"run": "npm run skills:check"
+				},
+				{
+					"name": "tests-ts",
+					"run": "npm run test:ts",
+					"counts": "tests"
+				}
+			],
+			"full": [
+				{
+					"name": "check",
+					"run": "npm run check"
+				},
+				{
+					"name": "skills",
+					"run": "npm run skills:check"
+				},
+				{
+					"name": "build",
+					"run": "npm run build"
+				},
+				{
+					"name": "tests-ts",
+					"run": "nice -n 10 npm run test:ts",
+					"counts": "tests"
+				},
+				{
+					"name": "tests-py",
+					"run": "nice -n 10 npm run test:py"
+				}
+			]
+		}
 	}
 }

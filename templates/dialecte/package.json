@@ -5,7 +5,9 @@
 	"license": "MIT",
 	"source": "src/index.ts",
 	"files": [
-		"dist"
+		"dist",
+		"skills",
+		"!skills/*/evals"
 	],
 	"type": "module",
 	"exports": {
@@ -33,6 +35,8 @@
 		"test": "vitest",
 		"//====== CHECK ======//": "",
 		"check": "run-p type-check type-check:test type-check:node lint:check format:check",
+		"skills:generate": "dialecte skills generate",
+		"skills:check": "dialecte skills check",
 		"type-check": "tsc -p tsconfig.build.json --noEmit",
 		"type-check:test": "tsc -p tsconfig.vitest.json --noEmit",
 		"type-check:node": "tsc -p tsconfig.node.json --noEmit",

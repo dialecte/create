@@ -33,6 +33,9 @@ const TWO_ROOTS_FIXTURE = new URL('../test/fixtures/two-roots.xsd', import.meta.
 const EXTENSION_FIXTURE = new URL('../test/fixtures/extension/entry.xsd', import.meta.url).pathname
 const CORE_TEST_FIXTURE = new URL('../test/fixtures/xsd/core-test/test.xsd', import.meta.url)
 	.pathname
+const TEMPLATE_MANIFEST = new URL('../templates/dialecte/package.json', import.meta.url).pathname
+/** The first @dialecte/cli with the `skills` command. */
+const CLI_WITH_SKILLS = [0, 2, 0]
 const EXPECTED = ['definition.generated.ts', 'constants.generated.ts', 'types.generated.ts']
 const FIXTURES = new URL('../test/fixtures/', import.meta.url).pathname
 const COMMITTED_SCHEMAS = JSON.parse(
@@ -77,7 +80,7 @@ async function assertScaffold({ fixture, packageName, expectations, options = []
 	const targetDir = await mkdtemp(join(tmpdir(), 'dialecte-scaffold-'))
 	try {
 		await runCli(['create', fixture, '--name', packageName, '--out', targetDir, ...options])
-		for (const { file, includes, excludes, absent, reason } of expectations) {
+		for (const { file, includes, matches, excludes, absent, reason } of expectations) {
 			const path = join(targetDir, file)
 			const exists = await stat(path).then(
 				() => true,
@@ -92,6 +95,9 @@ async function assertScaffold({ fixture, packageName, expectations, options = []
 				throw new Error(
 					`${file} of ${packageName}: ${reason} (expected to find ${JSON.stringify(includes)})`,
 				)
+			}
+			if (matches !== undefined && !matches.test(content)) {
+				throw new Error(`${file} of ${packageName}: ${reason} (expected to match ${matches})`)
 			}
 			if (excludes !== undefined && content.includes(excludes)) {
 				throw new Error(
@@ -261,9 +267,44 @@ async function assertInstalledScaffoldTypeChecks() {
 		run('npm', ['run', 'type-check:test'], targetDir)
 		run('npm', ['run', 'type-check:node'], targetDir)
 		console.log(`Installed scaffold type-checks (engine: ${core || 'default range'}).`)
+		await assertInstalledSkillsCheck(targetDir)
 	} finally {
 		await rm(parent, { recursive: true, force: true })
 	}
+}
+
+/**
+ * The skill the scaffold ships matches what the generator renders from the installed package. Skipped only while
+ * the template pins a cli older than the one with the skills command; from then on a failing check fails the smoke.
+ */
+async function assertInstalledSkillsCheck(targetDir) {
+	const template = JSON.parse(await readFile(TEMPLATE_MANIFEST, 'utf8'))
+	const pinned =
+		template.devDependencies?.['@dialecte/cli'] ?? template.dependencies?.['@dialecte/cli']
+	if (pinned === undefined) throw new Error('The template does not depend on @dialecte/cli')
+	if (isBelowVersion({ version: pinned, minimum: CLI_WITH_SKILLS })) {
+		console.log(
+			`Skills check skipped: the template pins @dialecte/cli ${pinned}, the skills command ships in ${CLI_WITH_SKILLS.join('.')}.`,
+		)
+		return
+	}
+	run('npx', ['dialecte', 'skills', 'check'], targetDir)
+	console.log('Installed scaffold: its skill checks green.')
+}
+
+/** `0.0.3`, `^0.2.0` or `~1.4.2` against `[major, minor, patch]`: the range's lowest version decides. */
+function isBelowVersion({ version, minimum }) {
+	const parts = version
+		.replace(/^[\^~=v]+/, '')
+		.split('.')
+		.map(Number)
+	if (parts.length !== 3 || parts.some(Number.isNaN)) {
+		throw new Error(
+			`Cannot read the @dialecte/cli version ${JSON.stringify(version)} of the template`,
+		)
+	}
+	const differing = parts.findIndex((part, index) => part !== minimum[index])
+	return differing !== -1 && parts[differing] < minimum[differing]
 }
 
 async function main() {
@@ -356,6 +397,49 @@ async function main() {
 					file: 'src/v1/test/hydrated-test.ts',
 					includes: 'assertValidWidgetTestCases({ testCases: params.testCases })',
 					reason: 'the runner checks every case before the suite runs',
+				},
+				{
+					file: 'skills/dialecte-widget/SKILL.md',
+					includes: 'name: dialecte-widget',
+					reason:
+						'a generated dialecte ships the agent skill that describes it, named after its id',
+				},
+				{
+					file: 'skills/dialecte-widget/SKILL.md',
+					matches: /\| `helloWorld` +\| `sayHello` +\| `ensure\w+` +\|/,
+					reason:
+						'the skill ships with its verb map filled as the generator renders it, so check passes before any edit',
+				},
+				{
+					file: 'skills/dialecte-widget/SKILL.md',
+					includes: 'This package has no hooks.',
+					reason: 'a new package has no hooks folder: the generated hooks block says so',
+				},
+				{
+					file: 'skills/dialecte-widget/SKILL.md',
+					excludes: '__',
+					reason: 'no placeholder or conditional marker is left in the skill',
+				},
+				{
+					file: 'skills/dialecte-widget/references/api.md',
+					excludes: '__',
+					reason: 'no placeholder or conditional marker is left in the API index',
+				},
+				{
+					file: 'skills/dialecte-widget/references/api.md',
+					matches:
+						/\| `doc\.query\.helloWorld\.sayHello` +\| The smallest useful read: what is this document made of\? +\| count what a document is made of; example of a read extension +\|/,
+					reason: 'the API index row is the JSDoc of the example as the generator renders it',
+				},
+				{
+					file: 'package.json',
+					includes: '"skills:check": "dialecte skills check"',
+					reason: 'the check gate fails when the skill cites what the code no longer has',
+				},
+				{
+					file: 'package.json',
+					includes: '"!skills/*/evals"',
+					reason: 'the skill ships in the tarball, its maintainer evals do not',
 				},
 				{
 					file: 'src/v1/extensions/index.ts',
@@ -467,6 +551,28 @@ async function main() {
 					file: 'README.md',
 					excludes: 'tx.helloWorld',
 					reason: 'the readme shows no write the example does not have',
+				},
+				{
+					file: 'skills/dialecte-quoted/SKILL.md',
+					matches: /\| `helloWorld` +\| `sayHello` +\| - +\|/,
+					reason: 'the verb map of the skill lists no write the example does not have',
+				},
+				{
+					file: 'skills/dialecte-quoted/SKILL.md',
+					excludes: '__',
+					reason:
+						'no placeholder or conditional marker is left in the skill of a root without child',
+				},
+				{
+					file: 'skills/dialecte-quoted/references/api.md',
+					excludes: '__',
+					reason:
+						'no placeholder or conditional marker is left in the API index of a root without child',
+				},
+				{
+					file: 'skills/dialecte-quoted/references/api.md',
+					excludes: 'ensure',
+					reason: 'the API index lists no write the example does not have',
 				},
 			],
 		})
