@@ -3,34 +3,27 @@ import {
 	assertValid__DialecteName__Xml,
 } from './assert-valid-xml'
 
-import {
-	CUSTOM_RECORD_ID_ATTRIBUTE,
-	CUSTOM_RECORD_ID_ATTRIBUTE_NAME,
-	XMLNS_XSI_NAMESPACE,
-} from '@dialecte/core/helpers'
+import { CUSTOM_RECORD_ID_ATTRIBUTE, CUSTOM_RECORD_ID_ATTRIBUTE_NAME } from '@dialecte/core/helpers'
 import {
 	createTestProject,
 	createTestRecordFactory,
 	createXmlAssertions,
 	createTestRunner,
-	XMLNS_DEV_NAMESPACE,
 } from '@dialecte/core/test'
 
 import { __DIALECTE_NAME___DIALECTE_CONFIG } from '@/__version__/config'
 import { __DIALECTE_NAME___EXTENSION_MODULES } from '@/__version__/extensions'
 
+import type { __DialecteName__Test } from './hydrated-test.types'
 import type { Config } from '@/__version__/config/dialecte.config'
 
-type __DialecteName__Modules = typeof __DIALECTE_NAME___EXTENSION_MODULES
-
-export const XMLNS___DIALECTE_NAME___NAMESPACE = `xmlns="${__DIALECTE_NAME___DIALECTE_CONFIG.namespaces.default.uri}"`
-export const ALL_XMLNS_NAMESPACES = `${XMLNS___DIALECTE_NAME___NAMESPACE} ${XMLNS_DEV_NAMESPACE} ${XMLNS_XSI_NAMESPACE}`
+export { ALL_XMLNS_NAMESPACES, XMLNS___DIALECTE_NAME___NAMESPACE } from './xmlns.constants'
 export { CUSTOM_RECORD_ID_ATTRIBUTE, CUSTOM_RECORD_ID_ATTRIBUTE_NAME }
 export { assertValid__DialecteName__Xml } from './assert-valid-xml'
 
 const __DIALECTE_NAME___EXTENSIONS = { base: __DIALECTE_NAME___EXTENSION_MODULES }
 
-const rawRun__DialecteName__TestCases = createTestRunner<Config, __DialecteName__Modules>({
+const rawRun__DialecteName__TestCases = createTestRunner<Config, __DialecteName__Test.Modules>({
 	dialecteConfig: __DIALECTE_NAME___DIALECTE_CONFIG,
 	extensions: __DIALECTE_NAME___EXTENSIONS,
 })
@@ -58,10 +51,11 @@ export async function create__DialecteName__TestProject(params: {
 }) {
 	const { sourceXml, targetXml } = params
 	// a fixture may leave out required attributes; its structure must still be the schema's
-	assertValid__DialecteName__Xml(sourceXml, 'sourceXml', { requireComplete: false })
-	if (targetXml) assertValid__DialecteName__Xml(targetXml, 'targetXml', { requireComplete: false })
+	assertValid__DialecteName__Xml({ xml: sourceXml, label: 'sourceXml', requireComplete: false })
+	if (targetXml)
+		assertValid__DialecteName__Xml({ xml: targetXml, label: 'targetXml', requireComplete: false })
 
-	return createTestProject<Config, __DialecteName__Modules>({
+	return createTestProject<Config, __DialecteName__Test.Modules>({
 		sourceXml,
 		targetXml,
 		dialecteConfig: __DIALECTE_NAME___DIALECTE_CONFIG,

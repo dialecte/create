@@ -32,7 +32,10 @@
 		"generate": "npm create @dialecte generate -- --out-dir ./src/__version__/definition__generateOptions__ --entry",
 		"//====== TEST ======//": "",
 		"pretest": "playwright install chromium",
-		"test": "vitest",
+		"test": "npm run test:node && npm run test:browser",
+		"test:node": "vitest run --project node",
+		"test:browser": "vitest run --project browser --passWithNoTests",
+		"test:browser:all": "vitest run --project browser-all",
 		"//====== CHECK ======//": "",
 		"check": "run-p type-check type-check:test type-check:node lint:check format:check",
 		"skills:generate": "dialecte skills generate",
@@ -72,5 +75,61 @@
 		"vite-plugin-dts": "^5.0.2",
 		"vitepress": "^2.0.0-alpha.17",
 		"vitest": "^4.1.10"
+	},
+	"dialecte": {
+		"gate": {
+			"fast": [
+				{
+					"name": "check",
+					"run": "npm run check"
+				},
+				{
+					"name": "skills",
+					"run": "npm run skills:check"
+				},
+				{
+					"name": "tests",
+					"run": "npx vitest run --project node --changed",
+					"counts": "tests",
+					"changedOnly": true
+				}
+			],
+			"full": [
+				{
+					"name": "check",
+					"run": "npm run check"
+				},
+				{
+					"name": "skills",
+					"run": "npm run skills:check"
+				},
+				{
+					"name": "build",
+					"run": "npm run build"
+				},
+				{
+					"name": "tests",
+					"run": "nice -n 10 npx vitest run --project node --maxWorkers=2",
+					"counts": "tests"
+				},
+				{
+					"name": "browser tests",
+					"run": "nice -n 10 npx vitest run --project browser --passWithNoTests --no-file-parallelism"
+				},
+				{
+					"name": "docs",
+					"run": "npm run doc:build"
+				},
+				{
+					"name": "type-bench",
+					"run": "npm run type-bench:check"
+				}
+			]
+		},
+		"tdd": {
+			"production": [
+				"src/__version__/test"
+			]
+		}
 	}
 }

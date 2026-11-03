@@ -11,9 +11,9 @@ import type { __DialecteName__Test } from '@/__version__/test'
 
 type TestCase = __DialecteName__Test.BaseXmlTestCase & { expected: HelloWorldGreeting }
 
-// A read is tested with `withoutExport`: every row is imported into a fresh database, `act`
-// asserts on what the query answers, and the runner cleans up. Nothing is written, so nothing
-// is exported.
+// A read is tested with `withoutExport`: every row is imported into a fresh project, on the store
+// the test runner chose, `act` asserts on what the query answers, and the runner cleans up.
+// Nothing is written, so nothing is exported.
 //
 // `ns` declares the namespaces a test document needs, `id` gives a record a stable id you can
 // name in a query.
