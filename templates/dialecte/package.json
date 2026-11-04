@@ -61,7 +61,7 @@
 		"@dialecte/core": "__coreVersion__"
 	},
 	"devDependencies": {
-		"@dialecte/cli": "0.3.0",
+		"@dialecte/cli": "0.3.1",
 		"@tsconfig/node24": "^24.0.4",
 		"@types/node": "^24.12.4",
 		"@vitest/browser-playwright": "^4.1.10",

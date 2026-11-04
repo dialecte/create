@@ -880,7 +880,7 @@ async function assertScaffolds() {
 			{
 				file: 'package.json',
 				json: ['devDependencies', '@dialecte/cli'],
-				equals: '0.3.0',
+				equals: '0.3.1',
 				reason: 'the cli is pinned exactly at the version with profiles and the hook gate',
 			},
 			{
