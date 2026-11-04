@@ -9,6 +9,8 @@ import type { StorageParam, ExtensionModules } from '@dialecte/core'
 /**
  * Create a __DialecteName__ project with pre-configured config and extensions.
  * Call .open(name) to initialize the store and hydrate state.
+ *
+ * @intent open a __DialecteName__ project, import read and edit __DialecteName__ documents
  */
 export function create__DialecteName__Project<
 	CustomModules extends ExtensionModules = Record<never, never>,

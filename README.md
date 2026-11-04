@@ -57,8 +57,11 @@ The generated package includes:
 - VitePress documentation scaffolding
 
 The default namespace is the one the root element lives in, or none for a schema without one. For
-an extension schema (IEC 61850-6-100 over SCL) that is the base schema's namespace, not the entry's. After `npm install`, run `npm run format:fix` once - names of any length are
-substituted into the template, so its line breaks cannot suit every package.
+an extension schema over a base schema that is the base schema's namespace, not the entry's. The package
+comes out formatted by its own formatter configuration, and its first `npm install` writes its skill's API index
+and its type-bench baseline (its `prepare` script; a step that cannot run says how to run it by hand), so its
+`dialecte gate --full` and `dialecte contrib` pass from the start. Commit what that first install writes (the
+skill's `references/api.md` and `api.json`, and `benchmarks/types/<version>/baseline.json`) with the package.
 
 ### `generate`
 

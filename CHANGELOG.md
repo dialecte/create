@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-04
+
+### Changed
+
+- **A scaffolded package passes its own gate from its first `npm install`**: `dialecte gate --full` and `dialecte contrib` are green on a fresh package, its skill check included.
+  - create formats the package with its own formatter configuration once the names are substituted; `npm run format:fix` is no longer a step after the install.
+  - Its `prepare` script (`husky && node scripts/prepare.mjs`) writes the skill's API index (`dialecte skills generate`) on every install, and the type-bench baseline once, when there is none; from then on the baseline changes only when the package runs `npm run type-bench`. A step that cannot run prints one line saying how to run it by hand (`skills index not generated: run \`npm run skills:generate\``) and the install goes on; `npm run skills:check` still reports a missing or stale index.
+  - Its entry and test helpers carry a JSDoc summary and an `@intent` tag, so its skill's API index lists them: `create<Name>Project`, `create<Name>TestProject`, `create<Name>TestRecord`, `assertValid<Name>Xml`, `assertExpectedElementQueries`, `assertUnexpectedElementQueries`.
+- create's next steps make the repository before the install (`git init`, `npm install`, then a first commit), so husky points git at the package's hooks and every commit runs them; the first commit holds what the install wrote.
+- A scaffolded package's readme and docs home page are titled with its name again (0.2.0 wrote `**packageName**`).
+- `generate` formats its output with create's own oxfmt when npm installed it beside create (`npm create`, npx) and the project configures oxfmt without installing it; before, the output was left unformatted without a word.
+- **A scaffolded package runs on `@dialecte/cli` 0.3.0** (pinned exactly, was 0.0.3) and declares the contributor profile: its full gate checks, checks the skills, builds, then runs the node and the browser-only tests with the runner's defaults; the docs build and the type bench run in `dialecte contrib`. Its commit hook runs `npm run check` (no longer `format:fix`), then the tests through `dialecte gate --hook` (the suite, unless a green `gate --full` of the committed tree answers it), then the build.
+
 ## [0.2.0] - 2026-11-04
 
 ### Added

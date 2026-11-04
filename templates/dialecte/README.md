@@ -1,4 +1,4 @@
-# **packageName**
+# __packageName__
 
 Dialecte SDK for `__dialecteId__`.
 
@@ -57,11 +57,14 @@ schema offers several), so a regeneration reproduces the same definition.
 ## Develop
 
 ```sh
-npm install
+npm install          # also writes the skill API index, and the type-bench baseline when there is none
 npm run build        # type-check + bundle (ESM + d.ts)
 npm run test:node    # the tests, in node
 npm run doc:dev      # vitepress docs
 ```
+
+The first `npm install` writes `skills/dialecte-__dialecteId__/references/api.md`, `api.json` and
+`benchmarks/types/__version__/baseline.json`: commit them with the package.
 
 ## Test
 

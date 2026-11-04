@@ -1,4 +1,4 @@
-# **packageName**
+# __packageName__
 
 Dialecte SDK for `__dialecteId__`, generated with [`@dialecte/create`](https://github.com/dialecte/create).
 

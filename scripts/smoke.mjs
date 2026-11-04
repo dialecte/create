@@ -11,6 +11,7 @@
  * .tgz> installs that engine instead of the default range, to test against an unreleased core.
  */
 import { spawnSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import {
 	copyFile,
 	mkdtemp,
@@ -18,11 +19,12 @@ import {
 	rm,
 	stat,
 	readFile,
+	rename,
 	symlink,
 	writeFile,
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { delimiter, join, resolve } from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 
 import { main as runCli, runGenerator } from '../dist/cli/index.js'
@@ -415,6 +417,149 @@ async function assertInstalledSkillsCheck(targetDir) {
 	return 'Installed scaffold: its skill checks green.'
 }
 
+/**
+ * The installed scaffold, committed as a fresh repository, passes its own full gate: the package's checks,
+ * its skills, its build and its tests, as its first contributor will run them.
+ */
+function assertInstalledGateGreen(targetDir) {
+	// the install pointed git at the package's hooks (checked right after it): the commit runs the hook
+	run('git', ['add', '--all'], targetDir)
+	run(
+		'git',
+		[
+			'-c',
+			'user.name=smoke',
+			'-c',
+			'user.email=smoke@example.invalid',
+			'commit',
+			'--quiet',
+			'-m',
+			'scaffold',
+		],
+		targetDir,
+	)
+	run('npx', ['dialecte', 'gate', '--full'], targetDir)
+	run('npx', ['dialecte', 'contrib'], targetDir)
+	return 'Installed scaffold commits through its hook, and passes its own gate --full and dialecte contrib.'
+}
+
+/**
+ * create installed from its package, as `npm create` installs it - its dependencies hoisted beside it, none under
+ * its own folder - still leaves a scaffold formatted by the package's formatter configuration.
+ */
+function assertFormattedFromAnInstalledCreate(parent) {
+	const installDir = join(parent, 'installed-create')
+	const outDir = join(parent, 'from-installed-create')
+	run('mkdir', ['-p', installDir], parent)
+	const repository = new URL('..', import.meta.url).pathname
+	const [packed] = JSON.parse(
+		run('npm', ['pack', '--json', '--pack-destination', parent], repository),
+	)
+	run('npm', ['init', '--yes'], installDir)
+	run('npm', ['install', '--no-audit', '--no-fund', join(parent, packed.filename)], installDir)
+	const bundled = join(
+		installDir,
+		'node_modules',
+		'@dialecte',
+		'create',
+		'node_modules',
+		'.bin',
+		'oxfmt',
+	)
+	if (existsSync(bundled))
+		throw new Error('npm kept oxfmt under create: the layout is not the hoisted one')
+	const createBin = join(
+		installDir,
+		'node_modules',
+		'@dialecte',
+		'create',
+		'dist',
+		'cli',
+		'index.js',
+	)
+	run('node', [createBin, 'create', FIXTURE, '--name', '@acme/hoisted', '--out', outDir], parent)
+	run(join(installDir, 'node_modules', '.bin', 'oxfmt'), ['--check'], outDir)
+	return 'create installed as npm create installs it leaves a formatted scaffold.'
+}
+
+/**
+ * The install-time step of a scaffold never fails an install: when the skill index cannot be written (here the
+ * cli is not reachable), `npm run prepare` still exits 0 and says in one line how to write it by hand.
+ */
+async function assertFailedSkillsGenerateKeepsTheInstall(targetDir) {
+	const bin = join(targetDir, 'node_modules', '.bin', 'dialecte')
+	const hidden = `${bin}.hidden`
+	await rename(bin, hidden)
+	try {
+		// the smoke runs under create's own npm script, whose PATH holds create's cli: leave every
+		// node_modules/.bin out, so the scaffold's hidden one is the only cli npm could find
+		const path = (process.env.PATH ?? '')
+			.split(delimiter)
+			.filter((entry) => !entry.endsWith(join('node_modules', '.bin')))
+			.join(delimiter)
+		const result = spawnSync('npm', ['run', 'prepare'], {
+			cwd: targetDir,
+			encoding: 'utf8',
+			env: { ...process.env, PATH: path },
+		})
+		const output = `${result.stdout}${result.stderr}`
+		const line = 'skills index not generated: run `npm run skills:generate`'
+		if (result.status !== 0 || !output.includes(line)) {
+			throw new Error(
+				`npm run prepare without the cli exited ${result.status}, expected 0 and ${JSON.stringify(line)}:\n${output}`,
+			)
+		}
+	} finally {
+		await rename(hidden, bin)
+	}
+	return 'A scaffold whose skill index cannot be written still installs, and says how to write it.'
+}
+
+/**
+ * The next steps create prints make the repository before the install: husky, run by the install, points git at
+ * the package's hooks only in a repository, so the first commit already runs the pre-commit hook.
+ */
+async function assertNextStepsMakeARepositoryFirst() {
+	const parent = await mkdtemp(join(tmpdir(), 'dialecte-next-steps-'))
+	try {
+		const cli = new URL('../dist/cli/index.js', import.meta.url).pathname
+		const output = run(
+			'node',
+			[cli, 'create', FIXTURE, '--name', '@acme/steps', '--out', join(parent, 'pkg')],
+			parent,
+		)
+		const steps = output.slice(output.indexOf('Next steps:'))
+		const repository = steps.indexOf('git init')
+		const install = steps.indexOf('npm install')
+		if (repository === -1 || install === -1 || repository > install) {
+			throw new Error(`the next steps must run git init before npm install:\n${steps}`)
+		}
+	} finally {
+		await rm(parent, { recursive: true, force: true })
+	}
+	console.log('The next steps make the repository before the install.')
+}
+
+/** A scaffold leaves create formatted as its own formatter configuration says, whatever its names' lengths. */
+async function assertScaffoldFormatted() {
+	const targetDir = await mkdtemp(join(tmpdir(), 'dialecte-formatted-'))
+	try {
+		await runCli([
+			'create',
+			FIXTURE,
+			'--name',
+			'@acme/a-rather-long-package-name',
+			'--out',
+			targetDir,
+		])
+		const oxfmt = new URL('../node_modules/.bin/oxfmt', import.meta.url).pathname
+		run(oxfmt, ['--check'], targetDir)
+	} finally {
+		await rm(targetDir, { recursive: true, force: true })
+	}
+	console.log('A scaffold is formatted as its formatter configuration says.')
+}
+
 /** `0.0.3`, `^0.2.0` or `~1.4.2` against `[major, minor, patch]`: the range's lowest version decides. */
 function isBelowVersion({ version, minimum }) {
 	const parts = version
@@ -452,7 +597,16 @@ async function assertInstalledScaffoldTypeChecks() {
 			await writeFile(manifestPath, JSON.stringify(manifest, null, '\t'))
 		}
 
+		// the order the next steps print: a repository first, so the install's husky points git at the hooks
+		run('git', ['init', '--quiet'], targetDir)
 		run('npm', ['install', '--no-audit', '--no-fund'], targetDir)
+		// read before any later step reruns husky (npm run prepare), so only the install can have set it
+		const hooksPath = run('git', ['config', 'core.hooksPath'], targetDir).trim()
+		if (hooksPath !== '.husky/_') {
+			throw new Error(
+				`the scaffold's install set core.hooksPath to ${JSON.stringify(hooksPath)}, not .husky/_`,
+			)
+		}
 		const engine = core || 'default range'
 		const testFiles = (await testFilesOf(targetDir)).length
 		const failures = []
@@ -486,6 +640,15 @@ async function assertInstalledScaffoldTypeChecks() {
 			},
 			function missingNodeOnlyTestFileRefused() {
 				return assertMissingListedTestFileRefused({ targetDir, listName: 'NODE_ONLY_TEST_FILES' })
+			},
+			function formattedFromAnInstalledCreate() {
+				return assertFormattedFromAnInstalledCreate(parent)
+			},
+			function failedSkillsGenerateKeepsTheInstall() {
+				return assertFailedSkillsGenerateKeepsTheInstall(targetDir)
+			},
+			function wholeGateGreen() {
+				return assertInstalledGateGreen(targetDir)
 			},
 		]) {
 			try {
@@ -640,7 +803,7 @@ async function assertScaffolds() {
 			},
 			{
 				file: 'src/v1/extensions/hello-world/transaction/ensure-item.ts',
-				includes: "tagName: 'Item', attributes: { id: 'hello-world' },",
+				matches: /tagName: 'Item',\s+attributes: \{ id: 'hello-world' \},/,
 				reason: 'the example writes with the typed API, the attribute the schema requires filled',
 			},
 			{
@@ -701,20 +864,54 @@ async function assertScaffolds() {
 					{ name: 'check', run: 'npm run check' },
 					{ name: 'skills', run: 'npm run skills:check' },
 					{ name: 'build', run: 'npm run build' },
-					{
-						name: 'tests',
-						run: 'nice -n 10 npx vitest run --project node --maxWorkers=2',
-						counts: 'tests',
-					},
-					{
-						name: 'browser tests',
-						run: 'nice -n 10 npx vitest run --project browser --passWithNoTests --no-file-parallelism',
-					},
-					{ name: 'docs', run: 'npm run doc:build' },
-					{ name: 'type-bench', run: 'npm run type-bench:check' },
+					{ name: 'tests', run: 'npx vitest run --project node', counts: 'tests' },
+					{ name: 'browser tests', run: 'npx vitest run --project browser --passWithNoTests' },
 				]),
 				reason:
-					'the full gate checks, checks the skills, builds, runs every node test gently and counts them, the browser-only tests one file at a time, the docs and the type bench',
+					"the full gate checks, checks the skills, builds, runs every node test and counts them, then the browser-only tests, all with the runner's defaults; the docs and the type bench are contributor checks",
+			},
+			{
+				file: 'package.json',
+				json: ['dialecte', 'profile'],
+				equals: 'contributor',
+				reason:
+					'a scaffolded dialecte is a package of the family: dialecte contrib runs its docs and type bench',
+			},
+			{
+				file: 'package.json',
+				json: ['devDependencies', '@dialecte/cli'],
+				equals: '0.3.0',
+				reason: 'the cli is pinned exactly at the version with profiles and the hook gate',
+			},
+			{
+				file: 'package.json',
+				json: ['scripts', 'test:hook'],
+				equals: 'dialecte gate --hook',
+				reason:
+					'the commit hook runs the tests through the gate, which reuses a green gate --full of the committed tree',
+			},
+			{
+				file: 'README.md',
+				matches: /^# @acme\/widget\n/,
+				reason: 'the readme is titled with the package name',
+			},
+			{
+				file: 'docs/index.md',
+				matches: /^# @acme\/widget\n/,
+				reason: 'the docs home page is titled with the package name',
+			},
+			{
+				file: 'package.json',
+				json: ['scripts', 'prepare'],
+				equals: 'husky && node scripts/prepare.mjs',
+				reason:
+					'every npm install of the package writes its skill index, and the type-bench baseline once',
+			},
+			{
+				file: '.husky/pre-commit',
+				matches: /^npm run check\nnpm run test:hook\nnpm run build\n?$/,
+				reason:
+					'the commit hook checks, runs the tests through the gate, then builds; it formats nothing',
 			},
 			{
 				file: 'package.json',
@@ -902,7 +1099,7 @@ async function assertScaffolds() {
 		expectations: [
 			{
 				file: 'src/v1/config/namespaces.ts',
-				includes: "uri: 'urn:it\\'s:real'",
+				matches: /uri: (?:'urn:it\\'s:real'|"urn:it's:real")/,
 				reason: 'the namespace is the one of the root tag, not of a comment, and it is escaped',
 			},
 			{
@@ -1050,6 +1247,8 @@ async function main() {
 			assertUnknownFlagRefused,
 			assertHelpAndVersion,
 			assertRunsThroughABinLink,
+			assertScaffoldFormatted,
+			assertNextStepsMakeARepositoryFirst,
 			assertInstalledScaffoldTypeChecks,
 		]) {
 			try {

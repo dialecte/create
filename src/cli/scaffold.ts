@@ -4,34 +4,12 @@ import { join, resolve } from 'node:path'
 
 import { tsKey } from '../derive/ts-syntax.ts'
 import { writeExample } from './example.ts'
+import { formatScaffold } from './format-output.ts'
 import { TEMPLATES_DIR } from './paths.ts'
 import { runGenerator } from './pyodide-runner.ts'
+import { XSI_NAMESPACE_URI } from './scaffold.constants.ts'
 
-export interface ScaffoldOptions {
-	/** Absolute path to the entry .xsd file used to generate definitions. */
-	entry: string
-	/** Target directory for the new dialecte package. */
-	targetDir: string
-	/** npm package name, e.g. "@dialecte/foo". */
-	packageName: string
-	/** Version folder name, e.g. "v1". */
-	version: string
-	/** Pinned @dialecte/core version. */
-	coreVersion: string
-	/** The element that starts a document, when more than one could. */
-	root?: string
-}
-
-export interface Replacements {
-	packageName: string
-	dialecteId: string
-	DialecteName: string
-	DIALECTE_NAME: string
-	version: string
-	coreVersion: string
-	/** The `generate` options a regeneration must repeat, `--root` included, as one string. */
-	generateOptions: string
-}
+import type { Replacements, ScaffoldOptions } from './scaffold.types.ts'
 
 /** Derive a bare dialecte id (e.g. "foo") from a package name (e.g. "@dialecte/foo"). */
 export function dialecteIdFromPackageName(packageName: string): string {
@@ -54,9 +32,6 @@ export function buildReplacements(options: ScaffoldOptions): Replacements {
 		generateOptions: options.root === undefined ? '' : ` --root ${options.root}`,
 	}
 }
-
-/** The namespace of xsi:type and xsi:nil: the template declares it as `xsi`. */
-const XSI_NAMESPACE_URI = 'http://www.w3.org/2001/XMLSchema-instance'
 
 /**
  * The config entries of the namespaces the definition prefixes, keyed by prefix: core stores an xsi:type value with
@@ -190,6 +165,10 @@ export async function scaffoldDialecte(
 			facts: facts.example,
 			defaultNamespaceUri: namespaceUri,
 		})
+
+		// names of any length are substituted into the template, so its line breaks cannot be right for all:
+		// the package's own formatter configuration decides
+		formatScaffold({ targetDir })
 	} catch (error) {
 		// A half-written package would only make the next attempt fail on a non-empty directory.
 		await rm(targetDir, { recursive: true, force: true })
@@ -200,9 +179,14 @@ export async function scaffoldDialecte(
 	console.log('')
 	console.log('Done. Next steps:')
 	console.log(`  cd ${options.targetDir}`)
+	// husky, run by the install, points git at the package's hooks only in a repository
+	console.log('  git init')
 	console.log('  npm install')
-	// Names of any length are substituted into the template, so line breaks cannot be right for all.
-	console.log('  npm run format:fix')
-	console.log('  npm run build')
+	console.log('  git add --all && git commit -m "scaffold"')
+	console.log('')
+	console.log(
+		'The first install writes the skill API index and the type-bench baseline: commit them with the',
+	)
+	console.log('package. Then `npx dialecte gate --full` and `npx dialecte contrib` pass.')
 	return { namespaceUri, rootElement }
 }

@@ -45,6 +45,13 @@ export const run__DialecteName__TestCases: typeof rawRun__DialecteName__TestCase
 	},
 }
 
+/**
+ * A __DialecteName__ project opened on the given XML, its structure checked against the schema first (required
+ * attributes may be left out). Opened inside a running test, the project is destroyed when the test ends; opened
+ * outside one (`beforeAll`), the caller destroys it.
+ *
+ * @intent open a test project on a fixture XML
+ */
 export async function create__DialecteName__TestProject(params: {
 	sourceXml: string
 	targetXml?: string
@@ -63,11 +70,31 @@ export async function create__DialecteName__TestProject(params: {
 	})
 }
 
+/**
+ * Builds a raw (default), tracked or tree record of the __DialecteName__ definition from its tag and fields, as
+ * core stores it, without opening a project.
+ *
+ * @intent build one typed record for a test without opening a project
+ */
 export const create__DialecteName__TestRecord: ReturnType<typeof createTestRecordFactory<Config>> =
 	createTestRecordFactory<Config>(__DIALECTE_NAME___DIALECTE_CONFIG)
 
-export const { assertExpectedElementQueries, assertUnexpectedElementQueries } = createXmlAssertions(
-	{
-		namespaces: __DIALECTE_NAME___DIALECTE_CONFIG.namespaces,
-	},
-)
+const xmlAssertions = createXmlAssertions({
+	namespaces: __DIALECTE_NAME___DIALECTE_CONFIG.namespaces,
+})
+
+/**
+ * Asserts that each XPath query selects at least one node of the XML text; the prefixes are the
+ * __DialecteName__ namespace keys.
+ *
+ * @intent assert that an exported XML holds the elements XPath queries select
+ */
+export const assertExpectedElementQueries = xmlAssertions.assertExpectedElementQueries
+
+/**
+ * Asserts that no XPath query selects a node of the XML text, while every step but the last still does; the
+ * prefixes are the __DialecteName__ namespace keys.
+ *
+ * @intent assert that an exported XML no longer holds an element
+ */
+export const assertUnexpectedElementQueries = xmlAssertions.assertUnexpectedElementQueries

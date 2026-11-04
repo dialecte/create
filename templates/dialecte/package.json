@@ -36,6 +36,7 @@
 		"test:node": "vitest run --project node",
 		"test:browser": "vitest run --project browser --passWithNoTests",
 		"test:browser:all": "vitest run --project browser-all",
+		"test:hook": "dialecte gate --hook",
 		"//====== CHECK ======//": "",
 		"check": "run-p type-check type-check:test type-check:node lint:check format:check",
 		"skills:generate": "dialecte skills generate",
@@ -54,13 +55,13 @@
 		"type-narrowing": "npm run coverage:gen && dialecte narrowing",
 		"type-audit": "dialecte audit",
 		"//====== HOOKS ======//": "",
-		"prepare": "husky"
+		"prepare": "husky && node scripts/prepare.mjs"
 	},
 	"dependencies": {
 		"@dialecte/core": "__coreVersion__"
 	},
 	"devDependencies": {
-		"@dialecte/cli": "0.0.3",
+		"@dialecte/cli": "0.3.0",
 		"@tsconfig/node24": "^24.0.4",
 		"@types/node": "^24.12.4",
 		"@vitest/browser-playwright": "^4.1.10",
@@ -77,6 +78,7 @@
 		"vitest": "^4.1.10"
 	},
 	"dialecte": {
+		"profile": "contributor",
 		"gate": {
 			"fast": [
 				{
@@ -109,20 +111,12 @@
 				},
 				{
 					"name": "tests",
-					"run": "nice -n 10 npx vitest run --project node --maxWorkers=2",
+					"run": "npx vitest run --project node",
 					"counts": "tests"
 				},
 				{
 					"name": "browser tests",
-					"run": "nice -n 10 npx vitest run --project browser --passWithNoTests --no-file-parallelism"
-				},
-				{
-					"name": "docs",
-					"run": "npm run doc:build"
-				},
-				{
-					"name": "type-bench",
-					"run": "npm run type-bench:check"
+					"run": "npx vitest run --project browser --passWithNoTests"
 				}
 			]
 		},

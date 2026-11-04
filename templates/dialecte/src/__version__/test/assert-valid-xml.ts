@@ -18,5 +18,12 @@ const { assertValidXml, assertValidXmlTestCases } = createXmlSchemaAssertions({
 	schemaName: '__DialecteName__',
 })
 
+/**
+ * Throws when the XML breaks the structure of the __DialecteName__ schema: an element in the wrong namespace, a child
+ * its parent does not allow, an unknown attribute or, unless `requireComplete: false`, a missing required attribute.
+ * It is not a full XSD validation: child order, occurrence counts and attribute values are not checked.
+ *
+ * @intent check that a test fixture follows the __DialecteName__ schema before a test reads it
+ */
 export const assertValid__DialecteName__Xml = assertValidXml
 export const assertValid__DialecteName__TestCases = assertValidXmlTestCases

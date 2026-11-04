@@ -1,11 +1,10 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 
+import { OXFMT_BIN, OXFMT_CONFIGS } from './format-output.constants.ts'
 import { PACKAGE_ROOT } from './paths.ts'
-
-const OXFMT_BIN = join('node_modules', '.bin', 'oxfmt')
-const OXFMT_CONFIGS = ['.oxfmtrc.json', '.oxfmtrc.jsonc']
 
 /** The directories from the output directory up to the root. */
 function* ancestors(outDir: string): Generator<string> {
@@ -34,8 +33,42 @@ function findFormatter(outDir: string): string | undefined {
 		const candidate = join(directory, OXFMT_BIN)
 		if (existsSync(candidate)) return candidate
 	}
-	const bundled = join(PACKAGE_ROOT, OXFMT_BIN)
-	return existsSync(bundled) ? bundled : undefined
+	return bundledFormatter()
+}
+
+/**
+ * create's own oxfmt, wherever npm put it: under create's folder, or hoisted beside it as `npm create` and npx
+ * install it. Resolved the way Node resolves an import, never from a fixed path.
+ */
+function bundledFormatter(): string | undefined {
+	try {
+		const manifestPath = createRequire(join(PACKAGE_ROOT, 'package.json')).resolve(
+			'oxfmt/package.json',
+		)
+		const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { bin: { oxfmt: string } }
+		return join(dirname(manifestPath), manifest.bin.oxfmt)
+	} catch {
+		return undefined
+	}
+}
+
+/**
+ * Format a new package in place with create's own oxfmt (the template's version) and the package's formatter
+ * configuration. Never fatal: when no formatter runs, say how to format it by hand.
+ */
+export function formatScaffold(params: { targetDir: string }): void {
+	const formatter = bundledFormatter()
+	const result =
+		formatter === undefined
+			? undefined
+			: spawnSync(process.execPath, [formatter, '.'], {
+					cwd: resolve(params.targetDir),
+					stdio: 'pipe',
+				})
+	if (result?.status === 0) return
+	console.warn(
+		'Warning: could not format the package: run `npm run format:fix` after `npm install`.',
+	)
 }
 
 /**
