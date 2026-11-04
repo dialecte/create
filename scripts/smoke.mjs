@@ -508,7 +508,7 @@ async function assertScaffolds() {
 		expectations: [
 			{
 				file: 'package.json',
-				includes: '"@dialecte/core": "^0.6.',
+				includes: '"@dialecte/core": "^0.8.',
 				reason: 'the engine range must target the current release line',
 			},
 			{

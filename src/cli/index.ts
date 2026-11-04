@@ -3,15 +3,13 @@ import { readFile } from 'node:fs/promises'
 import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { COMMAND_FLAGS, DEFAULT_CORE_VERSION, DEFAULT_VERSION } from './index.constants.ts'
 import { PACKAGE_ROOT } from './paths.ts'
 import { runGenerator } from './pyodide-runner.ts'
 import { scaffoldDialecte, dialecteIdFromPackageName } from './scaffold.ts'
 
 export { runGenerator } from './pyodide-runner.ts'
 export { scaffoldDialecte } from './scaffold.ts'
-
-const DEFAULT_CORE_VERSION = '^0.6.0'
-const DEFAULT_VERSION = 'v1'
 
 interface ParsedArgs {
 	_: string[]
@@ -75,17 +73,10 @@ generate options:
 }
 
 async function printVersion(): Promise<void> {
-	const manifest = JSON.parse(await readFile(join(PACKAGE_ROOT, 'package.json'), 'utf8')) as {
-		version: string
-	}
+	const text = await readFile(join(PACKAGE_ROOT, 'package.json'), 'utf8')
+	const manifest = JSON.parse(text) as { version: string }
 	console.log(manifest.version)
 }
-
-/** The flags each command takes: any other is refused, never ignored. */
-const COMMAND_FLAGS = {
-	create: ['name', 'out', 'version', 'core-version', 'root'],
-	generate: ['entry', 'out-dir', 'root'],
-} as const
 
 function refuseUnknownFlags(params: {
 	command: keyof typeof COMMAND_FLAGS

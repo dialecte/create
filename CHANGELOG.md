@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-04
+
 ### Added
 
 - A generated dialecte ships its own agent skill, `skills/dialecte-<id>/SKILL.md`, with the verb map and hook list generated from its source (`npm run skills:generate`) and an API index of its verbs by intent (`references/api.md`); `npm run skills:check` verifies them. The hello-world example carries `@intent` tags.
@@ -15,11 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Breaking (scaffolded package):** the test helpers of a scaffolded package are written for the one-object XML check of `@dialecte/core` 0.8: `create<Name>TestProject` checks its fixtures with `assertValid<Name>Xml({ xml, label, requireComplete: false })`.
+- **Breaking (scaffolded package):** the default engine range is `^0.8.0` (was `^0.6.0`, against which a scaffold failed its type-check and node tests: the template is written for the core 0.8 test helpers); `--core-version` still sets another.
 - A scaffolded package runs its tests in two tiers. `npm run test:node` runs every test in node, on the in-memory store (the `node` vitest project, whose setup file calls `useTestStorage({ type: 'inMemory' })`); `npm run test:browser` runs the browser-only tests in Chromium (none in a new package, listed in `BROWSER_ONLY_TEST_FILES` of `vitest.config.constants.ts`); `npm test` runs both; `npm run test:browser:all` runs the whole suite in Chromium, as its CI does after the node tier. The vitest config refuses a listed test file that does not exist. Its `dialecte` field also declares the gate steps (fast and full) and its test helpers as production code: `dialecte gate` and `dialecte tdd` read them from `@dialecte/cli` 0.2, the first release that has those commands.
 - The xmlns constants of a scaffolded package's test entry (`XMLNS_<NAME>_NAMESPACE`, `ALL_XMLNS_NAMESPACES`) live in `test/xmlns.constants.ts`, still exported from the test entry, and its extension modules are typed once, as `<Name>Test.Modules`.
 - The readme and docs of a scaffolded package give the command of each test tier, and tell a consumer of its test helpers to run them in node with a setup file of its own calling `useTestStorage({ type: 'inMemory' })` (depending on `@dialecte/core` itself); a project the helpers open inside a running test is destroyed when that test ends.
 - The install check (`npm run test:cli:install`) also runs the scaffold's node tests, and fails when one fails or none runs.
 - A scaffolded package's `npm run check` type-checks its Vite and Vitest configs too (`type-check:node`): an error in them no longer goes unseen.
+- The repository's own tooling runs on `@dialecte/cli` 0.3.0 (nothing changes for a user of the generator): the contributor profile, the tests with the runner's defaults, and a commit hook that checks, runs the TypeScript tests through `dialecte gate --hook` (the suite, unless a green `gate --full` of the committed tree answers it), then builds.
 
 ### Fixed
 

@@ -43,7 +43,7 @@ element definitions from the schema in one step.
 | `--name <pkg>`         | `@dialecte/<schema basename>` | npm package name                                    |
 | `--out <dir>`          | `./<dialecte id>`             | target directory                                    |
 | `--version <vN>`       | `v1`                          | version folder name                                 |
-| `--core-version <ver>` | `^0.6.0`                      | `@dialecte/core` version range                      |
+| `--core-version <ver>` | `^0.8.0`                      | `@dialecte/core` version range                      |
 | `--root <element>`     | the one root candidate        | which element starts a document, when several could |
 
 The generated package includes:

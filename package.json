@@ -1,6 +1,6 @@
 {
 	"name": "@dialecte/create",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Scaffold and generate Dialecte SDKs from an XSD schema. Runs the Python generator in WebAssembly - no Python required.",
 	"license": "MIT",
 	"repository": {
@@ -35,6 +35,7 @@
 		"skills:generate": "dialecte skills generate",
 		"skills:check": "dialecte skills check",
 		"test:ts": "node scripts/test-runner/run-tests.ts all",
+		"test:hook": "dialecte gate --hook",
 		"derive:check": "node scripts/derive-check/derive-check.ts",
 		"definition:diff": "node scripts/definition-diff/definition-diff.ts",
 		"test:py": "cd python && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) -m pytest",
@@ -55,6 +56,7 @@
 		"pyodide": "^0.27.2"
 	},
 	"devDependencies": {
+		"@dialecte/cli": "0.3.0",
 		"@stryker-mutator/core": "10.0.0",
 		"@types/node": "^22.0.0",
 		"@typescript/native-preview": "7.0.0-dev.20260707.2",
@@ -67,6 +69,7 @@
 		"node": ">=20"
 	},
 	"dialecte": {
+		"profile": "contributor",
 		"gate": {
 			"fast": [
 				{
@@ -98,12 +101,12 @@
 				},
 				{
 					"name": "tests-ts",
-					"run": "nice -n 10 npm run test:ts",
+					"run": "npm run test:ts",
 					"counts": "tests"
 				},
 				{
 					"name": "tests-py",
-					"run": "nice -n 10 npm run test:py"
+					"run": "npm run test:py"
 				}
 			]
 		}
