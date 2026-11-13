@@ -671,7 +671,7 @@ async function assertScaffolds() {
 		expectations: [
 			{
 				file: 'package.json',
-				includes: '"@dialecte/core": "^0.8.',
+				includes: '"@dialecte/core": "^0.10.',
 				reason: 'the engine range must target the current release line',
 			},
 			{
@@ -880,7 +880,7 @@ async function assertScaffolds() {
 			{
 				file: 'package.json',
 				json: ['devDependencies', '@dialecte/cli'],
-				equals: '0.3.1',
+				equals: '0.6.0',
 				reason: 'the cli is pinned exactly at the version with profiles and the hook gate',
 			},
 			{
