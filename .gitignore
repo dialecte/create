@@ -25,3 +25,5 @@ python/*.egg-info/
 
 # Corpora cache (python -m corpora.fetch; never committed)
 .corpora/
+
+AGENTS.local.md

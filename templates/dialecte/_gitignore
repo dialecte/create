@@ -9,3 +9,5 @@ dist/
 .bench-*.tsconfig.json
 benchmarks/types/.audit-entry.ts
 benchmarks/types/*/generated/
+
+AGENTS.local.md

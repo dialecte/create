@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **A scaffolded package holds an `AGENTS.md`** (the rules a coding agent follows, with the session check) and
+  ignores `AGENTS.local.md`.
+
 ### Changed
 
 - **Breaking (scaffolded package):** the default engine range is `^0.10.0` (was `^0.8.0`); `--core-version` still sets another.
