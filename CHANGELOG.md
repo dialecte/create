@@ -15,8 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Breaking (scaffolded package):** the default engine range is `^0.10.0` (was `^0.8.0`); `--core-version` still sets another.
-- **A scaffolded package runs on `@dialecte/cli` 0.6.0** (pinned exactly, was 0.3.1).
-- The repository's own tooling runs on `@dialecte/cli` 0.6.0 (nothing changes for a user of the generator).
+- **A scaffolded package runs on `@dialecte/cli` 0.7.0** (pinned exactly, was 0.3.1).
+- The repository's own tooling runs on `@dialecte/cli` 0.7.0 (nothing changes for a user of the generator).
 
 ## [0.2.1] - 2026-11-04
 
