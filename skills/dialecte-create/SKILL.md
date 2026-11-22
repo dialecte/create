@@ -47,8 +47,9 @@ npx @dialecte/create generate --entry path/to/entry.xsd --out-dir <pkg>/src/<ver
 
 - Writes only the three `*.generated.ts` files, formatted with the target package's oxfmt.
 - Schema sidecars (`parent-mapping.json`, `attribute-mapping.json`) sit next to the entry XSD.
-- After regenerating: run the package's full Definition of Done; expect type-bench movement and
-  explain it; review the generated diff (`create`'s `definition:diff` script helps).
+- After regenerating: run the package's full Definition of Done; expect type-bench movement against the
+  change's base and explain it (a `- Type cost: <why>` line in the changelog fragment when a scenario grows past
+  5 %); review the generated diff (`create`'s `definition:diff` script helps).
 - If a generated file looks wrong, fix the generator (or the schema input), never the output.
 
 ## Changing create itself
@@ -71,17 +72,18 @@ npx @dialecte/create generate --entry path/to/entry.xsd --out-dir <pkg>/src/<ver
 
 Zero-config on a dialecte package (finds `src/<version>/definition/*.generated.ts`):
 
-| Script in the package | Command                  | Purpose                                    |
-| --------------------- | ------------------------ | ------------------------------------------ |
-| `coverage:gen`        | `dialecte coverage`      | generate type probes for every element     |
-| `type-bench`          | `dialecte bench`         | measure instantiations, WRITE the baseline |
-| `type-bench:check`    | `dialecte bench --check` | CI gate: > 5 % growth over baseline fails  |
-| `type-narrowing`      | `dialecte narrowing`     | schema-derived narrowing still holds       |
-| `type-audit`          | `dialecte audit`         | readability of emitted types               |
+| Script in the package | Command                  | Purpose                                 |
+| --------------------- | ------------------------ | --------------------------------------- |
+| `coverage:gen`        | `dialecte coverage`      | generate type probes for every element  |
+| `type-bench`          | `dialecte bench`         | measure the change against its base     |
+| `type-bench:check`    | `dialecte bench --check` | CI gate: unexplained > 5 % growth fails |
+| `type-narrowing`      | `dialecte narrowing`     | schema-derived narrowing still holds    |
+| `type-audit`          | `dialecte audit`         | readability of emitted types            |
 
-Careful: before `@dialecte/cli` 0.2.0, `dialecte bench --help` is not a help flag - it runs the bench
-and writes the baseline (from 0.2.0 it only prints the help). Bench single-threaded (the package's bench tsconfig) for order-stable counts. A gate
-breach is a prompt to explain the growth; re-baseline in its own lot when it is legitimate.
+The bench measures the head and the base the change goes onto, fresh, one checker each, and stores nothing (CI
+hands the base; locally pass `--base <ref>`). A gate breach is a prompt to explain the growth: when it is legitimate,
+the change says so with a `- Type cost: <why>` line in its changelog fragment. There is no baseline file and no
+re-baseline lot.
 
 ## Retro gate - before you hand over
 

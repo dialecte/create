@@ -1,0 +1,7 @@
+schema_version: '1.1'
+name: regenerate-moves-type-bench
+expected_outcome: |
+  A regenerated definition moves the type bench, measured against the base the change goes onto (nothing stored).
+  The accepted excess is explained in the change: a line `- Type cost: <why>` in its changelog fragment
+  `changes/new-element.md`; the generated files are not edited by hand. No baseline is written, edited or committed,
+  no `npm run type-bench` re-baseline and no separate re-baseline lot.
