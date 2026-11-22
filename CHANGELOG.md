@@ -15,8 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Breaking (scaffolded package):** the default engine range is `^0.10.0` (was `^0.8.0`); `--core-version` still sets another.
-- **A scaffolded package runs on `@dialecte/cli` 0.7.0** (pinned exactly, was 0.3.1).
-- The repository's own tooling runs on `@dialecte/cli` 0.7.0 (nothing changes for a user of the generator).
+- **Breaking (scaffolded package):** its type bench measures each change against the base it goes onto and stores nothing: its first `npm install` no longer writes a type-bench baseline, `type-bench` / `type-bench:check` run `dialecte bench` directly, and its CI type-perf job hands the change's base to the bench. A change more than 5% over its base explains the cost with a `- Type cost: <why>` line in its changelog. A package scaffolded before keeps working once it pins cli 0.10.0 and deletes its `benchmarks/types/<version>/baseline.json`.
+- **A scaffolded package runs on `@dialecte/cli` 0.10.0** (pinned exactly, was 0.3.1).
+- The repository's own tooling runs on `@dialecte/cli` 0.10.0 (nothing changes for a user of the generator).
 
 ## [0.2.1] - 2026-11-04
 

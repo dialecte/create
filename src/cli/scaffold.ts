@@ -184,9 +184,7 @@ export async function scaffoldDialecte(
 	console.log('  npm install')
 	console.log('  git add --all && git commit -m "scaffold"')
 	console.log('')
-	console.log(
-		'The first install writes the skill API index and the type-bench baseline: commit them with the',
-	)
+	console.log('The first install writes the skill API index: commit it with the')
 	console.log('package. Then `npx dialecte gate --full` and `npx dialecte contrib` pass.')
 	return { namespaceUri, rootElement }
 }

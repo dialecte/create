@@ -57,14 +57,15 @@ schema offers several), so a regeneration reproduces the same definition.
 ## Develop
 
 ```sh
-npm install          # also writes the skill API index, and the type-bench baseline when there is none
+npm install          # also writes the skill API index
 npm run build        # type-check + bundle (ESM + d.ts)
 npm run test:node    # the tests, in node
 npm run doc:dev      # vitepress docs
 ```
 
-The first `npm install` writes `skills/dialecte-__dialecteId__/references/api.md`, `api.json` and
-`benchmarks/types/__version__/baseline.json`: commit them with the package.
+The first `npm install` writes `skills/dialecte-__dialecteId__/references/api.md` and `api.json`: commit them with
+the package. The type bench stores nothing: `npm run type-bench:check` measures a change against the base it goes
+onto, and a change more than 5% over its base explains the cost with a `- Type cost: <why>` line in its changelog.
 
 ## Test
 

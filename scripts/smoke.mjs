@@ -880,8 +880,9 @@ async function assertScaffolds() {
 			{
 				file: 'package.json',
 				json: ['devDependencies', '@dialecte/cli'],
-				equals: '0.7.0',
-				reason: 'the cli is pinned exactly at the version with profiles and the hook gate',
+				equals: '0.10.0',
+				reason:
+					'the cli is pinned exactly at the version whose type bench measures each change against its base',
 			},
 			{
 				file: 'package.json',
@@ -904,8 +905,7 @@ async function assertScaffolds() {
 				file: 'package.json',
 				json: ['scripts', 'prepare'],
 				equals: 'husky && node scripts/prepare.mjs',
-				reason:
-					'every npm install of the package writes its skill index, and the type-bench baseline once',
+				reason: 'every npm install of the package writes its skill index',
 			},
 			{
 				file: '.husky/pre-commit',
